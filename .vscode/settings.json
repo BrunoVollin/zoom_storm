@@ -1,0 +1,17 @@
+{
+  "debug.node.autoAttach": "off",
+
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  "typescript.tsserver.experimental.enableProjectDiagnostics": true,
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  "jestRunIt.jestCommand": "node --import tsx ./node_modules/jest/bin/jest.js"
+}

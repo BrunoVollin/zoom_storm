@@ -1,0 +1,50 @@
+import { Coupon } from "../coupon/Coupon";
+import { IdType } from "../../shared/IdType";
+import { CartItem } from "./CartItem";
+
+export class Cart {
+  constructor(readonly id: IdType) {}
+
+  private items: Array<CartItem> = [];
+  private coupons: Array<Coupon> = [];
+
+  addItem(item: CartItem) {
+    this.items.push(item);
+  }
+
+  addCoupon(coupon: Coupon) {
+    this.coupons.push(coupon);
+  }
+
+  removeItem(id: IdType) {
+    this.items = this.items.filter((item) => item.id !== id);
+  }
+
+  getItems() {
+    return this.items;
+  }
+
+  getId() {
+    return this.id;
+  }
+
+  calcSubtotal() {
+    const subtotal = this.items.reduce((acc, item) => acc + item.getPrice(), 0);
+    return subtotal;
+  }
+
+  calcTotalDiscount(subtotal: number) {
+    const discount = this.coupons.reduce((acc, coupon) => {
+      const discountResult = coupon.getDiscount(subtotal);
+      return acc + discountResult;
+    }, 0);
+
+    return discount;
+  }
+
+  calcTotal() {
+    const subtotal = this.calcSubtotal();
+    const discount = this.calcTotalDiscount(subtotal);
+    return Math.max(0, subtotal - discount);
+  }
+}

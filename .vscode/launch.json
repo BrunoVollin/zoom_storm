@@ -1,0 +1,40 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+     {
+      "type": "pwa-node",
+      "request": "launch",
+      "name": "Debug Jest Current File",
+      "runtimeExecutable": "/home/bruno/.nvm/versions/node/v24.16.0/bin/node",
+      "runtimeArgs": [
+        "--import",
+        "tsx",
+        "./node_modules/jest/bin/jest.js",
+        "${file}",
+        "--runInBand"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "disableOptimisticBPs": true,
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    },
+    {
+      "type": "pwa-node",
+      "request": "launch",
+      "name": "Debug zoom",
+      "runtimeExecutable": "/home/bruno/.nvm/versions/node/v24.16.0/bin/node",
+      "runtimeArgs": [
+        "--import",
+        "tsx"
+      ],
+      "program": "${workspaceFolder}/index.ts",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    }
+  ]
+}
