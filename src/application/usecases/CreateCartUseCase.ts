@@ -1,10 +1,10 @@
-import { Cart } from "../../domain/entities/cart/Cart";
-import { CartItem } from "../../domain/entities/cart/CartItem";
-import { CartRepository } from "../../domain/repositories/CartRepository";
-import { CouponRepository } from "../../domain/repositories/CouponRepository";
-import { ProductRepository } from "../../domain/repositories/ProductRepository";
-import { IdType } from "../../domain/shared/IdType";
-import { Status, UseCase } from "../contracts/UseCase";
+import { Cart } from '../../domain/entities/cart/Cart';
+import { CartItem } from '../../domain/entities/cart/CartItem';
+import { CartRepository } from '../../domain/repositories/CartRepository';
+import { CouponRepository } from '../../domain/repositories/CouponRepository';
+import { ProductRepository } from '../../domain/repositories/ProductRepository';
+import { IdType } from '../../domain/shared/IdType';
+import { Status, UseCase } from '../contracts/UseCase';
 
 export class CreateCartUseCase implements UseCase<Input, Output> {
   constructor(
@@ -26,18 +26,21 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
       if (coupons.length !== input.coupons.length) {
         return {
           status: Status.ERROR,
-          message: "Coupon not found",
-        };
-      }
-      
-      if (products.length !== input.products.length) {
-        return {
-          status: Status.ERROR,
-          message: "Product not found",
+          message: 'Coupon not found',
         };
       }
 
-      const cart = new Cart(IdType.create());
+      if (products.length !== input.products.length) {
+        return {
+          status: Status.ERROR,
+          message: 'Product not found',
+        };
+      }
+
+      const cart = new Cart(
+        IdType.create(input.userId),
+        IdType.create(),
+      );
 
       products.forEach((product) => {
         const quantity = input.products.find(
@@ -53,7 +56,7 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
         if (!coupon.isValid()) {
           return {
             status: Status.ERROR,
-            message: "Error: " + coupon.getName(),
+            message: 'Error: ' + coupon.getName(),
           };
         }
         cart.addCoupon(coupon);
@@ -70,13 +73,14 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
         message:
           error instanceof Error
             ? error.message
-            : "An unexpected error occurred.",
+            : 'An unexpected error occurred.',
       };
     }
   }
 }
 
 interface Input {
+  userId: string;
   products: Array<{ id: string; quantity: number }>;
   coupons: Array<string>;
 }

@@ -14,7 +14,7 @@ export interface ErrorOutput {
 export type OutputUseCase = SuccessOutput | ErrorOutput;
 
 export enum Status {
-  SUCCESS = "SUCCESS",
-  ERROR = "ERROR",
-  PENDING = "PENDING",
+  SUCCESS = 'SUCCESS',
+  ERROR = 'ERROR',
+  PENDING = 'PENDING',
 }

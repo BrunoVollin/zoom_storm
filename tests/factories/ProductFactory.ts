@@ -1,7 +1,7 @@
-import { Transport } from "../../src/domain/entities/freight/Transport";
-import { Product } from "../../src/domain/entities/product/Product";
-import { IdType } from "../../src/domain/shared/IdType";
-import { createIdFromString } from "./IdFactory";
+import { Transport } from '../../src/domain/entities/freight/Transport';
+import { Product } from '../../src/domain/entities/product/Product';
+import { IdType } from '../../src/domain/shared/IdType';
+import { createIdFromString } from './IdFactory';
 
 export function createTransport(
   width: number = 10,
@@ -23,11 +23,11 @@ export function createProduct(
   }>,
 ): Product {
   const defaults = {
-    id: createIdFromString("product-1"),
-    name: "Bluza",
+    id: createIdFromString('product-1'),
+    name: 'Bluza',
     price: 1000,
-    description: "Product description",
-    category: "Clothing",
+    description: 'Product description',
+    category: 'Clothing',
     stock: 10,
     transport: createTransport(),
   };

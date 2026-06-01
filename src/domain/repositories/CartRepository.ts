@@ -1,5 +1,5 @@
-import { Cart } from "../entities/cart/Cart";
-import { IdType } from "../shared/IdType";
+import { Cart } from '../entities/cart/Cart';
+import { IdType } from '../shared/IdType';
 
 export interface CartRepository {
   save(cart: Cart): Promise<void>;

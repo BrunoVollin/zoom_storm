@@ -1,21 +1,21 @@
-import { Shipment } from "../../src/domain/entities/freight/Freight";
+import { Shipment } from '../../src/domain/entities/freight/Freight';
 
 export function createShipment(
   overrides?: Partial<{
-    width: number;
-    height: number;
-    length: number;
+    distance: number;
+    volume: number;
+    weight: number;
   }>,
 ): Shipment {
   const defaults = {
-    width: 10,
-    height: 10,
-    length: 10,
+    distance: 10,
+    volume: 10,
+    weight: 10,
   };
 
   return new Shipment(
-    overrides?.width ?? defaults.width,
-    overrides?.height ?? defaults.height,
-    overrides?.length ?? defaults.length,
+    overrides?.distance ?? defaults.distance,
+    overrides?.volume ?? defaults.volume,
+    overrides?.weight ?? defaults.weight,
   );
 }

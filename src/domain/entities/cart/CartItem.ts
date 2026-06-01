@@ -1,5 +1,5 @@
-import { Product } from "../product/Product";
-import { IdType } from "../../shared/IdType";
+import { Product } from '../product/Product';
+import { IdType } from '../../shared/IdType';
 
 export class CartItem {
   constructor(

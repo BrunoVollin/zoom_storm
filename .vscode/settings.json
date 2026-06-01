@@ -1,17 +1,19 @@
 {
   "debug.node.autoAttach": "off",
-
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true
   },
-
   "typescript.tsserver.experimental.enableProjectDiagnostics": true,
   "typescript.enablePromptUseWorkspaceTsdk": true,
-
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-
-  "jestRunIt.jestCommand": "node --import tsx ./node_modules/jest/bin/jest.js"
+  "jestRunIt.jestCommand": "node --import tsx ./node_modules/jest/bin/jest.js",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  }
 }

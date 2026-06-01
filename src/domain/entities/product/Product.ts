@@ -1,5 +1,5 @@
-import { Transport } from "../freight/Transport";
-import { IdType } from "../../shared/IdType";
+import { Transport } from '../freight/Transport';
+import { IdType } from '../../shared/IdType';
 
 export class Product {
   constructor(

@@ -1,9 +1,12 @@
-import { Coupon } from "../coupon/Coupon";
-import { IdType } from "../../shared/IdType";
-import { CartItem } from "./CartItem";
+import { Coupon } from '../coupon/Coupon';
+import { IdType } from '../../shared/IdType';
+import { CartItem } from './CartItem';
 
 export class Cart {
-  constructor(readonly id: IdType) {}
+  constructor(
+    readonly userId: IdType,
+    readonly id: IdType,
+  ) {}
 
   private items: Array<CartItem> = [];
   private coupons: Array<Coupon> = [];
@@ -14,6 +17,14 @@ export class Cart {
 
   addCoupon(coupon: Coupon) {
     this.coupons.push(coupon);
+  }
+
+  removeCoupon(id: IdType) {
+    this.coupons = this.coupons.filter((coupon) => coupon.id !== id);
+  }
+
+  getCoupons() {
+    return this.coupons;
   }
 
   removeItem(id: IdType) {
@@ -28,14 +39,20 @@ export class Cart {
     return this.id;
   }
 
+  getUserId() {
+    return this.userId;
+  }
+
   calcSubtotal() {
     const subtotal = this.items.reduce((acc, item) => acc + item.getPrice(), 0);
+
     return subtotal;
   }
 
   calcTotalDiscount(subtotal: number) {
     const discount = this.coupons.reduce((acc, coupon) => {
       const discountResult = coupon.getDiscount(subtotal);
+
       return acc + discountResult;
     }, 0);
 
@@ -45,6 +62,7 @@ export class Cart {
   calcTotal() {
     const subtotal = this.calcSubtotal();
     const discount = this.calcTotalDiscount(subtotal);
+
     return Math.max(0, subtotal - discount);
   }
 }

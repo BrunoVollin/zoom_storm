@@ -1,7 +1,5 @@
 export class IdType {
-  private constructor(
-    readonly value: string | number
-  ) {}
+  private constructor(readonly value: string | number) {}
 
   static create(value?: string) {
     return new IdType(value ?? crypto.randomUUID());

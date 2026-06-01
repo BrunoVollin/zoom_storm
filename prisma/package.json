@@ -1,0 +1,15 @@
+{
+    "name": "@prisma/client",
+    "main": "./index.js",
+    "types": "./index.d.ts",
+    "exports": {
+        ".": {
+            "default": "./index.js",
+            "types": "./index.d.ts"
+        },
+        "./extension": {
+            "default": "./extension.js",
+            "types": "./extension.d.ts"
+        }
+    }
+}

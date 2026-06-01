@@ -1,4 +1,4 @@
-import { IdType } from "../../shared/IdType";
+import { IdType } from '../../shared/IdType';
 
 export interface Coupon {
   id: IdType;
@@ -30,6 +30,7 @@ export class CouponPercentByTime implements Coupon {
     if (this.isValid()) {
       return total * this.percent;
     }
+
     return 0;
   }
 }
