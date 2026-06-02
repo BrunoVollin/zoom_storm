@@ -4,7 +4,6 @@ import { IdType } from '@domain/shared/IdType';
 import { ProductRepository } from '@domain/repositories/ProductRepository';
 import { prisma } from '../prisma-connection';
 
-
 interface ProductRow {
   id: string;
   name: string;

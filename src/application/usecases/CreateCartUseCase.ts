@@ -37,10 +37,7 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
         };
       }
 
-      const cart = new Cart(
-        IdType.create(input.userId),
-        IdType.create(),
-      );
+      const cart = new Cart(IdType.create(input.userId), IdType.create());
 
       products.forEach((product) => {
         const quantity = input.products.find(
@@ -62,7 +59,7 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
         cart.addCoupon(coupon);
       }
 
-      await this.cartRepository.save(cart);
+      await this.cartRepository.save(cart);      
 
       return {
         status: Status.SUCCESS,

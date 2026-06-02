@@ -1,7 +1,4 @@
-import {
-  Coupon,
-  CouponPercentByTime,
-} from '@domain/entities/coupon/Coupon';
+import { Coupon, CouponPercentByTime } from '@domain/entities/coupon/Coupon';
 import { IdType } from '@domain/shared/IdType';
 import { CouponRepository } from '@domain/repositories/CouponRepository';
 import { PrismaClient } from '../../../../generated/prisma/client';

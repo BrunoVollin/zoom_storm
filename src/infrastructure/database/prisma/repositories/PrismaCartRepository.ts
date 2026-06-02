@@ -54,7 +54,10 @@ export class PrismaCartRepository implements CartRepository {
 
     if (!dbCart) return null;
 
-    const cart = new Cart(IdType.create(dbCart.userId), IdType.create(dbCart.id));
+    const cart = new Cart(
+      IdType.create(dbCart.userId),
+      IdType.create(dbCart.id),
+    );
 
     for (const it of dbCart.items) {
       const p = it.product;
