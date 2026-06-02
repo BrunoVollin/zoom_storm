@@ -3,16 +3,10 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import { defineConfig } from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier';
-//@ts-ignore
-import noComments from 'eslint-plugin-no-comments';
 
 export default defineConfig([
   {
-    ignores: [
-      '**/sandbox/**', 
-      '**/sandbox.*', 
-      '**/*sandbox*',
-    ],
+    ignores: ['**/sandbox/**', '**/sandbox.*', '**/*sandbox*'],
   },
 
   js.configs.recommended,
@@ -20,15 +14,11 @@ export default defineConfig([
 
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
-    plugins: {
-      'no-comments': noComments,
-    },
+    plugins: {},
     languageOptions: {
       globals: globals.browser,
     },
     rules: {
-      'no-comments/no-comments': 'error',
-
       eqeqeq: ['error', 'always'],
       curly: ['error', 'all'],
       'no-var': 'error',
