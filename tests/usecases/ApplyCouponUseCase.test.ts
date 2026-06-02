@@ -1,5 +1,4 @@
 import { ApplyCouponUseCase } from '@src/application/usecases/ApplyCouponUseCase';
-import { createIdFromString } from '../factories/IdFactory';
 import {
   createValidCoupon,
   createInvalidCoupon,
@@ -12,7 +11,7 @@ describe('ApplyCouponUseCase', () => {
   let cartRepositoryMock: CartRepository;
   let couponRepositoryMock: CouponRepository;
   let useCase: ApplyCouponUseCase;
-  let cartMock: any;
+  let cartMock: object;
 
   const cartId = 'cart-1';
   const couponId = 'coupon-1';

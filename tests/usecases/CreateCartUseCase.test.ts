@@ -1,4 +1,3 @@
-import { IdType } from '@domain/shared/IdType';
 import { Status } from '@application/contracts/UseCase';
 import { CreateCartUseCase } from '@application/usecases/CreateCartUseCase';
 import { CartRepository } from '@domain/repositories/CartRepository';
@@ -16,7 +15,7 @@ describe('CreateCartUseCase', () => {
   let couponRepositoryMock: CouponRepository;
   let cartRepositoryMock: CartRepository;
   let useCase: CreateCartUseCase;
-  let userId = 'user-1'
+  const userId = 'user-1'
 
   beforeEach(() => {
     productRepositoryMock = {
