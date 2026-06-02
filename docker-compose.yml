@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  zoom-postgres:
+    image: postgres:latest
+    container_name: zoom-postgres
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: zoom
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - zoom-network
+
+  zoom-mongo:
+    image: mongo:latest
+    container_name: zoom-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - zoom-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zoom-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - zoom-network
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: zoom-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9022:9022"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9022
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - zoom-network
+
+  akhq:
+    image: tchiotludo/akhq:latest
+    container_name: zoom-akhq
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            docker-kafka:
+              properties:
+                bootstrap.servers: "kafka:29092"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+    networks:
+      - zoom-network
+
+volumes:
+  mongo_data:
+  postgres_data:
+
+networks:
+  zoom-network:
+    driver: bridge
