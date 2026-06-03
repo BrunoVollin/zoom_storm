@@ -1,8 +1,30 @@
 docker run --name zoom-postgres -e POSTGRES_PASSWORD=root -e POSTGRES_DB=zoom -p 5432:5432 -d postgres
 
-1. Criar usecases via testes 
-    CalculateShippingUseCase
-    CheckoutUseCase
-2. Criar a api com autenicacao via keyclock
+docker run -d \
+  --name zoom-mongo \
+  -p 27017:27017 \
+  -v mongo_data:/data/db \
+  -e MONGO_INITDB_ROOT_USERNAME=root \
+  -e MONGO_INITDB_ROOT_PASSWORD=root \
+  mongo:latest
+
+1. Criar usecases via testes - ok 
+
 3. Criar o banco de leitura
+3. Criar CQRS para trazer os dados do card 
+2. Criar a api com autenicacao via keyclock
+
+    - tem que fazer o banco de leitura primeiro pq nao faz sentido 
 4. Estudar onde adicionar o kafka 
+
+A ideia 
+
+Ajuestes
+1. Revisar a logica dos usecases
+2. corrigitr o lint dos testes use cases 
+
+
+---
+
+
+usecase salva -> 

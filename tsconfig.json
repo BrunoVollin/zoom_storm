@@ -13,16 +13,16 @@
     "isolatedModules": true,
     "paths": {
       "@src/*": [
-        "./src/*"
+        "apps/cart-service/src/*"
       ],
       "@domain/*": [
-        "./src/domain/*"
+        "apps/cart-service/src/domain/*"
       ],
       "@application/*": [
-        "./src/application/*"
+        "apps/cart-service/src/application/*"
       ],
       "@infrastructure/*": [
-        "./src/infrastructure/*"
+        "apps/cart-service/src/infrastructure/*"
       ]
     }
   }
