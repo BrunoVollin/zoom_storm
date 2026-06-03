@@ -3,6 +3,8 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "strict": true,
     "esModuleInterop": true,
     "types": [
@@ -23,6 +25,9 @@
       ],
       "@infrastructure/*": [
         "apps/cart-service/src/infrastructure/*"
+      ],
+      "@cart-projection/*": [
+        "apps/cart-projection-worker/src/*"
       ]
     }
   }
