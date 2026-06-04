@@ -3,3 +3,5 @@ node_modules
 .gitignore
 .env
 coverage
+notes
+*.notes.txt
