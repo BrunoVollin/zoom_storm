@@ -5,11 +5,13 @@ import {
 } from '../factories/CouponFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
 import { CouponRepository } from '../../src/domain/repositories/CouponRepository';
+import { EventPublisher } from '../../src/domain/events/EventPublisher';
 import { Status } from '../../src/application/contracts/UseCase';
 
 describe('ApplyCouponUseCase', () => {
   let cartRepositoryMock: CartRepository;
   let couponRepositoryMock: CouponRepository;
+  let eventPublisherMock: EventPublisher;
   let useCase: ApplyCouponUseCase;
   let cartMock: any;
 
@@ -28,6 +30,10 @@ describe('ApplyCouponUseCase', () => {
       findByIds: jest.fn(),
     };
 
+    eventPublisherMock = {
+      publish: jest.fn(),
+    };
+
     cartMock = {
       id: { toString: () => 'cart-1' },
       userId: { toString: () => 'user-1' },
@@ -39,7 +45,7 @@ describe('ApplyCouponUseCase', () => {
       addCoupon: jest.fn(),
     };
 
-    useCase = new ApplyCouponUseCase(cartRepositoryMock, couponRepositoryMock);
+    useCase = new ApplyCouponUseCase(cartRepositoryMock, couponRepositoryMock, eventPublisherMock);
 
     jest.clearAllMocks();
   });

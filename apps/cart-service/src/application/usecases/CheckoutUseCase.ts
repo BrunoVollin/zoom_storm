@@ -1,9 +1,15 @@
+import { DomainEvent, DomainEventName } from '@src/domain/events/DomainEvent';
+import { EventPublisher } from '@src/domain/events/EventPublisher';
 import { CartRepository } from '../../domain/repositories/CartRepository';
 import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
+import { CartMapper } from '../mappers/CartMapper';
 
 export class CheckoutUseCase implements UseCase<Input, Output> {
-  constructor(private readonly cartRepository: CartRepository) {}
+  constructor(
+    private readonly cartRepository: CartRepository,
+    private readonly eventPublisher: EventPublisher,
+  ) {}
 
   async execute(input: Input): Promise<Output> {
     try {
@@ -33,6 +39,14 @@ export class CheckoutUseCase implements UseCase<Input, Output> {
       const shipping = input.shipping;
 
       const finalTotal = total + shipping;
+
+      const event = new DomainEvent(
+        DomainEventName.CART_CHECKED_OUT,
+        { ...CartMapper.toPrimitives(cart), shipping, total: finalTotal },
+        new Date(),
+      );
+
+      await this.eventPublisher.publish(event);
 
       return {
         status: Status.SUCCESS,

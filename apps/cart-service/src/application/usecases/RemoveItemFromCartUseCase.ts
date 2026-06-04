@@ -1,10 +1,15 @@
+import { DomainEvent, DomainEventName } from '@src/domain/events/DomainEvent';
+import { EventPublisher } from '@src/domain/events/EventPublisher';
 import { CartRepository } from '../../domain/repositories/CartRepository';
 import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
 import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
 
 export class RemoveItemFromCartUseCase implements UseCase<Input, Output> {
-  constructor(private readonly cartRepository: CartRepository) {}
+  constructor(
+    private readonly cartRepository: CartRepository,
+    private readonly eventPublisher: EventPublisher,
+  ) {}
 
   async execute(input: Input): Promise<Output> {
     try {
@@ -34,9 +39,19 @@ export class RemoveItemFromCartUseCase implements UseCase<Input, Output> {
       cart.removeItem(IdType.create(input.itemId));
       await this.cartRepository.save(cart);
 
+      const cartPrimitives = CartMapper.toPrimitives(cart);
+
+      const event = new DomainEvent(
+        DomainEventName.CART_ITEM_REMOVED,
+        cartPrimitives,
+        new Date(),
+      );
+
+      await this.eventPublisher.publish(event);
+
       return {
         status: Status.SUCCESS,
-        cart: CartMapper.toPrimitives(cart),
+        cart: cartPrimitives,
       };
     } catch (error) {
       return {

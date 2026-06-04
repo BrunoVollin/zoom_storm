@@ -1,3 +1,5 @@
+import { DomainEvent, DomainEventName } from '@src/domain/events/DomainEvent';
+import { EventPublisher } from '@src/domain/events/EventPublisher';
 import { CartItem } from '../../domain/entities/cart/CartItem';
 import { CartRepository } from '../../domain/repositories/CartRepository';
 import { ProductRepository } from '../../domain/repositories/ProductRepository';
@@ -9,6 +11,7 @@ export class UpdateItemQuantityUseCase implements UseCase<Input, Output> {
   constructor(
     private readonly cartRepository: CartRepository,
     private readonly productRepository: ProductRepository,
+    private readonly eventPublisher: EventPublisher,
   ) {}
 
   async execute(input: Input): Promise<Output> {
@@ -54,6 +57,14 @@ export class UpdateItemQuantityUseCase implements UseCase<Input, Output> {
       );
 
       await this.cartRepository.save(cart);
+
+      const event = new DomainEvent(
+        DomainEventName.CART_UPDATED,
+        CartMapper.toPrimitives(cart),
+        new Date(),
+      );
+
+      await this.eventPublisher.publish(event);
 
       return {
         status: Status.SUCCESS,

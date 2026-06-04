@@ -1,10 +1,12 @@
 import { RemoveItemFromCartUseCase } from '../../src/application/usecases/RemoveItemFromCartUseCase';
 import { createIdFromString } from '../factories/IdFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
+import { EventPublisher } from '../../src/domain/events/EventPublisher';
 import { Status } from '../../src/application/contracts/UseCase';
 
 describe('RemoveItemFromCartUseCase', () => {
   let cartRepositoryMock: CartRepository;
+  let eventPublisherMock: EventPublisher;
   let useCase: RemoveItemFromCartUseCase;
   let cartMock: any;
 
@@ -15,6 +17,10 @@ describe('RemoveItemFromCartUseCase', () => {
     cartRepositoryMock = {
       save: jest.fn(),
       findById: jest.fn(),
+    };
+
+    eventPublisherMock = {
+      publish: jest.fn(),
     };
 
     cartMock = {
@@ -28,7 +34,7 @@ describe('RemoveItemFromCartUseCase', () => {
       removeItem: jest.fn(),
     };
 
-    useCase = new RemoveItemFromCartUseCase(cartRepositoryMock);
+    useCase = new RemoveItemFromCartUseCase(cartRepositoryMock, eventPublisherMock);
 
     jest.clearAllMocks();
   });

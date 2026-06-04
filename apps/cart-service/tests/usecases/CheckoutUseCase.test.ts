@@ -3,10 +3,12 @@ import { createIdFromString } from '../factories/IdFactory';
 import { createProduct } from '../factories/ProductFactory';
 import { createValidCoupon } from '../factories/CouponFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
+import { EventPublisher } from '../../src/domain/events/EventPublisher';
 import { Status } from '../../src/application/contracts/UseCase';
 
 describe('CheckoutUseCase', () => {
   let cartRepositoryMock: CartRepository;
+  let eventPublisherMock: EventPublisher;
   let useCase: CheckoutUseCase;
   let cartMock: any;
 
@@ -19,18 +21,25 @@ describe('CheckoutUseCase', () => {
       findById: jest.fn(),
     };
 
+    eventPublisherMock = {
+      publish: jest.fn(),
+    };
+
     const product = createProduct({
       id: createIdFromString('product-1'),
       price: 1000,
     });
 
     const mockItem = {
+      id: createIdFromString('item-1'),
       quantity: 2,
       product,
       getPrice: jest.fn(() => 2000),
     };
 
     cartMock = {
+      id: { toString: () => 'cart-1' },
+      userId: { toString: () => 'user-1' },
       getItems: jest.fn(() => [mockItem]),
       calcSubtotal: jest.fn(() => 2000),
       calcTotalDiscount: jest.fn(() => 200),
@@ -38,7 +47,7 @@ describe('CheckoutUseCase', () => {
       getCoupons: jest.fn(() => []),
     };
 
-    useCase = new CheckoutUseCase(cartRepositoryMock);
+    useCase = new CheckoutUseCase(cartRepositoryMock, eventPublisherMock);
 
     jest.clearAllMocks();
   });

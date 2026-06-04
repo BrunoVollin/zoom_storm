@@ -2,10 +2,12 @@ import { RemoveCouponUseCase } from '../../src/application/usecases/RemoveCoupon
 import { createIdFromString } from '../factories/IdFactory';
 import { createValidCoupon } from '../factories/CouponFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
+import { EventPublisher } from '../../src/domain/events/EventPublisher';
 import { Status } from '../../src/application/contracts/UseCase';
 
 describe('RemoveCouponUseCase', () => {
   let cartRepositoryMock: CartRepository;
+  let eventPublisherMock: EventPublisher;
   let useCase: RemoveCouponUseCase;
   let cartMock: any;
 
@@ -16,6 +18,10 @@ describe('RemoveCouponUseCase', () => {
     cartRepositoryMock = {
       save: jest.fn(),
       findById: jest.fn(),
+    };
+
+    eventPublisherMock = {
+      publish: jest.fn(),
     };
 
     const validCoupon = createValidCoupon();
@@ -31,7 +37,7 @@ describe('RemoveCouponUseCase', () => {
       removeCoupon: jest.fn(),
     };
 
-    useCase = new RemoveCouponUseCase(cartRepositoryMock);
+    useCase = new RemoveCouponUseCase(cartRepositoryMock, eventPublisherMock);
 
     jest.clearAllMocks();
   });
