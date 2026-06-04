@@ -9,9 +9,11 @@
   "scripts": {
     "test": "jest",
     "start": "tsx index.ts",
-    "format": "prettier --write \"src/**/*.{js,ts}\"",
+    "format": "prettier --write \"apps/**/*.{js,ts}\"",
     "lint": "yarn format && eslint . --fix",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "dev:proj": "cd apps/cart-projection && tsx index.ts",
+    "sand": "tsx sandbox.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

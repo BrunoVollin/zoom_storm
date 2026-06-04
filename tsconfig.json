@@ -27,7 +27,7 @@
         "apps/cart-service/src/infrastructure/*"
       ],
       "@cart-projection/*": [
-        "apps/cart-projection-worker/src/*"
+        "apps/cart-projection/src/*"
       ]
     }
   }

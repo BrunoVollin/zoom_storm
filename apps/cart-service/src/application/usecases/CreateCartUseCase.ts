@@ -6,14 +6,14 @@ import { CouponRepository } from '../../domain/repositories/CouponRepository';
 import { ProductRepository } from '../../domain/repositories/ProductRepository';
 import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
-import { DomainEvent } from '../../domain/events/DomainEvent';
+import { DomainEvent, DomainEventName } from '../../domain/events/DomainEvent';
 
 export class CreateCartUseCase implements UseCase<Input, Output> {
   constructor(
-    private readonly productRepository: ProductRepository,
-    private readonly couponRepository: CouponRepository,
     private readonly cartRepository: CartRepository,
+    private readonly couponRepository: CouponRepository,
     private readonly eventPublisher: EventPublisher,
+    private readonly productRepository: ProductRepository,
   ) {}
   async execute(input: Input): Promise<Output> {
     try {
@@ -64,13 +64,13 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
 
       await this.cartRepository.save(cart);
 
-      const e: DomainEvent = {
-        name: 'cart.saved',
-        payload: cart,
-        occurredAt: new Date(),
-      };
+      const event = new DomainEvent(
+        DomainEventName.CART_CREATED,
+        cart,
+        new Date(),
+      );
 
-      await this.eventPublisher.publish(e);
+      await this.eventPublisher.publish(event);
 
       return {
         status: Status.SUCCESS,

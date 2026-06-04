@@ -15,10 +15,10 @@ import { createProduct } from './apps/cart-service/tests/factories/ProductFactor
   try {
     console.log('🔄 Salvando produto...');
     const useCase = new CreateCartUseCase(
-      new PrismaProductRepository(),
-      new PrismaCouponRepository(),
       new PrismaCartRepository(),
+      new PrismaCouponRepository(),
       new KafkaEventPublisher(new KafkaProducerClient()),
+      new PrismaProductRepository(),
     );
 
     // // create product
@@ -26,7 +26,7 @@ import { createProduct } from './apps/cart-service/tests/factories/ProductFactor
     // await new PrismaProductRepository().save(product);
 
     const r = await useCase.execute({
-      userId: 'user-1',
+      userId: 'user-5',
       products: [{ id: 'product-1', quantity: 2 }],
       coupons: [],
     });
