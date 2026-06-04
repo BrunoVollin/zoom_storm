@@ -4,10 +4,13 @@ import { createProduct } from '../factories/ProductFactory';
 import { ProductRepository } from '../../src/domain/repositories/ProductRepository';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
 import { Status } from '../../src/application/contracts/UseCase';
+import { Cart } from '../../src/domain/entities/cart/Cart';
+import { CartItem } from '../../src/domain/entities/cart/CartItem';
 
 describe('AddItemToCartUseCase', () => {
   let productRepositoryMock: ProductRepository;
   let cartRepositoryMock: CartRepository;
+  let eventPublisherMock: { publish: jest.Mock };
   let useCase: AddItemToCartUseCase;
   let cartMock: any;
 
@@ -25,13 +28,20 @@ describe('AddItemToCartUseCase', () => {
       findById: jest.fn(),
     };
 
-    cartMock = {
-      addItem: jest.fn(),
+    cartMock = new Cart(
+      createIdFromString('user-1'),
+      createIdFromString('cart-1'),
+    );
+    cartMock.addItem = jest.fn();
+
+    eventPublisherMock = {
+      publish: jest.fn().mockResolvedValue(undefined),
     };
 
     useCase = new AddItemToCartUseCase(
       productRepositoryMock,
       cartRepositoryMock,
+      eventPublisherMock,
     );
 
     jest.clearAllMocks();

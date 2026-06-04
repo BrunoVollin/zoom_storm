@@ -18,6 +18,16 @@ export class CartMapper {
         },
         subtotal: item.getPrice(),
       })),
+      coupons: cart.getCoupons().map((coupon) => ({
+        id: coupon.id.toString(),
+        name: coupon.name,
+        discount: coupon.getDiscount(cart.calcSubtotal()),
+      })),
+      subtotal: cart.calcSubtotal(),
+      totalDiscount: cart.calcTotalDiscount(cart.calcSubtotal()),
+      total: cart.calcTotal(),
     };
   }
 }
+
+export type CartPrimitives = ReturnType<typeof CartMapper.toPrimitives>;

@@ -7,13 +7,16 @@ import { ProductRepository } from '../../domain/repositories/ProductRepository';
 import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
 import { DomainEvent, DomainEventName } from '../../domain/events/DomainEvent';
+import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
 
 export class CreateCartUseCase implements UseCase<Input, Output> {
   constructor(
     private readonly cartRepository: CartRepository,
     private readonly couponRepository: CouponRepository,
-    private readonly eventPublisher: EventPublisher,
     private readonly productRepository: ProductRepository,
+    private readonly eventPublisher: EventPublisher = {
+      publish: async () => undefined,
+    },
   ) {}
   async execute(input: Input): Promise<Output> {
     try {
@@ -66,7 +69,7 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
 
       const event = new DomainEvent(
         DomainEventName.CART_CREATED,
-        cart,
+        CartMapper.toPrimitives(cart),
         new Date(),
       );
 
@@ -74,6 +77,7 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
 
       return {
         status: Status.SUCCESS,
+        cart: CartMapper.toPrimitives(cart),
       };
     } catch (error) {
       return {
@@ -95,6 +99,7 @@ interface Input {
 
 interface SuccessOutput {
   status: Status.SUCCESS;
+  cart: CartPrimitives;
 }
 
 interface ErrorOutput {

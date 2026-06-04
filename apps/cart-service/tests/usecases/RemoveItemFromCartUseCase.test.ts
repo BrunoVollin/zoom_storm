@@ -18,7 +18,13 @@ describe('RemoveItemFromCartUseCase', () => {
     };
 
     cartMock = {
+      id: { toString: () => 'cart-1' },
+      userId: { toString: () => 'user-1' },
       getItems: jest.fn(),
+      getCoupons: jest.fn(() => []),
+      calcSubtotal: jest.fn(() => 0),
+      calcTotalDiscount: jest.fn(() => 0),
+      calcTotal: jest.fn(() => 0),
       removeItem: jest.fn(),
     };
 
@@ -29,7 +35,19 @@ describe('RemoveItemFromCartUseCase', () => {
 
   describe('Success Scenario', () => {
     it('should remove item from cart successfully', async () => {
-      const itemWithId = { id: createIdFromString(itemId) };
+      const itemWithId = {
+        id: createIdFromString(itemId),
+        quantity: 2,
+        product: {
+          id: createIdFromString('product-1'),
+          name: 'Product 1',
+          price: 10,
+          description: 'Desc',
+          category: 'cat',
+          stock: 5,
+        },
+        getPrice: jest.fn(() => 20),
+      };
 
       (cartRepositoryMock.findById as jest.Mock).mockResolvedValue(cartMock);
       (cartMock.getItems as jest.Mock).mockReturnValue([itemWithId]);
@@ -41,8 +59,14 @@ describe('RemoveItemFromCartUseCase', () => {
       });
 
       expect(result.status).toBe(Status.SUCCESS);
+      expect(result).toEqual(
+        expect.objectContaining({
+          status: Status.SUCCESS,
+          cart: expect.anything(),
+        }),
+      );
       expect(cartRepositoryMock.findById).toHaveBeenCalledTimes(1);
-      expect(cartMock.getItems).toHaveBeenCalledTimes(1);
+      expect(cartMock.getItems).toHaveBeenCalledTimes(2);
       expect(cartMock.removeItem).toHaveBeenCalledTimes(1);
       expect(cartRepositoryMock.save).toHaveBeenCalledWith(cartMock);
     });

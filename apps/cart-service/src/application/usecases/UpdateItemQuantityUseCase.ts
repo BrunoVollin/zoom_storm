@@ -3,6 +3,7 @@ import { CartRepository } from '../../domain/repositories/CartRepository';
 import { ProductRepository } from '../../domain/repositories/ProductRepository';
 import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
+import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
 
 export class UpdateItemQuantityUseCase implements UseCase<Input, Output> {
   constructor(
@@ -56,6 +57,7 @@ export class UpdateItemQuantityUseCase implements UseCase<Input, Output> {
 
       return {
         status: Status.SUCCESS,
+        cart: CartMapper.toPrimitives(cart),
       };
     } catch (error) {
       return {
@@ -77,6 +79,7 @@ interface Input {
 
 interface SuccessOutput {
   status: Status.SUCCESS;
+  cart: CartPrimitives;
 }
 
 interface ErrorOutput {

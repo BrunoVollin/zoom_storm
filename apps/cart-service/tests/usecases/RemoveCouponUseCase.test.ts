@@ -7,7 +7,7 @@ import { Status } from '../../src/application/contracts/UseCase';
 describe('RemoveCouponUseCase', () => {
   let cartRepositoryMock: CartRepository;
   let useCase: RemoveCouponUseCase;
-  let cartMock: object;
+  let cartMock: any;
 
   const cartId = 'cart-1';
   const couponId = 'coupon-1';
@@ -21,7 +21,13 @@ describe('RemoveCouponUseCase', () => {
     const validCoupon = createValidCoupon();
 
     cartMock = {
+      id: { toString: () => 'cart-1' },
+      userId: { toString: () => 'user-1' },
+      getItems: jest.fn(() => []),
       getCoupons: jest.fn(() => [validCoupon]),
+      calcSubtotal: jest.fn(() => 0),
+      calcTotalDiscount: jest.fn(() => 0),
+      calcTotal: jest.fn(() => 0),
       removeCoupon: jest.fn(),
     };
 
@@ -46,8 +52,14 @@ describe('RemoveCouponUseCase', () => {
       });
 
       expect(result.status).toBe(Status.SUCCESS);
+      expect(result).toEqual(
+        expect.objectContaining({
+          status: Status.SUCCESS,
+          cart: expect.anything(),
+        }),
+      );
       expect(cartRepositoryMock.findById).toHaveBeenCalledTimes(1);
-      expect(cartMock.getCoupons).toHaveBeenCalledTimes(1);
+      expect(cartMock.getCoupons).toHaveBeenCalledTimes(2);
       expect(cartRepositoryMock.save).toHaveBeenCalledTimes(1);
     });
 

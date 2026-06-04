@@ -29,6 +29,13 @@ describe('ApplyCouponUseCase', () => {
     };
 
     cartMock = {
+      id: { toString: () => 'cart-1' },
+      userId: { toString: () => 'user-1' },
+      getItems: jest.fn(() => []),
+      getCoupons: jest.fn(() => []),
+      calcSubtotal: jest.fn(() => 0),
+      calcTotalDiscount: jest.fn(() => 0),
+      calcTotal: jest.fn(() => 0),
       addCoupon: jest.fn(),
     };
 
@@ -53,6 +60,12 @@ describe('ApplyCouponUseCase', () => {
       });
 
       expect(result.status).toBe(Status.SUCCESS);
+      expect(result).toEqual(
+        expect.objectContaining({
+          status: Status.SUCCESS,
+          cart: expect.anything(),
+        }),
+      );
       expect(cartRepositoryMock.findById).toHaveBeenCalledTimes(1);
       expect(couponRepositoryMock.findById).toHaveBeenCalledTimes(1);
       expect(cartMock.addCoupon).toHaveBeenCalledWith(validCoupon);

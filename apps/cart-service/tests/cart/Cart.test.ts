@@ -52,6 +52,17 @@ describe('Cart', () => {
       expect(cart.getItems().length).toBe(2);
       expect(cart.calcSubtotal()).toBe(4000);
     });
+
+    it('should merge quantities when the same product is added again', () => {
+      const cart = new Cart(userId, cartId);
+
+      cart.addItem(new CartItem(createIdFromString('item-1'), product1, 2));
+      cart.addItem(new CartItem(createIdFromString('item-2'), product1, 3));
+
+      expect(cart.getItems()).toHaveLength(1);
+      expect(cart.getItems()[0].quantity).toBe(5);
+      expect(cart.calcSubtotal()).toBe(5000);
+    });
   });
 
   describe('Remove Items', () => {

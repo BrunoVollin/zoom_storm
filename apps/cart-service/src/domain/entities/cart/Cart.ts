@@ -12,6 +12,27 @@ export class Cart {
   private coupons: Array<Coupon> = [];
 
   addItem(item: CartItem) {
+    const existingItem = this.items.find(
+      (currentItem) =>
+        currentItem.product.getId().toString() ===
+        item.product.getId().toString(),
+    );
+
+    if (existingItem) {
+      this.items = this.items.map((currentItem) =>
+        currentItem.product.getId().toString() ===
+        item.product.getId().toString()
+          ? new CartItem(
+              currentItem.id,
+              currentItem.product,
+              currentItem.quantity + item.quantity,
+            )
+          : currentItem,
+      );
+
+      return;
+    }
+
     this.items.push(item);
   }
 

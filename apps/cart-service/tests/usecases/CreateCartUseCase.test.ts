@@ -14,6 +14,7 @@ describe('CreateCartUseCase', () => {
   let productRepositoryMock: ProductRepository;
   let couponRepositoryMock: CouponRepository;
   let cartRepositoryMock: CartRepository;
+  let eventPublisherMock: { publish: jest.Mock };
   let useCase: CreateCartUseCase;
   const userId = 'user-1';
 
@@ -35,10 +36,15 @@ describe('CreateCartUseCase', () => {
       findById: jest.fn(),
     };
 
+    eventPublisherMock = {
+      publish: jest.fn().mockResolvedValue(undefined),
+    };
+
     useCase = new CreateCartUseCase(
-      productRepositoryMock,
-      couponRepositoryMock,
       cartRepositoryMock,
+      couponRepositoryMock,
+      productRepositoryMock,
+      eventPublisherMock,
     );
 
     jest.clearAllMocks();

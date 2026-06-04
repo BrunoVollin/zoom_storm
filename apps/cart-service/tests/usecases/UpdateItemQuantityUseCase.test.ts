@@ -29,11 +29,19 @@ describe('UpdateItemQuantityUseCase', () => {
 
     const mockItem = {
       id: createIdFromString(itemId),
+      quantity: 2,
       product: createProduct({ id: createIdFromString('product-1') }),
+      getPrice: jest.fn(() => 20),
     };
 
     cartMock = {
+      id: { toString: () => 'cart-1' },
+      userId: { toString: () => 'user-1' },
       getItems: jest.fn(() => [mockItem]),
+      getCoupons: jest.fn(() => []),
+      calcSubtotal: jest.fn(() => 0),
+      calcTotalDiscount: jest.fn(() => 0),
+      calcTotal: jest.fn(() => 0),
       removeItem: jest.fn(),
       addItem: jest.fn(),
     };
@@ -61,6 +69,12 @@ describe('UpdateItemQuantityUseCase', () => {
       });
 
       expect(result.status).toBe(Status.SUCCESS);
+      expect(result).toEqual(
+        expect.objectContaining({
+          status: Status.SUCCESS,
+          cart: expect.anything(),
+        }),
+      );
       expect(cartRepositoryMock.findById).toHaveBeenCalledTimes(1);
       expect(productRepositoryMock.findById).toHaveBeenCalledTimes(1);
       expect(cartMock.removeItem).toHaveBeenCalledTimes(1);
