@@ -1,8 +1,0 @@
-docker run --name zoom-postgres -e POSTGRES_PASSWORD=root -e POSTGRES_DB=zoom -p 5432:5432 -d postgres
-
-1. Criar usecases via testes 
-    CalculateShippingUseCase
-    CheckoutUseCase
-2. Criar a api com autenicacao via keyclock
-3. Criar o banco de leitura
-4. Estudar onde adicionar o kafka 

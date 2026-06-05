@@ -1,0 +1,1 @@
+<img src="docs/img/zoom_storm.drawio.png"/>
