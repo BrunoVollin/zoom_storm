@@ -13,7 +13,9 @@ export class CartRepository {
   async save(
     cartData: { id?: string } & Record<string, unknown>,
   ): Promise<void> {
-    const filter = cartData.id ? { id: cartData.id } : { 'id.value': cartData.id };
+    const filter = cartData.id
+      ? { id: cartData.id }
+      : { 'id.value': cartData.id };
 
     await this.collection.replaceOne(filter, cartData, { upsert: true });
   }

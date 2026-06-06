@@ -34,7 +34,10 @@ describe('RemoveItemFromCartUseCase', () => {
       removeItem: jest.fn(),
     };
 
-    useCase = new RemoveItemFromCartUseCase(cartRepositoryMock, eventPublisherMock);
+    useCase = new RemoveItemFromCartUseCase(
+      cartRepositoryMock,
+      eventPublisherMock,
+    );
 
     jest.clearAllMocks();
   });

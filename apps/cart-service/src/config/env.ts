@@ -15,6 +15,8 @@ export const env = {
   },
   kafka: {
     clientId: process.env.CART_SERVICE_KAFKA_CLIENT_ID || 'cart-service',
-    brokers: (process.env.CART_SERVICE_KAFKA_BROKERS ?? 'localhost:9092').split(','),
+    brokers: (process.env.CART_SERVICE_KAFKA_BROKERS ?? 'localhost:9092').split(
+      ',',
+    ),
   },
 };
