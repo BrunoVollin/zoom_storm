@@ -1,4 +1,7 @@
-import { CartDTO, CartQueryRepository } from '../../../../domain/repositories/CartQueryRepository';
+import {
+  CartDTO,
+  CartQueryRepository,
+} from '../../../../domain/repositories/CartQueryRepository';
 import { IdType } from '../../../../domain/shared/IdType';
 import { prisma } from '../prisma-connection';
 
@@ -25,6 +28,7 @@ export class PrismaCartQueryRepository implements CartQueryRepository {
       if (now >= c.start && now <= c.end) {
         return sum + Math.round(subtotal * (c.percent / 100));
       }
+
       return sum;
     }, 0);
 
@@ -51,6 +55,7 @@ export class PrismaCartQueryRepository implements CartQueryRepository {
           now >= c.start && now <= c.end
             ? Math.round(subtotal * (c.percent / 100))
             : 0;
+
         return { id: c.id, name: c.name, discount };
       }),
       subtotal,

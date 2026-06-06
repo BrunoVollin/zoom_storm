@@ -1,4 +1,7 @@
-import { CartDTO, CartQueryRepository } from '../../../../domain/repositories/CartQueryRepository';
+import {
+  CartDTO,
+  CartQueryRepository,
+} from '../../../../domain/repositories/CartQueryRepository';
 import { IdType } from '../../../../domain/shared/IdType';
 import { mongoClient } from '../mongodb-connection';
 

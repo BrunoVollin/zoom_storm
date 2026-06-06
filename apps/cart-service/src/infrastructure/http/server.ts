@@ -16,7 +16,10 @@ import { RemoveCouponUseCase } from '../../application/usecases/RemoveCouponUseC
 import { CalculateShippingUseCase } from '../../application/usecases/CalculateShippingUseCase';
 import { CheckoutUseCase } from '../../application/usecases/CheckoutUseCase';
 import { closeDatabaseConnections } from '../database/prisma/prisma-connection';
-import { mongoClient, closeMongoConnection } from '../database/mongodb/mongodb-connection';
+import {
+  mongoClient,
+  closeMongoConnection,
+} from '../database/mongodb/mongodb-connection';
 import { MongoCartQueryRepository } from '../database/mongodb/repositories/MongoCartQueryRepository';
 import { CartQuery } from '../../application/Queries/CartQuery';
 
@@ -35,13 +38,36 @@ const cartQueryRepository = new MongoCartQueryRepository();
 
 const app = buildRouter({
   getCart: new CartQuery(cartQueryRepository),
-  createCart: new CreateCartUseCase(cartRepository, couponRepository, productRepository, eventPublisher),
-  addItemToCart: new AddItemToCartUseCase(productRepository, cartRepository, eventPublisher),
-  removeItemFromCart: new RemoveItemFromCartUseCase(cartRepository, eventPublisher),
-  updateItemQuantity: new UpdateItemQuantityUseCase(cartRepository, productRepository, eventPublisher),
-  applyCoupon: new ApplyCouponUseCase(cartRepository, couponRepository, eventPublisher),
+  createCart: new CreateCartUseCase(
+    cartRepository,
+    couponRepository,
+    productRepository,
+    eventPublisher,
+  ),
+  addItemToCart: new AddItemToCartUseCase(
+    productRepository,
+    cartRepository,
+    eventPublisher,
+  ),
+  removeItemFromCart: new RemoveItemFromCartUseCase(
+    cartRepository,
+    eventPublisher,
+  ),
+  updateItemQuantity: new UpdateItemQuantityUseCase(
+    cartRepository,
+    productRepository,
+    eventPublisher,
+  ),
+  applyCoupon: new ApplyCouponUseCase(
+    cartRepository,
+    couponRepository,
+    eventPublisher,
+  ),
   removeCoupon: new RemoveCouponUseCase(cartRepository, eventPublisher),
-  calculateShipping: new CalculateShippingUseCase(cartRepository, freightCalculator),
+  calculateShipping: new CalculateShippingUseCase(
+    cartRepository,
+    freightCalculator,
+  ),
   checkout: new CheckoutUseCase(cartRepository, eventPublisher),
 });
 

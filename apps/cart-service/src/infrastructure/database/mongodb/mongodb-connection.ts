@@ -20,8 +20,9 @@ class MongoDbClient {
   }
 
   getCollection<T extends Document>(name: string): Collection<T> {
-    if (!this.db) throw new Error('MongoDB not connected. Call connect() first.');
-    
+    if (!this.db)
+      throw new Error('MongoDB not connected. Call connect() first.');
+
     return this.db.collection<T>(name);
   }
 

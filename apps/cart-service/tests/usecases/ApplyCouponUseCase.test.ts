@@ -45,7 +45,11 @@ describe('ApplyCouponUseCase', () => {
       addCoupon: jest.fn(),
     };
 
-    useCase = new ApplyCouponUseCase(cartRepositoryMock, couponRepositoryMock, eventPublisherMock);
+    useCase = new ApplyCouponUseCase(
+      cartRepositoryMock,
+      couponRepositoryMock,
+      eventPublisherMock,
+    );
 
     jest.clearAllMocks();
   });
