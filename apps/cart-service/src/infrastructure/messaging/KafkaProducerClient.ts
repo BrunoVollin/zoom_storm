@@ -1,4 +1,5 @@
 import { Kafka, Producer as KafkaJSProducer } from 'kafkajs';
+import { env } from '../../config/env';
 
 export class KafkaProducerClient {
   private kafka: Kafka;
@@ -7,8 +8,8 @@ export class KafkaProducerClient {
 
   constructor() {
     this.kafka = new Kafka({
-      clientId: 'zoom-app',
-      brokers: ['localhost:9022'],
+      clientId: env.kafka.clientId,
+      brokers: env.kafka.brokers,
     });
 
     this.producer = this.kafka.producer();

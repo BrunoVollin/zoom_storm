@@ -11,6 +11,7 @@ import { ApplyCouponUseCase } from '@application/usecases/ApplyCouponUseCase';
 import { RemoveCouponUseCase } from '@application/usecases/RemoveCouponUseCase';
 import { CalculateShippingUseCase } from '@application/usecases/CalculateShippingUseCase';
 import { CheckoutUseCase } from '@application/usecases/CheckoutUseCase';
+import { CartQuery } from '@application/Queries/CartQuery';
 import { Status } from '@application/contracts/UseCase';
 
 const ProductInputSchema = z.object({
@@ -53,6 +54,7 @@ function validate<T>(schema: z.ZodType<T>, data: unknown): { data: T } | { error
 }
 
 interface Dependencies {
+  getCart: CartQuery;
   createCart: CreateCartUseCase;
   addItemToCart: AddItemToCartUseCase;
   removeItemFromCart: RemoveItemFromCartUseCase;
@@ -91,6 +93,13 @@ export function buildRouter(deps: Dependencies): Hono {
     </script>
   </body>
 </html>`);
+  });
+
+  app.get('/carts/:cartId', async (c) => {
+    const result = await deps.getCart.execute({ cartId: c.req.param('cartId') });
+    const status = result.status === Status.SUCCESS ? 200 : 404;
+
+    return c.json(result, status);
   });
 
   app.post('/carts', async (c) => {
