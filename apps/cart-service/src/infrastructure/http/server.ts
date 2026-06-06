@@ -1,4 +1,5 @@
 import { serve } from '@hono/node-server';
+import { env } from '../../config/env';
 import { buildRouter } from './router';
 import { PrismaCartRepository } from '../database/prisma/repositories/PrismaCartRepository';
 import { PrismaProductRepository } from '../database/prisma/repositories/PrismaProductRepository';
@@ -15,8 +16,11 @@ import { RemoveCouponUseCase } from '../../application/usecases/RemoveCouponUseC
 import { CalculateShippingUseCase } from '../../application/usecases/CalculateShippingUseCase';
 import { CheckoutUseCase } from '../../application/usecases/CheckoutUseCase';
 import { closeDatabaseConnections } from '../database/prisma/prisma-connection';
+import { mongoClient, closeMongoConnection } from '../database/mongodb/mongodb-connection';
+import { MongoCartQueryRepository } from '../database/mongodb/repositories/MongoCartQueryRepository';
+import { CartQuery } from '../../application/Queries/CartQuery';
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = env.http.port;
 
 const cartRepository = new PrismaCartRepository();
 const productRepository = new PrismaProductRepository();
@@ -27,7 +31,10 @@ const eventPublisher = new KafkaEventPublisher(kafkaProducer);
 
 const freightCalculator = new FreightRoadCalculator();
 
+const cartQueryRepository = new MongoCartQueryRepository();
+
 const app = buildRouter({
+  getCart: new CartQuery(cartQueryRepository),
   createCart: new CreateCartUseCase(cartRepository, couponRepository, productRepository, eventPublisher),
   addItemToCart: new AddItemToCartUseCase(productRepository, cartRepository, eventPublisher),
   removeItemFromCart: new RemoveItemFromCartUseCase(cartRepository, eventPublisher),
@@ -38,16 +45,19 @@ const app = buildRouter({
   checkout: new CheckoutUseCase(cartRepository, eventPublisher),
 });
 
-const server = serve({ fetch: app.fetch, port: PORT }, () => {
-  console.log(`cart-service HTTP API running on http://localhost:${PORT}`);
+mongoClient.connect().then(() => {
+  const server = serve({ fetch: app.fetch, port: PORT }, () => {
+    console.log(`cart-service HTTP API running on http://localhost:${PORT}`);
+  });
+
+  async function shutdown() {
+    server.close();
+    await kafkaProducer.disconnect();
+    await closeDatabaseConnections();
+    await closeMongoConnection();
+    process.exit(0);
+  }
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 });
-
-async function shutdown() {
-  server.close();
-  await kafkaProducer.disconnect();
-  await closeDatabaseConnections();
-  process.exit(0);
-}
-
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);

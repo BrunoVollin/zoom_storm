@@ -82,6 +82,31 @@ paths:
                 status: ERROR
                 message: Product not found
 
+  /carts/{cartId}:
+    get:
+      operationId: getCart
+      summary: Get a cart by ID
+      tags:
+        - Carts
+      parameters:
+        - $ref: '#/components/parameters/cartId'
+      responses:
+        '200':
+          description: Cart found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessResponse'
+        '404':
+          description: Cart not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Cart not found
+
   /carts/{cartId}/items:
     post:
       operationId: addItemToCart
