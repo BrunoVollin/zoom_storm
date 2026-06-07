@@ -69,7 +69,7 @@ export function buildRouter(deps: Dependencies): Hono {
     <div id="swagger-ui"></div>
     <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
     <script>
-      SwaggerUIBundle({ url: '/openapi.yml', dom_id: '#swagger-ui' });
+      SwaggerUIBundle({ url: 'openapi.yml', dom_id: '#swagger-ui' });
     </script>
   </body>
 </html>`),

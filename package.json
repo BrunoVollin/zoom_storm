@@ -7,7 +7,7 @@
   "type": "commonjs",
   "main": "index.ts",
   "scripts": {
-    "dev": "concurrently --names \"gateway,cart,products,proj\" --prefix-colors \"blue,green,yellow,magenta\" \"yarn dev:gateway\" \"yarn dev:cart\" \"yarn dev:products\" \"yarn dev:proj\"",
+    "dev": "concurrently --names \"gateway,cart,products,proj,bff\" --prefix-colors \"blue,green,yellow,magenta,cyan\" \"yarn dev:gateway\" \"yarn dev:cart\" \"yarn dev:products\" \"yarn dev:proj\" \"yarn dev:bff\"",
     "test": "jest",
     "start": "tsx index.ts",
     "format": "prettier --write \"apps/**/*.{js,ts}\"",
@@ -17,6 +17,7 @@
     "dev:cart": "tsx --tsconfig tsconfig.json -r register-env.ts apps/cart-service/src/infrastructure/http/server.ts",
     "dev:products": "tsx --tsconfig tsconfig.json apps/products-service/src/infrastructure/http/server.ts",
     "dev:gateway": "tsx --tsconfig tsconfig.json apps/api-gateway/src/infrastructure/http/server.ts",
+    "dev:bff": "tsx --tsconfig tsconfig.json apps/bff/src/infrastructure/http/server.ts",
     "sand": "tsx sandbox.ts"
   },
   "dependencies": {
@@ -28,10 +29,12 @@
     "@types/prompts": "^2.4.9",
     "dotenv": "^17.4.2",
     "install": "^0.13.0",
+    "ioredis": "^5.11.1",
     "jiti": "^2.7.0",
     "kafkajs": "^2.2.4",
     "mongodb": "^7.2.0",
     "npm": "^11.15.0",
+    "openid-client": "^6.8.4",
     "pg": "^8.21.0",
     "prompts": "^2.4.2",
     "tsx": "^4.22.3",
