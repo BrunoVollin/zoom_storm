@@ -7,17 +7,19 @@
   "type": "commonjs",
   "main": "index.ts",
   "scripts": {
-    "dev": "concurrently --names \"gateway,cart,products,proj,bff\" --prefix-colors \"blue,green,yellow,magenta,cyan\" \"yarn dev:gateway\" \"yarn dev:cart\" \"yarn dev:products\" \"yarn dev:proj\" \"yarn dev:bff\"",
+    "dev": "concurrently --names \"gateway,cart,products,proj,products-proj,bff,web\" --prefix-colors \"blue,green,yellow,magenta,red,cyan,white\" \"yarn dev:gateway\" \"yarn dev:cart\" \"yarn dev:products\" \"yarn dev:proj\" \"yarn dev:products-proj\" \"yarn dev:bff\" \"yarn dev:web\"",
     "test": "jest",
     "start": "tsx index.ts",
     "format": "prettier --write \"apps/**/*.{js,ts}\"",
     "lint": "yarn format && eslint . --fix",
     "postinstall": "prisma generate",
     "dev:proj": "cd apps/cart-projection && tsx index.ts",
+    "dev:products-proj": "cd apps/products-projection && tsx index.ts",
     "dev:cart": "tsx --tsconfig tsconfig.json -r register-env.ts apps/cart-service/src/infrastructure/http/server.ts",
     "dev:products": "tsx --tsconfig tsconfig.json apps/products-service/src/infrastructure/http/server.ts",
     "dev:gateway": "tsx --tsconfig tsconfig.json apps/api-gateway/src/infrastructure/http/server.ts",
     "dev:bff": "tsx --tsconfig tsconfig.json apps/bff/src/infrastructure/http/server.ts",
+    "dev:web": "cd apps/web && yarn dev",
     "sand": "tsx sandbox.ts"
   },
   "dependencies": {
@@ -31,6 +33,7 @@
     "install": "^0.13.0",
     "ioredis": "^5.11.1",
     "jiti": "^2.7.0",
+    "jose": "^6.2.2",
     "kafkajs": "^2.2.4",
     "mongodb": "^7.2.0",
     "npm": "^11.15.0",
