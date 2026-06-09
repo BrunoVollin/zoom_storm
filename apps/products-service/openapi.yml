@@ -1,0 +1,249 @@
+openapi: 3.0.3
+info:
+  title: Products Service API
+  version: 1.0.0
+  description: |
+    API for product catalog management.
+
+    **Architecture:** Clean Architecture with domain events published via Kafka.
+
+servers:
+  - url: http://localhost:3001
+    description: Local development
+
+tags:
+  - name: Products
+    description: Product catalog listing and creation
+
+paths:
+  /products:
+    get:
+      operationId: listProducts
+      summary: List all products
+      tags:
+        - Products
+      responses:
+        '200':
+          description: Products listed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListSuccessResponse'
+              example:
+                status: SUCCESS
+                products:
+                  - id: product-abc
+                    name: Runner X Sneaker
+                    price: 4999
+                    description: High-performance running shoe
+                    category: Footwear
+                    stock: 10
+                    transportHeight: 20
+                    transportWidth: 15
+                    transportLength: 30
+        '422':
+          description: Unprocessable entity (business error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Unable to list products
+    post:
+      operationId: createProduct
+      summary: Create a new product
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+            example:
+              name: Runner X Sneaker
+              price: 4999
+              description: High-performance running shoe
+              category: Footwear
+              stock: 10
+              transportHeight: 20
+              transportWidth: 15
+              transportLength: 30
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductSuccessResponse'
+              example:
+                status: SUCCESS
+                product:
+                  id: product-abc
+                  name: Runner X Sneaker
+                  price: 4999
+                  description: High-performance running shoe
+                  category: Footwear
+                  stock: 10
+                  transportHeight: 20
+                  transportWidth: 15
+                  transportLength: 30
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: 'name: Required'
+        '422':
+          description: Unprocessable entity (business error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Unable to create product
+
+components:
+  schemas:
+    # ── Request Schemas ──────────────────────────────────────────────────────
+
+    CreateProductRequest:
+      type: object
+      required:
+        - name
+        - price
+        - description
+        - category
+        - stock
+        - transportHeight
+        - transportWidth
+        - transportLength
+      properties:
+        name:
+          type: string
+          description: Product name
+          example: Runner X Sneaker
+        price:
+          type: integer
+          description: Unit price in cents
+          example: 4999
+        description:
+          type: string
+          description: Product description
+          example: High-performance running shoe
+        category:
+          type: string
+          description: Product category
+          example: Footwear
+        stock:
+          type: integer
+          description: Units in stock
+          example: 10
+        transportHeight:
+          type: integer
+          description: Transport packaging height in centimeters
+          example: 20
+        transportWidth:
+          type: integer
+          description: Transport packaging width in centimeters
+          example: 15
+        transportLength:
+          type: integer
+          description: Transport packaging length in centimeters
+          example: 30
+
+    # ── Domain Schemas ───────────────────────────────────────────────────────
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Product ID
+          example: product-abc
+        name:
+          type: string
+          description: Product name
+          example: Runner X Sneaker
+        price:
+          type: integer
+          description: Unit price in cents
+          example: 4999
+        description:
+          type: string
+          description: Product description
+          example: High-performance running shoe
+        category:
+          type: string
+          description: Product category
+          example: Footwear
+        stock:
+          type: integer
+          description: Units in stock
+          example: 10
+        transportHeight:
+          type: integer
+          description: Transport packaging height in centimeters
+          example: 20
+        transportWidth:
+          type: integer
+          description: Transport packaging width in centimeters
+          example: 15
+        transportLength:
+          type: integer
+          description: Transport packaging length in centimeters
+          example: 30
+
+    # ── Response Schemas ─────────────────────────────────────────────────────
+
+    ProductSuccessResponse:
+      type: object
+      required:
+        - status
+        - product
+      properties:
+        status:
+          type: string
+          enum:
+            - SUCCESS
+          example: SUCCESS
+        product:
+          $ref: '#/components/schemas/Product'
+
+    ProductListSuccessResponse:
+      type: object
+      required:
+        - status
+        - products
+      properties:
+        status:
+          type: string
+          enum:
+            - SUCCESS
+          example: SUCCESS
+        products:
+          type: array
+          description: List of products
+          items:
+            $ref: '#/components/schemas/Product'
+
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          enum:
+            - ERROR
+          example: ERROR
+        message:
+          type: string
+          description: Error description
+          example: Product not found
