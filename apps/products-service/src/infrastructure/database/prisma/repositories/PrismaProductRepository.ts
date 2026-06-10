@@ -1,5 +1,6 @@
 import { Product } from '../../../../domain/entities/Product';
 import { ProductRepository } from '../../../../domain/repositories/ProductRepository';
+import { IdType } from '../../../../domain/shared/IdType';
 import { prisma } from '../prisma-connection';
 
 export class PrismaProductRepository implements ProductRepository {
@@ -34,5 +35,28 @@ export class PrismaProductRepository implements ProductRepository {
         transportLength: product.transportLength,
       },
     });
+  }
+
+  async findById(id: IdType): Promise<Product | null> {
+    const p = await this.prisma.product.findUnique({
+      where: { id: id.toString() },
+    });
+    if (!p) return null;
+
+    return new Product(
+      IdType.create(p.id),
+      p.name,
+      p.price,
+      p.description,
+      p.category,
+      p.stock,
+      p.transportHeight,
+      p.transportWidth,
+      p.transportLength,
+    );
+  }
+
+  async delete(id: IdType): Promise<void> {
+    await this.prisma.product.delete({ where: { id: id.toString() } });
   }
 }

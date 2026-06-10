@@ -16,5 +16,3 @@ export const env = {
     dbName: process.env.PRODUCTS_PROJECTION_MONGO_DB_NAME || '',
   },
 };
-
-console.log(env)

@@ -32,7 +32,9 @@ export class KeycloakAuthService {
       env.keycloak.clientId,
       env.keycloak.clientSecret || undefined,
       undefined,
-      env.isProduction ? undefined : { execute: [client.allowInsecureRequests] },
+      env.isProduction
+        ? undefined
+        : { execute: [client.allowInsecureRequests] },
     );
 
     return this.configuration;

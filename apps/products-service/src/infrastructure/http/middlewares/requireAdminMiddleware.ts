@@ -6,7 +6,7 @@ let jwks: ReturnType<typeof createRemoteJWKSet> | undefined;
 
 function getJwks() {
   if (!jwks) jwks = createRemoteJWKSet(new URL(env.keycloak.jwksUri));
-  
+
   return jwks;
 }
 
@@ -31,10 +31,14 @@ export const requireAdmin: MiddlewareHandler = async (c, next) => {
     });
     payload = result.payload;
   } catch {
-    return c.json({ status: 'ERROR', message: 'Invalid or expired token' }, 401);
+    return c.json(
+      { status: 'ERROR', message: 'Invalid or expired token' },
+      401,
+    );
   }
 
-  const roles = (payload.realm_access as { roles?: string[] } | undefined)?.roles ?? [];
+  const roles =
+    (payload.realm_access as { roles?: string[] } | undefined)?.roles ?? [];
   if (!roles.includes('admin')) {
     return c.json({ status: 'ERROR', message: 'Admin role required' }, 403);
   }

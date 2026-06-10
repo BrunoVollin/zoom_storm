@@ -11,6 +11,8 @@ import { MongoProductQueryRepository } from '../database/mongodb/repositories/Mo
 import { KafkaProducerClient } from '../messaging/KafkaProducerClient';
 import { KafkaEventPublisher } from '../messaging/KafkaEventPublisher';
 import { CreateProductUseCase } from '../../application/usecases/CreateProductUseCase';
+import { UpdateProductUseCase } from '../../application/usecases/UpdateProductUseCase';
+import { DeleteProductUseCase } from '../../application/usecases/DeleteProductUseCase';
 import { ListProductsQuery } from '../../application/queries/ListProductsQuery';
 
 const PORT = env.http.port;
@@ -24,11 +26,15 @@ const eventPublisher = new KafkaEventPublisher(kafkaProducer);
 const app = buildRouter({
   listProducts: new ListProductsQuery(productQueryRepository),
   createProduct: new CreateProductUseCase(productRepository, eventPublisher),
+  updateProduct: new UpdateProductUseCase(productRepository, eventPublisher),
+  deleteProduct: new DeleteProductUseCase(productRepository, eventPublisher),
 });
 
 mongoClient.connect().then(() => {
   const server = serve({ fetch: app.fetch, port: PORT }, () => {
-    console.log(`products-service HTTP API running on http://localhost:${PORT}`);
+    console.log(
+      `products-service HTTP API running on http://localhost:${PORT}`,
+    );
   });
 
   async function shutdown() {
