@@ -15,7 +15,8 @@ export const env = {
     dbName: process.env.PRODUCTS_SERVICE_MONGO_DB_NAME || '',
   },
   kafka: {
-    clientId: process.env.PRODUCTS_SERVICE_KAFKA_CLIENT_ID || 'products-service',
+    clientId:
+      process.env.PRODUCTS_SERVICE_KAFKA_CLIENT_ID || 'products-service',
     brokers: (
       process.env.PRODUCTS_SERVICE_KAFKA_BROKERS ?? 'localhost:9092'
     ).split(','),

@@ -16,7 +16,9 @@ interface ErrorOutput {
 type Output = SuccessOutput | ErrorOutput;
 
 export class ListProductsQuery implements Query<Input, Output> {
-  constructor(private readonly productQueryRepository: ProductQueryRepository) {}
+  constructor(
+    private readonly productQueryRepository: ProductQueryRepository,
+  ) {}
 
   async execute(_input: Input): Promise<Output> {
     const products = await this.productQueryRepository.findAll();

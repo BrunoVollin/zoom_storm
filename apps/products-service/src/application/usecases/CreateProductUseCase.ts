@@ -35,7 +35,9 @@ type Output = SuccessOutput | ErrorOutput;
 export class CreateProductUseCase implements UseCase<Input, Output> {
   constructor(
     private readonly productRepository: ProductRepository,
-    private readonly eventPublisher: EventPublisher = { publish: async () => undefined },
+    private readonly eventPublisher: EventPublisher = {
+      publish: async () => undefined,
+    },
   ) {}
 
   async execute(input: Input): Promise<Output> {
@@ -60,6 +62,9 @@ export class CreateProductUseCase implements UseCase<Input, Output> {
     );
     await this.eventPublisher.publish(event);
 
-    return { status: Status.SUCCESS, product: ProductMapper.toPrimitives(product) };
+    return {
+      status: Status.SUCCESS,
+      product: ProductMapper.toPrimitives(product),
+    };
   }
 }

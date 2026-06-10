@@ -2,8 +2,8 @@ import { serve } from '@hono/node-server';
 import { env } from '../../config/env';
 import { buildRouter } from './router';
 import { PrismaCartRepository } from '../database/prisma/repositories/PrismaCartRepository';
-import { PrismaProductRepository } from '../database/prisma/repositories/PrismaProductRepository';
 import { PrismaCouponRepository } from '../database/prisma/repositories/PrismaCouponRepository';
+import { MongoProductRepository } from '../database/mongodb/repositories/MongoProductRepository';
 import { KafkaProducerClient } from '../messaging/KafkaProducerClient';
 import { KafkaEventPublisher } from '../messaging/KafkaEventPublisher';
 import { FreightRoadCalculator } from '../../domain/entities/freight/FreightCalculator';
@@ -26,7 +26,7 @@ import { CartQuery } from '../../application/Queries/CartQuery';
 const PORT = env.http.port;
 
 const cartRepository = new PrismaCartRepository();
-const productRepository = new PrismaProductRepository();
+const productRepository = new MongoProductRepository();
 const couponRepository = new PrismaCouponRepository();
 
 const kafkaProducer = new KafkaProducerClient();

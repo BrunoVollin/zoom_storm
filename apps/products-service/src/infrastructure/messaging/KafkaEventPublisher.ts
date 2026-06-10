@@ -26,8 +26,10 @@ export class KafkaEventPublisher implements EventPublisher {
   }
 
   private getTopic(eventName: DomainEventName): string {
-    const map = {
+    const map: Record<DomainEventName, string> = {
       [DomainEventName.PRODUCT_CREATED]: 'product-events',
+      [DomainEventName.PRODUCT_UPDATED]: 'product-events',
+      [DomainEventName.PRODUCT_DELETED]: 'product-events',
     };
     return map[eventName];
   }

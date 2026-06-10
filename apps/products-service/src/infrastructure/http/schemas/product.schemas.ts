@@ -13,6 +13,17 @@ export const CreateProductSchema = z.object({
   transportLength: z.int().min(0),
 });
 
+export const UpdateProductSchema = z.object({
+  name: z.string().min(1),
+  price: z.number().min(0),
+  description: z.string().min(1),
+  category: z.string().min(1),
+  stock: z.int().min(0),
+  transportHeight: z.int().min(0),
+  transportWidth: z.int().min(0),
+  transportLength: z.int().min(0),
+});
+
 export function validate<T>(
   schema: z.ZodType<T>,
   data: unknown,
