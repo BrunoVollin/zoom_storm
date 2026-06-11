@@ -11,6 +11,7 @@ import { RefreshTokenUseCase } from '@bff-application/usecases/RefreshTokenUseCa
 import { LogoutUseCase } from '@bff-application/usecases/LogoutUseCase';
 import { GetCurrentUserUseCase } from '@bff-application/usecases/GetCurrentUserUseCase';
 import { sessionAuthMiddleware } from './middlewares/sessionAuthMiddleware';
+import { optionalSessionMiddleware } from './middlewares/optionalSessionMiddleware';
 import { AuthController } from './controllers/AuthController';
 import { ProxyController } from './controllers/ProxyController';
 
@@ -44,6 +45,11 @@ export function buildRouter(redis: Redis): Hono {
     refreshTokenUseCase,
   );
 
+  const optionalSession = optionalSessionMiddleware(
+    sessionRepository,
+    refreshTokenUseCase,
+  );
+
   app.use(
     '*',
     cors({
@@ -63,7 +69,7 @@ export function buildRouter(redis: Redis): Hono {
     proxyController.forward(c, c.req.path),
   );
 
-  app.all('/products/*', requireSession, (c) =>
+  app.all('/products/*', optionalSession, (c) =>
     proxyController.forward(c, c.req.path),
   );
 

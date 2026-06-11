@@ -8,8 +8,8 @@ import type { Product } from "@/types/product";
  */
 export const productService = {
   async list(): Promise<Product[]> {
-    const { data } = await http.get<Product[]>("/products");
-    return data;
+    const { data } = await http.get<{ products: Product[] }>("/products");
+    return data.products;
   },
 
   async getById(id: string): Promise<Product> {

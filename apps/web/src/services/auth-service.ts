@@ -16,8 +16,8 @@ export const authService = {
 
   async getCurrentUser(): Promise<SessionUser | null> {
     try {
-      const { data } = await http.get<SessionUser>(BFF_ROUTES.me);
-      return data;
+      const { data } = await http.get<{ status: string; user: SessionUser }>(BFF_ROUTES.me);
+      return data.user;
     } catch {
       return null;
     }
