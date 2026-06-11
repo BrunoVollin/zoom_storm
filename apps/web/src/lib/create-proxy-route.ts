@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { proxyToBff } from "@/lib/bff-proxy";
 
 interface RouteParams {
-  params: Promise<{ path: string[] }>;
+  params: Promise<{ path?: string[] }>;
 }
 
 /**
@@ -14,7 +14,7 @@ interface RouteParams {
 export function createProxyRoute(prefix: string) {
   const handle = async (request: NextRequest, { params }: RouteParams) => {
     const { path } = await params;
-    return proxyToBff(request, path, prefix);
+    return proxyToBff(request, path ?? [], prefix);
   };
 
   return {

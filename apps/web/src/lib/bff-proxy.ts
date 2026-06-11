@@ -11,7 +11,8 @@ const HOP_BY_HOP_REQUEST_HEADERS = new Set(["host", "connection", "content-lengt
  * keeping it a server-only secret and the session cookie HttpOnly end to end.
  */
 export async function proxyToBff(request: NextRequest, segments: string[], prefix: string) {
-  const targetUrl = new URL(`${prefix}/${segments.join("/")}`, BFF_BASE_URL);
+  const targetPath = segments.length > 0 ? `${prefix}/${segments.join("/")}` : prefix;
+  const targetUrl = new URL(targetPath, BFF_BASE_URL);
   targetUrl.search = request.nextUrl.search;
 
   const headers = new Headers();

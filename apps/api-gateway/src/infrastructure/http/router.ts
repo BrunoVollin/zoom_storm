@@ -18,10 +18,9 @@ export function buildRouter(): Hono {
   });
 
   app.all('/products/*', (c) => {
-    const path = c.req.path.replace('/products', '');
     const query = new URL(c.req.url).search;
 
-    return proxyRequest(c, `${env.services.products}${path}${query}`);
+    return proxyRequest(c, `${env.services.products}${c.req.path}${query}`);
   });
 
   return app;

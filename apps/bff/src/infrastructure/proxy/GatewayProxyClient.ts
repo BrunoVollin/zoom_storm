@@ -4,7 +4,7 @@ import { env } from '../../config/env';
 
 export async function proxyToGateway(
   c: Context,
-  session: Session,
+  session: Session | undefined,
   path: string,
 ): Promise<Response> {
   const query = new URL(c.req.url).search;
@@ -13,7 +13,11 @@ export async function proxyToGateway(
   const headers = new Headers(c.req.raw.headers);
   headers.delete('host');
   headers.delete('cookie');
-  headers.set('authorization', `Bearer ${session.tokens.accessToken}`);
+  if (session) {
+    headers.set('authorization', `Bearer ${session.tokens.accessToken}`);
+  } else {
+    headers.delete('authorization');
+  }
 
   const hasBody = !['GET', 'HEAD'].includes(c.req.method);
 

@@ -1,18 +1,17 @@
-import type { Context, MiddlewareHandler } from 'hono';
+import type { MiddlewareHandler } from 'hono';
 import { getSignedCookie, deleteCookie } from 'hono/cookie';
-import { Session } from '@bff-domain/entities/Session';
 import { SessionRepository } from '@bff-domain/repositories/SessionRepository';
 import { RefreshTokenUseCase } from '@bff-application/usecases/RefreshTokenUseCase';
 import { env } from '../../../config/env';
 import { sessionCookieOptions } from '../cookies';
 
-declare module 'hono' {
-  interface ContextVariableMap {
-    session: Session | undefined;
-  }
-}
-
-export function sessionAuthMiddleware(
+/**
+ * Like sessionAuthMiddleware, but never blocks the request: if there is no
+ * session (or it's invalid/expired), `session` is left unset and the request
+ * proceeds anonymously. Used for routes that are accessible both to guests
+ * and authenticated users.
+ */
+export function optionalSessionMiddleware(
   sessionRepository: SessionRepository,
   refreshTokenUseCase: RefreshTokenUseCase,
 ): MiddlewareHandler {
@@ -23,27 +22,23 @@ export function sessionAuthMiddleware(
       env.session.cookieName,
     );
 
-    if (!sessionId) return unauthorized(c);
+    if (!sessionId) return next();
 
     const session = await sessionRepository.findById(sessionId);
-    if (!session) return clearSessionCookie(c);
+    if (!session) {
+      deleteCookie(c, env.session.cookieName, sessionCookieOptions());
+      return next();
+    }
 
     const refreshResult = await refreshTokenUseCase.execute({ session });
 
-    if (refreshResult.outcome === 'expired') return clearSessionCookie(c);
+    if (refreshResult.outcome === 'expired') {
+      deleteCookie(c, env.session.cookieName, sessionCookieOptions());
+      return next();
+    }
 
     c.set('session', refreshResult.session);
 
     await next();
   };
-}
-
-function unauthorized(c: Context): Response {
-  return c.json({ status: 'ERROR', message: 'Not authenticated' }, 401);
-}
-
-function clearSessionCookie(c: Context): Response {
-  deleteCookie(c, env.session.cookieName, sessionCookieOptions());
-
-  return unauthorized(c);
 }
