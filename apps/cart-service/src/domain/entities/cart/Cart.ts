@@ -41,7 +41,7 @@ export class Cart {
   }
 
   removeCoupon(id: IdType) {
-    this.coupons = this.coupons.filter((coupon) => coupon.id !== id);
+    this.coupons = this.coupons.filter((coupon) => !coupon.id.equals(id));
   }
 
   getCoupons() {
@@ -49,7 +49,7 @@ export class Cart {
   }
 
   removeItem(id: IdType) {
-    this.items = this.items.filter((item) => item.id !== id);
+    this.items = this.items.filter((item) => !item.id.equals(id));
   }
 
   getItems() {

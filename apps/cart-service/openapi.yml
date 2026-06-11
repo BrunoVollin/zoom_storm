@@ -1,0 +1,641 @@
+openapi: 3.0.3
+info:
+  title: Cart Service API
+  version: 1.0.0
+  description: |
+    API for shopping cart management.
+
+    **Architecture:** Clean Architecture with domain events published via Kafka.
+
+    **Shipping formula:** `taxBase(12) + weight*2 + volume*150 + distance*0.05` (in cents)
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: Carts
+    description: Cart creation and management
+  - name: Cart Items
+    description: Adding, removing, and updating cart items
+  - name: Coupons
+    description: Applying and removing discount coupons
+  - name: Shipping
+    description: Shipping cost calculation
+  - name: Checkout
+    description: Purchase checkout
+
+paths:
+  /carts:
+    post:
+      operationId: createCart
+      summary: Create a new cart
+      tags:
+        - Carts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCartRequest'
+            example:
+              userId: user-123
+              products:
+                - id: product-abc
+                  quantity: 2
+              coupons:
+                - coupon-xyz
+      responses:
+        '201':
+          description: Cart created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessResponse'
+              example:
+                status: SUCCESS
+                cart:
+                  id: cart-001
+                  userId: user-123
+                  items:
+                    - id: item-001
+                      quantity: 2
+                      product:
+                        id: product-abc
+                        name: Runner X Sneaker
+                        price: 4999
+                        description: High-performance running shoe
+                        category: Footwear
+                        stock: 10
+                      subtotal: 9998
+                  coupons: []
+                  subtotal: 9998
+                  totalDiscount: 0
+                  total: 9998
+        '422':
+          description: Unprocessable entity (business error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Product not found
+
+  /carts/{cartId}:
+    get:
+      operationId: getCart
+      summary: Get a cart by ID
+      tags:
+        - Carts
+      parameters:
+        - $ref: '#/components/parameters/cartId'
+      responses:
+        '200':
+          description: Cart found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessResponse'
+        '404':
+          description: Cart not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Cart not found
+
+  /carts/{cartId}/items:
+    post:
+      operationId: addItemToCart
+      summary: Add items to cart
+      tags:
+        - Cart Items
+      parameters:
+        - $ref: '#/components/parameters/cartId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddItemsRequest'
+            example:
+              products:
+                - id: product-xyz
+                  quantity: 1
+      responses:
+        '200':
+          description: Items added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessResponse'
+        '422':
+          description: Unprocessable entity (business error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Cart not found
+
+  /carts/{cartId}/items/{itemId}:
+    patch:
+      operationId: updateItemQuantity
+      summary: Update item quantity in cart
+      tags:
+        - Cart Items
+      parameters:
+        - $ref: '#/components/parameters/cartId'
+        - $ref: '#/components/parameters/itemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuantityRequest'
+            example:
+              quantity: 3
+      responses:
+        '200':
+          description: Quantity updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessResponse'
+        '422':
+          description: Unprocessable entity (business error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Item not found in cart
+    delete:
+      operationId: removeItemFromCart
+      summary: Remove an item from cart
+      tags:
+        - Cart Items
+      parameters:
+        - $ref: '#/components/parameters/cartId'
+        - $ref: '#/components/parameters/itemId'
+      responses:
+        '200':
+          description: Item removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessResponse'
+        '422':
+          description: Unprocessable entity (business error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Cart not found
+
+  /carts/{cartId}/coupons:
+    post:
+      operationId: applyCoupon
+      summary: Apply a discount coupon to the cart
+      tags:
+        - Coupons
+      parameters:
+        - $ref: '#/components/parameters/cartId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyCouponRequest'
+            example:
+              couponId: PROMO10
+      responses:
+        '200':
+          description: Coupon applied successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessResponse'
+        '422':
+          description: Unprocessable entity (invalid or expired coupon, or cart not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Coupon not found
+
+  /carts/{cartId}/coupons/{couponId}:
+    delete:
+      operationId: removeCoupon
+      summary: Remove a coupon from the cart
+      tags:
+        - Coupons
+      parameters:
+        - $ref: '#/components/parameters/cartId'
+        - $ref: '#/components/parameters/couponId'
+      responses:
+        '200':
+          description: Coupon removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessResponse'
+        '422':
+          description: Unprocessable entity (business error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Cart not found
+
+  /carts/{cartId}/shipping:
+    get:
+      operationId: calculateShipping
+      summary: Calculate shipping cost for the cart
+      description: |
+        Calculates shipping based on distance and the dimensions/weight of cart items.
+
+        **Formula:** `12 + (total_weight * 2) + (total_volume * 150) + (distance * 0.05)` (in cents)
+      tags:
+        - Shipping
+      parameters:
+        - $ref: '#/components/parameters/cartId'
+        - name: distance
+          in: query
+          required: true
+          description: Delivery distance in kilometers (must be greater than 0)
+          schema:
+            type: number
+            minimum: 0.01
+            example: 150
+      responses:
+        '200':
+          description: Shipping calculated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShippingSuccessResponse'
+              example:
+                status: SUCCESS
+                shipping: 2340
+        '400':
+          description: Invalid distance parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Invalid distance query param
+        '422':
+          description: Unprocessable entity (cart not found or empty)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Cart not found
+
+  /carts/{cartId}/checkout:
+    post:
+      operationId: checkout
+      summary: Checkout the cart
+      description: |
+        Finalizes the purchase by calculating the total with discounts and shipping.
+        Publishes the `cart.checked_out` event to the `checkout-events` Kafka topic.
+      tags:
+        - Checkout
+      parameters:
+        - $ref: '#/components/parameters/cartId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+            example:
+              shipping: 2340
+      responses:
+        '200':
+          description: Checkout completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutSuccessResponse'
+              example:
+                status: SUCCESS
+                subtotal: 9998
+                discount: 999
+                shipping: 2340
+                total: 11339
+        '422':
+          description: Unprocessable entity (empty cart, not found, or other error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Cart is empty
+
+components:
+  parameters:
+    cartId:
+      name: cartId
+      in: path
+      required: true
+      description: Unique cart ID
+      schema:
+        type: string
+        format: uuid
+        example: 550e8400-e29b-41d4-a716-446655440000
+    itemId:
+      name: itemId
+      in: path
+      required: true
+      description: Unique item ID in the cart
+      schema:
+        type: string
+        format: uuid
+        example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+    couponId:
+      name: couponId
+      in: path
+      required: true
+      description: Unique coupon ID
+      schema:
+        type: string
+        format: uuid
+        example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+
+  schemas:
+    # ── Request Schemas ──────────────────────────────────────────────────────
+
+    ProductInput:
+      type: object
+      required:
+        - id
+        - quantity
+      properties:
+        id:
+          type: string
+          description: Product ID
+          example: product-abc
+        quantity:
+          type: integer
+          minimum: 1
+          description: Desired quantity
+          example: 2
+
+    CreateCartRequest:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          description: ID of the cart owner
+          example: user-123
+        products:
+          type: array
+          description: Initial products in the cart (optional)
+          items:
+            $ref: '#/components/schemas/ProductInput'
+        coupons:
+          type: array
+          description: Coupon IDs to apply on creation (optional)
+          items:
+            type: string
+          example: []
+
+    AddItemsRequest:
+      type: object
+      required:
+        - products
+      properties:
+        products:
+          type: array
+          minItems: 1
+          description: List of products to add
+          items:
+            $ref: '#/components/schemas/ProductInput'
+
+    UpdateQuantityRequest:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          description: New item quantity
+          example: 3
+
+    ApplyCouponRequest:
+      type: object
+      required:
+        - couponId
+      properties:
+        couponId:
+          type: string
+          description: Coupon ID to apply
+          example: PROMO10
+
+    CheckoutRequest:
+      type: object
+      required:
+        - shipping
+      properties:
+        shipping:
+          type: integer
+          description: Shipping cost in cents (obtained via GET /carts/{cartId}/shipping)
+          example: 2340
+
+    # ── Domain Schemas ───────────────────────────────────────────────────────
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Product ID
+          example: product-abc
+        name:
+          type: string
+          description: Product name
+          example: Runner X Sneaker
+        price:
+          type: integer
+          description: Unit price in cents
+          example: 4999
+        description:
+          type: string
+          description: Product description
+          example: High-performance running shoe
+        category:
+          type: string
+          description: Product category
+          example: Footwear
+        stock:
+          type: integer
+          description: Units in stock
+          example: 10
+
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Cart item ID
+          example: item-001
+        quantity:
+          type: integer
+          description: Item quantity
+          example: 2
+        product:
+          $ref: '#/components/schemas/Product'
+        subtotal:
+          type: integer
+          description: Item subtotal in cents (price * quantity)
+          example: 9998
+
+    CartCoupon:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Coupon ID
+          example: coupon-xyz
+        name:
+          type: string
+          description: Coupon name
+          example: PROMO10
+        discount:
+          type: integer
+          description: Calculated discount value in cents
+          example: 999
+
+    Cart:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Cart ID
+          example: cart-001
+        userId:
+          type: string
+          description: ID of the cart owner
+          example: user-123
+        items:
+          type: array
+          description: Items in the cart
+          items:
+            $ref: '#/components/schemas/CartItem'
+        coupons:
+          type: array
+          description: Applied coupons
+          items:
+            $ref: '#/components/schemas/CartCoupon'
+        subtotal:
+          type: integer
+          description: Sum of item subtotals in cents
+          example: 9998
+        totalDiscount:
+          type: integer
+          description: Total applied discounts in cents
+          example: 999
+        total:
+          type: integer
+          description: Final total in cents (subtotal - totalDiscount)
+          example: 8999
+
+    # ── Response Schemas ─────────────────────────────────────────────────────
+
+    CartSuccessResponse:
+      type: object
+      required:
+        - status
+        - cart
+      properties:
+        status:
+          type: string
+          enum:
+            - SUCCESS
+          example: SUCCESS
+        cart:
+          $ref: '#/components/schemas/Cart'
+
+    ShippingSuccessResponse:
+      type: object
+      required:
+        - status
+        - shipping
+      properties:
+        status:
+          type: string
+          enum:
+            - SUCCESS
+          example: SUCCESS
+        shipping:
+          type: integer
+          description: Calculated shipping cost in cents
+          example: 2340
+
+    CheckoutSuccessResponse:
+      type: object
+      required:
+        - status
+        - subtotal
+        - discount
+        - shipping
+        - total
+      properties:
+        status:
+          type: string
+          enum:
+            - SUCCESS
+          example: SUCCESS
+        subtotal:
+          type: integer
+          description: Items subtotal in cents
+          example: 9998
+        discount:
+          type: integer
+          description: Total discounts in cents
+          example: 999
+        shipping:
+          type: integer
+          description: Shipping cost in cents
+          example: 2340
+        total:
+          type: integer
+          description: Final total including shipping in cents
+          example: 11339
+
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          enum:
+            - ERROR
+          example: ERROR
+        message:
+          type: string
+          description: Error description
+          example: Cart not found

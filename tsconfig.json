@@ -28,6 +28,18 @@
       ],
       "@cart-projection/*": [
         "apps/cart-projection/src/*"
+      ],
+      "@bff/*": [
+        "apps/bff/src/*"
+      ],
+      "@bff-domain/*": [
+        "apps/bff/src/domain/*"
+      ],
+      "@bff-application/*": [
+        "apps/bff/src/application/*"
+      ],
+      "@bff-infrastructure/*": [
+        "apps/bff/src/infrastructure/*"
       ]
     }
   }
