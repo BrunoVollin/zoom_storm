@@ -1,6 +1,6 @@
 import { IdType } from '../shared/IdType';
 
-export interface CartReadRepository {
+export interface CartQueryRepository {
   findById(id: IdType): Promise<CartDTO | null>;
 }
 
