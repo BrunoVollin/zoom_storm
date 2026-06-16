@@ -14,6 +14,7 @@ import { CreateProductUseCase } from '../../application/usecases/CreateProductUs
 import { UpdateProductUseCase } from '../../application/usecases/UpdateProductUseCase';
 import { DeleteProductUseCase } from '../../application/usecases/DeleteProductUseCase';
 import { ListProductsQuery } from '../../application/queries/ListProductsQuery';
+import { GetProductByIdQuery } from '../../application/queries/GetProductByIdQuery';
 
 const PORT = env.http.port;
 
@@ -25,6 +26,7 @@ const eventPublisher = new KafkaEventPublisher(kafkaProducer);
 
 const app = buildRouter({
   listProducts: new ListProductsQuery(productQueryRepository),
+  getProductById: new GetProductByIdQuery(productRepository),
   createProduct: new CreateProductUseCase(productRepository, eventPublisher),
   updateProduct: new UpdateProductUseCase(productRepository, eventPublisher),
   deleteProduct: new DeleteProductUseCase(productRepository, eventPublisher),

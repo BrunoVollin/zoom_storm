@@ -10,6 +10,7 @@ interface ProductDocument {
   transportHeight: number;
   transportWidth: number;
   transportLength: number;
+  weight: number;
 }
 
 export class ProductRepository {

@@ -23,6 +23,7 @@ export class CartItemController {
 
     const result = await this.addItemUseCase.execute({
       cartId: c.req.param('cartId')!,
+      userId: c.get('userId') as string,
       products: parsed.data.products,
     });
     const status = result.status === Status.SUCCESS ? 200 : 422;
@@ -33,6 +34,7 @@ export class CartItemController {
   async remove(c: Context) {
     const result = await this.removeItemUseCase.execute({
       cartId: c.req.param('cartId')!,
+      userId: c.get('userId') as string,
       itemId: c.req.param('itemId')!,
     });
     const status = result.status === Status.SUCCESS ? 200 : 422;
@@ -46,6 +48,7 @@ export class CartItemController {
 
     const result = await this.updateItemQuantityUseCase.execute({
       cartId: c.req.param('cartId')!,
+      userId: c.get('userId') as string,
       itemId: c.req.param('itemId')!,
       quantity: parsed.data.quantity,
     });

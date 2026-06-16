@@ -11,6 +11,7 @@ export class Product {
     readonly transportHeight: number,
     readonly transportWidth: number,
     readonly transportLength: number,
+    readonly weight: number,
   ) {}
 
   getId(): IdType {

@@ -4,6 +4,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { ProductController } from './controllers/ProductController';
 import { ListProductsQuery } from '../../application/queries/ListProductsQuery';
+import { GetProductByIdQuery } from '../../application/queries/GetProductByIdQuery';
 import { CreateProductUseCase } from '../../application/usecases/CreateProductUseCase';
 import { UpdateProductUseCase } from '../../application/usecases/UpdateProductUseCase';
 import { DeleteProductUseCase } from '../../application/usecases/DeleteProductUseCase';
@@ -11,6 +12,7 @@ import { requireAdmin } from './middlewares/requireAdminMiddleware';
 
 interface Dependencies {
   listProducts: ListProductsQuery;
+  getProductById: GetProductByIdQuery;
   createProduct: CreateProductUseCase;
   updateProduct: UpdateProductUseCase;
   deleteProduct: DeleteProductUseCase;
@@ -28,6 +30,7 @@ export function buildRouter(deps: Dependencies): Hono {
 
   const product = new ProductController(
     deps.listProducts,
+    deps.getProductById,
     deps.createProduct,
     deps.updateProduct,
     deps.deleteProduct,
@@ -58,6 +61,7 @@ export function buildRouter(deps: Dependencies): Hono {
 
   app.get('/hello', (c) => product.hello(c));
   app.get('/products', (c) => product.list(c));
+  app.get('/products/:id', (c) => product.getById(c));
   app.post('/products', requireAdmin, (c) => product.create(c));
   app.put('/products/:id', requireAdmin, (c) => product.update(c));
   app.delete('/products/:id', requireAdmin, (c) => product.delete(c));

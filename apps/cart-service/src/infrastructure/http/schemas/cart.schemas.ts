@@ -8,7 +8,6 @@ const ProductInputSchema = z.object({
 });
 
 export const CreateCartSchema = z.object({
-  userId: z.string().min(1),
   products: z.array(ProductInputSchema).optional().default([]),
   coupons: z.array(z.string().min(1)).optional().default([]),
 });

@@ -1,7 +1,9 @@
 import { Product } from '../../../../domain/entities/Product';
 import { ProductRepository } from '../../../../domain/repositories/ProductRepository';
 import { IdType } from '../../../../domain/shared/IdType';
+import { DomainEvent } from '../../../../domain/events/DomainEvent';
 import { prisma } from '../prisma-connection';
+import { Prisma } from '../../../../generated/prisma/client';
 
 export class PrismaProductRepository implements ProductRepository {
   private prisma;
@@ -10,30 +12,44 @@ export class PrismaProductRepository implements ProductRepository {
     this.prisma = prisma;
   }
 
-  async save(product: Product): Promise<void> {
-    await this.prisma.product.upsert({
-      where: { id: product.getId().toString() },
-      create: {
-        id: product.getId().toString(),
-        name: product.name,
-        price: product.price,
-        description: product.description,
-        category: product.category,
-        stock: product.stock,
-        transportHeight: product.transportHeight,
-        transportWidth: product.transportWidth,
-        transportLength: product.transportLength,
-      },
-      update: {
-        name: product.name,
-        price: product.price,
-        description: product.description,
-        category: product.category,
-        stock: product.stock,
-        transportHeight: product.transportHeight,
-        transportWidth: product.transportWidth,
-        transportLength: product.transportLength,
-      },
+  async save(product: Product, event?: DomainEvent): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.product.upsert({
+        where: { id: product.getId().toString() },
+        create: {
+          id: product.getId().toString(),
+          name: product.name,
+          price: product.price,
+          description: product.description,
+          category: product.category,
+          stock: product.stock,
+          transportHeight: product.transportHeight,
+          transportWidth: product.transportWidth,
+          transportLength: product.transportLength,
+          weight: product.weight,
+        },
+        update: {
+          name: product.name,
+          price: product.price,
+          description: product.description,
+          category: product.category,
+          stock: product.stock,
+          transportHeight: product.transportHeight,
+          transportWidth: product.transportWidth,
+          transportLength: product.transportLength,
+          weight: product.weight,
+        },
+      });
+
+      if (event) {
+        await tx.outboxEvent.create({
+          data: {
+            eventType: event.name,
+            payload: event.payload as Prisma.InputJsonValue,
+            occurredAt: event.occurredAt,
+          },
+        });
+      }
     });
   }
 
@@ -53,10 +69,23 @@ export class PrismaProductRepository implements ProductRepository {
       p.transportHeight,
       p.transportWidth,
       p.transportLength,
+      p.weight,
     );
   }
 
-  async delete(id: IdType): Promise<void> {
-    await this.prisma.product.delete({ where: { id: id.toString() } });
+  async delete(id: IdType, event?: DomainEvent): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.product.delete({ where: { id: id.toString() } });
+
+      if (event) {
+        await tx.outboxEvent.create({
+          data: {
+            eventType: event.name,
+            payload: event.payload as Prisma.InputJsonValue,
+            occurredAt: event.occurredAt,
+          },
+        });
+      }
+    });
   }
 }

@@ -16,6 +16,7 @@ export class CartCheckoutController {
 
     const result = await this.checkoutUseCase.execute({
       cartId: c.req.param('cartId')!,
+      userId: c.get('userId') as string,
       shipping: parsed.data.shipping,
     });
     const status = result.status === Status.SUCCESS ? 200 : 422;

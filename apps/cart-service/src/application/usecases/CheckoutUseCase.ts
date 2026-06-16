@@ -24,6 +24,13 @@ export class CheckoutUseCase implements UseCase<Input, Output> {
         };
       }
 
+      if (cart.getUserId().toString() !== input.userId) {
+        return {
+          status: Status.ERROR,
+          message: 'Cart not found',
+        };
+      }
+
       const items = cart.getItems();
 
       if (items.length === 0) {
@@ -69,6 +76,7 @@ export class CheckoutUseCase implements UseCase<Input, Output> {
 
 interface Input {
   cartId: string;
+  userId: string;
   shipping: number;
 }
 

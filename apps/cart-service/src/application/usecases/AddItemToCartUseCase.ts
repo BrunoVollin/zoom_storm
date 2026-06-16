@@ -5,13 +5,11 @@ import { ProductRepository } from '../../domain/repositories/ProductRepository';
 import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
 import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
-import { EventPublisher } from '@src/domain/events/EventPublisher';
 
 export class AddItemToCartUseCase implements UseCase<Input, Output> {
   constructor(
     private readonly productRepository: ProductRepository,
     private readonly cartRepository: CartRepository,
-    private readonly eventPublisher: EventPublisher,
   ) {}
   async execute(input: Input): Promise<Output> {
     try {
@@ -23,6 +21,13 @@ export class AddItemToCartUseCase implements UseCase<Input, Output> {
       ]);
 
       if (!cart) {
+        return {
+          status: Status.ERROR,
+          message: 'Cart not found',
+        };
+      }
+
+      if (cart.getUserId().toString() !== input.userId) {
         return {
           status: Status.ERROR,
           message: 'Cart not found',
@@ -46,15 +51,13 @@ export class AddItemToCartUseCase implements UseCase<Input, Output> {
         }
       }
 
-      await this.cartRepository.save(cart);
-
       const event = new DomainEvent(
         DomainEventName.CART_ITEM_ADDED,
         CartMapper.toPrimitives(cart),
         new Date(),
       );
 
-      await this.eventPublisher.publish(event);
+      await this.cartRepository.save(cart, event);
 
       return {
         status: Status.SUCCESS,
@@ -74,6 +77,7 @@ export class AddItemToCartUseCase implements UseCase<Input, Output> {
 
 interface Input {
   cartId: string;
+  userId: string;
   products: Array<{ id: string; quantity: number }>;
 }
 

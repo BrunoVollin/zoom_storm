@@ -20,6 +20,7 @@ export function createProduct(
     category: string;
     stock: number;
     transport: Transport;
+    weight: number;
   }>,
 ): Product {
   const defaults = {
@@ -30,6 +31,7 @@ export function createProduct(
     category: 'Clothing',
     stock: 10,
     transport: createTransport(),
+    weight: 1,
   };
 
   return new Product(
@@ -40,5 +42,6 @@ export function createProduct(
     overrides?.category ?? defaults.category,
     overrides?.stock ?? defaults.stock,
     overrides?.transport ?? defaults.transport,
+    overrides?.weight ?? defaults.weight,
   );
 }

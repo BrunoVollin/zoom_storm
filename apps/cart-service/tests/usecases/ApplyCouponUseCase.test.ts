@@ -37,6 +37,7 @@ describe('ApplyCouponUseCase', () => {
     cartMock = {
       id: { toString: () => 'cart-1' },
       userId: { toString: () => 'user-1' },
+      getUserId: jest.fn(() => ({ toString: () => 'user-1' })),
       getItems: jest.fn(() => []),
       getCoupons: jest.fn(() => []),
       calcSubtotal: jest.fn(() => 0),
@@ -66,6 +67,7 @@ describe('ApplyCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
@@ -94,6 +96,7 @@ describe('ApplyCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
@@ -110,6 +113,7 @@ describe('ApplyCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
@@ -130,6 +134,7 @@ describe('ApplyCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
@@ -151,6 +156,7 @@ describe('ApplyCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
@@ -174,6 +180,7 @@ describe('ApplyCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 

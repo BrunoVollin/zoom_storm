@@ -20,6 +20,7 @@ export class CartCouponController {
 
     const result = await this.applyCouponUseCase.execute({
       cartId: c.req.param('cartId')!,
+      userId: c.get('userId') as string,
       couponId: parsed.data.couponId,
     });
     const status = result.status === Status.SUCCESS ? 200 : 422;
@@ -30,6 +31,7 @@ export class CartCouponController {
   async remove(c: Context) {
     const result = await this.removeCouponUseCase.execute({
       cartId: c.req.param('cartId')!,
+      userId: c.get('userId') as string,
       couponId: c.req.param('couponId')!,
     });
     const status = result.status === Status.SUCCESS ? 200 : 422;
