@@ -1,4 +1,3 @@
-import { EventPublisher } from '../../domain/events/EventPublisher';
 import { Cart } from '../../domain/entities/cart/Cart';
 import { CartItem } from '../../domain/entities/cart/CartItem';
 import { CartRepository } from '../../domain/repositories/CartRepository';
@@ -14,9 +13,6 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
     private readonly cartRepository: CartRepository,
     private readonly couponRepository: CouponRepository,
     private readonly productRepository: ProductRepository,
-    private readonly eventPublisher: EventPublisher = {
-      publish: async () => undefined,
-    },
   ) {}
   async execute(input: Input): Promise<Output> {
     try {
@@ -65,15 +61,13 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
         cart.addCoupon(coupon);
       }
 
-      await this.cartRepository.save(cart);
-
       const event = new DomainEvent(
         DomainEventName.CART_CREATED,
         CartMapper.toPrimitives(cart),
         new Date(),
       );
 
-      await this.eventPublisher.publish(event);
+      await this.cartRepository.save(cart, event);
 
       return {
         status: Status.SUCCESS,

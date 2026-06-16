@@ -10,6 +10,7 @@ export class Product {
     readonly category: string,
     readonly stock: number,
     readonly transport: Transport,
+    readonly weight: number,
   ) {}
 
   getVolume(): number {

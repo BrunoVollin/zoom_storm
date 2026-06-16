@@ -43,6 +43,7 @@ describe('UpdateItemQuantityUseCase', () => {
     cartMock = {
       id: { toString: () => 'cart-1' },
       userId: { toString: () => 'user-1' },
+      getUserId: jest.fn(() => ({ toString: () => 'user-1' })),
       getItems: jest.fn(() => [mockItem]),
       getCoupons: jest.fn(() => []),
       calcSubtotal: jest.fn(() => 0),
@@ -71,6 +72,7 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity,
       });
@@ -99,6 +101,7 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity: newQuantity,
       });
@@ -114,6 +117,7 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity,
       });
@@ -133,6 +137,7 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity,
       });
@@ -150,6 +155,7 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity,
       });
@@ -171,6 +177,7 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity,
       });
@@ -193,6 +200,7 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity,
       });

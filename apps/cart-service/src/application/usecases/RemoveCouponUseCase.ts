@@ -24,6 +24,13 @@ export class RemoveCouponUseCase implements UseCase<Input, Output> {
         };
       }
 
+      if (cart.getUserId().toString() !== input.userId) {
+        return {
+          status: Status.ERROR,
+          message: 'Cart not found',
+        };
+      }
+
       const coupons = cart.getCoupons();
       const couponExists = coupons.some(
         (coupon) => coupon.id.toString() === input.couponId,
@@ -67,6 +74,7 @@ export class RemoveCouponUseCase implements UseCase<Input, Output> {
 
 interface Input {
   cartId: string;
+  userId: string;
   couponId: string;
 }
 

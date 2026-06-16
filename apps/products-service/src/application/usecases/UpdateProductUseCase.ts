@@ -19,6 +19,7 @@ interface Input {
   transportHeight: number;
   transportWidth: number;
   transportLength: number;
+  weight: number;
 }
 
 interface SuccessOutput {
@@ -59,6 +60,7 @@ export class UpdateProductUseCase implements UseCase<Input, Output> {
       input.transportHeight,
       input.transportWidth,
       input.transportLength,
+      input.weight,
     );
 
     await this.productRepository.save(updated);

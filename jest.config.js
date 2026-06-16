@@ -22,8 +22,6 @@ module.exports = {
 
     ...pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
   },
-  transformIgnorePatterns: [
-    'node_modules/(?!(uuid)/)',
-  ],
+  transformIgnorePatterns: ['node_modules/(?!(uuid|jose)/)'],
   testMatch: ['**/*.test.ts'],
 };

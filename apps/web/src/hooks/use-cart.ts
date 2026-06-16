@@ -33,7 +33,7 @@ export function useCart() {
     mutationFn: async () => {
       if (cartId) return cartQuery.data ?? cartService.getById(cartId);
       if (!user) throw new Error("É necessário entrar para montar um carrinho");
-      return cartService.create({ userId: user.subject });
+      return cartService.create({});
     },
     onSuccess: setCart,
   });

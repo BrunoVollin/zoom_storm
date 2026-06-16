@@ -17,6 +17,7 @@ export class CartController {
   async getById(c: Context) {
     const result = await this.getCartQuery.execute({
       cartId: c.req.param('cartId')!,
+      userId: c.get('userId') as string,
     });
     const status = result.status === Status.SUCCESS ? 200 : 404;
 
@@ -27,7 +28,10 @@ export class CartController {
     const parsed = validate(CreateCartSchema, await c.req.json());
     if ('error' in parsed) return validationError(c, parsed.error);
 
-    const result = await this.createCartUseCase.execute(parsed.data);
+    const result = await this.createCartUseCase.execute({
+      ...parsed.data,
+      userId: c.get('userId') as string,
+    });
 
     const status = result.status === Status.SUCCESS ? 201 : 422;
 

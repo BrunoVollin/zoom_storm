@@ -61,6 +61,7 @@ describe('AddItemToCartUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         products: [{ id: productId, quantity }],
       });
 
@@ -84,6 +85,7 @@ describe('AddItemToCartUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         products: [
           { id: 'product-1', quantity: 1 },
           { id: 'product-2', quantity: 5 },
@@ -107,6 +109,7 @@ describe('AddItemToCartUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         products: [{ id: 'product-1', quantity: 1 }],
       });
 
@@ -128,6 +131,7 @@ describe('AddItemToCartUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         products: [
           { id: 'product-1', quantity: 1 },
           { id: 'product-2', quantity: 1 },
@@ -152,6 +156,7 @@ describe('AddItemToCartUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         products: [{ id: 'product-1', quantity: 1 }],
       });
 
@@ -175,6 +180,7 @@ describe('AddItemToCartUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         products: [{ id: 'product-1', quantity: 1 }],
       });
 
@@ -192,6 +198,7 @@ describe('AddItemToCartUseCase', () => {
 
       await useCase.execute({
         cartId,
+        userId: 'user-1',
         products: [
           { id: 'product-1', quantity: 1 },
           { id: 'product-2', quantity: 2 },

@@ -16,6 +16,7 @@ import { CartItemController } from './controllers/CartItemController';
 import { CartCouponController } from './controllers/CartCouponController';
 import { CartShippingController } from './controllers/CartShippingController';
 import { CartCheckoutController } from './controllers/CartCheckoutController';
+import { requireAuth } from './middlewares/requireAuthMiddleware';
 
 interface Dependencies {
   getCart: CartQuery;
@@ -74,6 +75,9 @@ export function buildRouter(deps: Dependencies): Hono {
   </body>
 </html>`),
   );
+
+  app.use('/carts', requireAuth);
+  app.use('/carts/*', requireAuth);
 
   app.get('/carts/:cartId', (c) => cart.getById(c));
   app.post('/carts', (c) => cart.create(c));

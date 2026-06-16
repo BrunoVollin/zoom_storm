@@ -2,7 +2,6 @@ import { http } from "@/lib/http";
 import type { Cart, CartResponse, ShippingResponse } from "@/types/cart";
 
 interface CreateCartInput {
-  userId: string;
   products?: { id: string; quantity: number }[];
 }
 

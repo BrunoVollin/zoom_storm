@@ -15,4 +15,8 @@ export class CartItem {
   getVolume(): number {
     return this.product.getVolume() * this.quantity;
   }
+
+  getWeight(): number {
+    return this.product.weight * this.quantity;
+  }
 }

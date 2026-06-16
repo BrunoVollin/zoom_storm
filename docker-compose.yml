@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_DB: zoom
     ports:
-      - "5432:5432"
+      - "3010:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -21,7 +21,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root
     ports:
-      - "27017:27017"
+      - "3020:27017"
     volumes:
       - mongo_data:/data/db
     networks:
@@ -31,7 +31,7 @@ services:
     image: redis:7
     container_name: zoom-redis
     ports:
-      - "6379:6379"
+      - "3030:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -45,7 +45,7 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
-      - "8081:8080"
+      - "3040:8080"
     networks:
       - zoom-network
 
@@ -64,7 +64,7 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "9022:9022"
+      - "3045:9022"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -86,7 +86,7 @@ services:
               properties:
                 bootstrap.servers: "kafka:29092"
     ports:
-      - "8080:8080"
+      - "3050:8080"
     depends_on:
       - kafka
     networks:

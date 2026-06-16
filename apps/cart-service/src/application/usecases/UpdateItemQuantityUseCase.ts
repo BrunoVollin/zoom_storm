@@ -27,6 +27,13 @@ export class UpdateItemQuantityUseCase implements UseCase<Input, Output> {
         };
       }
 
+      if (cart.getUserId().toString() !== input.userId) {
+        return {
+          status: Status.ERROR,
+          message: 'Cart not found',
+        };
+      }
+
       const items = cart.getItems();
       const itemIndex = items.findIndex(
         (item) => item.id.toString() === input.itemId,
@@ -84,6 +91,7 @@ export class UpdateItemQuantityUseCase implements UseCase<Input, Output> {
 
 interface Input {
   cartId: string;
+  userId: string;
   itemId: string;
   quantity: number;
 }

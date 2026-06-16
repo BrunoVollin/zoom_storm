@@ -41,6 +41,7 @@ paths:
                     transportHeight: 20
                     transportWidth: 15
                     transportLength: 30
+                    weight: 1.5
         '422':
           description: Unprocessable entity (business error)
           content:
@@ -70,6 +71,7 @@ paths:
               transportHeight: 20
               transportWidth: 15
               transportLength: 30
+              weight: 1.5
       responses:
         '201':
           description: Product created successfully
@@ -89,6 +91,7 @@ paths:
                   transportHeight: 20
                   transportWidth: 15
                   transportLength: 30
+                  weight: 1.5
         '400':
           description: Validation error
           content:
@@ -108,6 +111,49 @@ paths:
                 status: ERROR
                 message: Unable to create product
 
+  /products/{id}:
+    get:
+      operationId: getProductById
+      summary: Get a product by id
+      tags:
+        - Products
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: product-abc
+      responses:
+        '200':
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductSuccessResponse'
+              example:
+                status: SUCCESS
+                product:
+                  id: product-abc
+                  name: Runner X Sneaker
+                  price: 4999
+                  description: High-performance running shoe
+                  category: Footwear
+                  stock: 10
+                  transportHeight: 20
+                  transportWidth: 15
+                  transportLength: 30
+                  weight: 1.5
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: ERROR
+                message: Product not found
+
 components:
   schemas:
     # ── Request Schemas ──────────────────────────────────────────────────────
@@ -123,6 +169,7 @@ components:
         - transportHeight
         - transportWidth
         - transportLength
+        - weight
       properties:
         name:
           type: string
@@ -156,6 +203,10 @@ components:
           type: integer
           description: Transport packaging length in centimeters
           example: 30
+        weight:
+          type: number
+          description: Product weight (used in shipping calculation)
+          example: 1.5
 
     # ── Domain Schemas ───────────────────────────────────────────────────────
 
@@ -198,6 +249,10 @@ components:
           type: integer
           description: Transport packaging length in centimeters
           example: 30
+        weight:
+          type: number
+          description: Product weight (used in shipping calculation)
+          example: 1.5
 
     # ── Response Schemas ─────────────────────────────────────────────────────
 

@@ -23,6 +23,13 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
         };
       }
 
+      if (cart.getUserId().toString() !== input.userId) {
+        return {
+          status: Status.ERROR,
+          message: 'Cart not found',
+        };
+      }
+
       const items = cart.getItems();
 
       if (items.length === 0) {
@@ -37,7 +44,7 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
       }, 0);
 
       const totalWeight = items.reduce((acc, item) => {
-        return acc + item.quantity;
+        return acc + item.getWeight();
       }, 0);
 
       const shipment = new Shipment(input.distance, totalVolume, totalWeight);
@@ -61,6 +68,7 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
 
 interface Input {
   cartId: string;
+  userId: string;
   distance: number;
 }
 

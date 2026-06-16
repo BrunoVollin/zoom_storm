@@ -27,6 +27,13 @@ export class ApplyCouponUseCase implements UseCase<Input, Output> {
         };
       }
 
+      if (cart.getUserId().toString() !== input.userId) {
+        return {
+          status: Status.ERROR,
+          message: 'Cart not found',
+        };
+      }
+
       if (!coupon) {
         return {
           status: Status.ERROR,
@@ -70,6 +77,7 @@ export class ApplyCouponUseCase implements UseCase<Input, Output> {
 
 interface Input {
   cartId: string;
+  userId: string;
   couponId: string;
 }
 

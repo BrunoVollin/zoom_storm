@@ -18,6 +18,13 @@ export class CartQuery implements Query<Input, Output> {
       };
     }
 
+    if ((cartData as { userId?: string }).userId !== input.userId) {
+      return {
+        status: Status.ERROR,
+        message: 'Cart not found',
+      };
+    }
+
     return {
       status: Status.SUCCESS,
       cartData: cartData,
@@ -27,6 +34,7 @@ export class CartQuery implements Query<Input, Output> {
 
 interface Input {
   cartId: string;
+  userId: string;
 }
 
 interface SuccessOutput {
