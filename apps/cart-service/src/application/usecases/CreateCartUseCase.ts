@@ -56,7 +56,7 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
         if (!coupon.isValid()) {
           return {
             status: Status.ERROR,
-            message: 'Error: ' + coupon.getName(),
+            message: `Coupon "${coupon.getName()}" is not valid`,
           };
         }
         cart.addCoupon(coupon);

@@ -184,7 +184,9 @@ describe('CreateCartUseCase', () => {
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(`Error: ${invalidCoupon.getName()}`);
+        expect(result.message).toBe(
+          `Coupon "${invalidCoupon.getName()}" is not valid`,
+        );
       }
 
       expect(cartRepositoryMock.save).toHaveBeenCalledTimes(0);
