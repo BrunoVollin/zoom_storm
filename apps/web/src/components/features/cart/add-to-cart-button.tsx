@@ -33,6 +33,7 @@ export function AddToCartButton({ productId, className, disabled }: AddToCartBut
 
   return (
     <Button
+      data-testid="add-to-cart-btn"
       className={cn(className)}
       disabled={disabled || addItem.isPending}
       onClick={(event) => {

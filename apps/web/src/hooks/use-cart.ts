@@ -62,6 +62,18 @@ export function useCart() {
     onSuccess: setCart,
   });
 
+  const checkout = useMutation({
+    mutationFn: (shipping: number) => {
+      if (!cartId) throw new Error("Carrinho inexistente");
+      return cartService.checkout(cartId, shipping);
+    },
+    onSuccess: () => {
+      localStorage.removeItem("zoom-storm:cart-id");
+      queryClient.removeQueries({ queryKey: queryKeys.cart.detail(cartId ?? "") });
+      setCartId(""); // triggers re-render with no cart
+    },
+  });
+
   return {
     cart: cartQuery.data,
     isLoading: Boolean(cartId) && cartQuery.isLoading,
@@ -69,5 +81,6 @@ export function useCart() {
     addItem,
     updateItemQuantity,
     removeItem,
+    checkout,
   };
 }

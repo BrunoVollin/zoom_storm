@@ -1,0 +1,23 @@
+{
+  "status": "SUCCESS",
+  "cart": {
+    "id": "cart-1",
+    "userId": "test-user-id",
+    "items": [
+      {
+        "id": "item-1",
+        "product": {
+          "id": "product-1",
+          "name": "The Legend of Zelda: Breath of the Wild",
+          "description": "Open-world adventure game",
+          "category": "Action-Adventure",
+          "price": 29990,
+          "stock": 10,
+          "transport": { "weight": 0.1, "volume": 0.5 }
+        },
+        "quantity": 1
+      }
+    ],
+    "coupons": []
+  }
+}
