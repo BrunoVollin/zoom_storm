@@ -29,10 +29,7 @@ export class PrismaCartRepository implements CartRepository {
       quantity: item.quantity,
     }));
 
-    const coupons = cart.getCoupons().map((c) => ({
-      cartId,
-      couponId: c.id.toString(),
-    }));
+    const couponIds = cart.getCoupons().map((c) => c.id.toString());
 
     await prisma.$transaction(async (tx) => {
       await tx.cart.upsert({
@@ -41,16 +38,35 @@ export class PrismaCartRepository implements CartRepository {
         update: {},
       });
 
-      await tx.cartItem.deleteMany({ where: { cartId } });
-      await tx.cartCoupon.deleteMany({ where: { cartId } });
+      const itemIds = items.map((item) => item.id);
 
-      if (items.length > 0) {
-        await tx.cartItem.createMany({ data: items });
-      }
+      await tx.cartItem.deleteMany({
+        where: { cartId, id: { notIn: itemIds } },
+      });
 
-      if (coupons.length > 0) {
-        await tx.cartCoupon.createMany({ data: coupons });
-      }
+      await tx.cartCoupon.deleteMany({
+        where: { cartId, couponId: { notIn: couponIds } },
+      });
+
+      await Promise.all(
+        items.map((item) =>
+          tx.cartItem.upsert({
+            where: { id: item.id },
+            create: item,
+            update: item,
+          }),
+        ),
+      );
+
+      await Promise.all(
+        couponIds.map((couponId) =>
+          tx.cartCoupon.upsert({
+            where: { cartId_couponId: { cartId, couponId } },
+            create: { cartId, couponId },
+            update: {},
+          }),
+        ),
+      );
 
       if (event) {
         await tx.outboxEvent.create({
