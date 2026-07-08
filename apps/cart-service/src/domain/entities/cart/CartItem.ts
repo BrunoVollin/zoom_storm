@@ -6,7 +6,11 @@ export class CartItem {
     readonly id: IdType,
     readonly product: Product,
     readonly quantity: number,
-  ) {}
+  ) {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      throw new Error('CartItem quantity must be a positive integer');
+    }
+  }
 
   getPrice() {
     return this.product.price * this.quantity;
