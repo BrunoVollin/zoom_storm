@@ -87,7 +87,8 @@ export type CouponScalarFieldEnum = (typeof CouponScalarFieldEnum)[keyof typeof 
 
 export const CartScalarFieldEnum = {
   id: 'id',
-  userId: 'userId'
+  userId: 'userId',
+  version: 'version'
 } as const
 
 export type CartScalarFieldEnum = (typeof CartScalarFieldEnum)[keyof typeof CartScalarFieldEnum]

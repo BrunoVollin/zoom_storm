@@ -4,7 +4,9 @@ import { createIdFromString } from '../factories/IdFactory';
 import { createProduct } from '../factories/ProductFactory';
 import { createValidCoupon } from '../factories/CouponFactory';
 
-const cartUpsert = jest.fn();
+const cartFindUnique = jest.fn();
+const cartCreate = jest.fn();
+const cartUpdateMany = jest.fn();
 const cartItemDeleteMany = jest.fn();
 const cartItemUpsert = jest.fn();
 const cartCouponDeleteMany = jest.fn();
@@ -12,7 +14,11 @@ const cartCouponUpsert = jest.fn();
 const outboxEventCreate = jest.fn();
 
 const tx = {
-  cart: { upsert: cartUpsert },
+  cart: {
+    findUnique: cartFindUnique,
+    create: cartCreate,
+    updateMany: cartUpdateMany,
+  },
   cartItem: { deleteMany: cartItemDeleteMany, upsert: cartItemUpsert },
   cartCoupon: { deleteMany: cartCouponDeleteMany, upsert: cartCouponUpsert },
   outboxEvent: { create: outboxEventCreate },
@@ -29,6 +35,7 @@ import { PrismaCartRepository } from '../../src/infrastructure/database/prisma/r
 describe('PrismaCartRepository', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    cartFindUnique.mockResolvedValue(null);
   });
 
   describe('save', () => {
