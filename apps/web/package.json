@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start -p 3100",
     "lint": "eslint .",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "cy:open": "cypress open",
+    "cy:run": "cypress run"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -27,11 +29,13 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@cypress/webpack-preprocessor": "^7.1.1",
     "@eslint/eslintrc": "^3.2.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "cypress": "^13.0.0",
     "eslint": "^9.18.0",
     "eslint-config-next": "15.5.19",
     "prettier": "^3.4.2",
