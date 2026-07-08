@@ -67,11 +67,7 @@ export function useCart() {
       if (!cartId) throw new Error("Carrinho inexistente");
       return cartService.checkout(cartId, shipping);
     },
-    onSuccess: () => {
-      localStorage.removeItem("zoom-storm:cart-id");
-      queryClient.removeQueries({ queryKey: queryKeys.cart.detail(cartId ?? "") });
-      setCartId(""); // triggers re-render with no cart
-    },
+    onSuccess: setCart,
   });
 
   return {

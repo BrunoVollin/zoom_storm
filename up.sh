@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
 SKIP_INSTALL=false
 SKIP_MIGRATE=false
 SKIP_KEYCLOAK=false
@@ -39,14 +42,15 @@ fi
 
 if [ "$SKIP_MIGRATE" = false ]; then
   export DATABASE_URL=$(grep -m1 '^DATABASE_URL=' apps/cart-service/.env | cut -d= -f2- | tr -d '"')
+  export PRODUCTS_SERVICE_DATABASE_URL=$(grep -m1 '^PRODUCTS_SERVICE_DATABASE_URL=' apps/products-service/.env | cut -d= -f2- | tr -d '"')
 
   echo "==> Generating Prisma clients..."
-  npx prisma generate --schema apps/cart-service/prisma/schema.prisma
-  npx prisma generate --schema apps/products-service/prisma/schema.prisma
+  npx prisma generate --config apps/cart-service/prisma.config.ts --schema apps/cart-service/prisma/schema.prisma
+  npx prisma generate --config apps/products-service/prisma.config.ts --schema apps/products-service/prisma/schema.prisma
 
   echo "==> Running database migrations..."
-  npx prisma migrate deploy --schema apps/cart-service/prisma/schema.prisma
-  npx prisma migrate deploy --schema apps/products-service/prisma/schema.prisma
+  npx prisma migrate deploy --config apps/cart-service/prisma.config.ts --schema apps/cart-service/prisma/schema.prisma
+  npx prisma migrate deploy --config apps/products-service/prisma.config.ts --schema apps/products-service/prisma/schema.prisma
 fi
 
 if [ "$SKIP_KEYCLOAK" = false ]; then
