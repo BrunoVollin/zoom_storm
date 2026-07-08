@@ -3,7 +3,7 @@ import { EventPublisher } from '@src/domain/events/EventPublisher';
 import { CartRepository } from '../../domain/repositories/CartRepository';
 import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
-import { CartMapper } from '../mappers/CartMapper';
+import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
 import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
 export class CheckoutUseCase implements UseCase<Input, Output> {
@@ -56,8 +56,13 @@ export class CheckoutUseCase implements UseCase<Input, Output> {
 
       await this.eventPublisher.publish(event);
 
+      cart.clear();
+
+      await this.cartRepository.save(cart);
+
       return {
         status: Status.SUCCESS,
+        cart: CartMapper.toPrimitives(cart),
         subtotal,
         discount,
         shipping,
@@ -77,6 +82,7 @@ interface Input {
 
 interface SuccessOutput {
   status: Status.SUCCESS;
+  cart: CartPrimitives;
   subtotal: number;
   discount: number;
   shipping: number;

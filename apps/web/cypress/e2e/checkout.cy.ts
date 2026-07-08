@@ -81,6 +81,8 @@ describe("Checkout", () => {
     cy.contains("Frete estimado").should("be.visible");
 
     cy.get("[data-testid=checkout-btn]").should("not.be.disabled");
+
+    cy.screenshot("checkout-frete-estimado", { capture: "fullPage" });
   });
 
   it("finalizes the purchase and empties the cart", () => {
@@ -93,5 +95,7 @@ describe("Checkout", () => {
 
     cy.wait("@checkout");
     cy.contains("Seu carrinho está vazio").should("be.visible");
+
+    cy.screenshot("checkout-finalizado", { capture: "fullPage" });
   });
 });

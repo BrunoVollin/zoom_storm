@@ -46,6 +46,7 @@ describe('CheckoutUseCase', () => {
       calcTotalDiscount: jest.fn(() => 200),
       calcTotal: jest.fn(() => 1800),
       getCoupons: jest.fn(() => []),
+      clear: jest.fn(),
     };
 
     useCase = new CheckoutUseCase(cartRepositoryMock, eventPublisherMock);
@@ -69,8 +70,11 @@ describe('CheckoutUseCase', () => {
         expect(result.discount).toBe(200);
         expect(result.shipping).toBe(shipping);
         expect(result.total).toBe(6800);
+        expect(result.cart).toBeDefined();
       }
       expect(cartRepositoryMock.findById).toHaveBeenCalledTimes(1);
+      expect(cartMock.clear).toHaveBeenCalledTimes(1);
+      expect(cartRepositoryMock.save).toHaveBeenCalledWith(cartMock);
     });
 
     it('should checkout with zero discount', async () => {

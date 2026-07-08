@@ -53,6 +53,11 @@ export class Cart {
     this.items = this.items.filter((item) => !item.id.equals(id));
   }
 
+  clear() {
+    this.items = [];
+    this.coupons = [];
+  }
+
   getItems() {
     return this.items;
   }
