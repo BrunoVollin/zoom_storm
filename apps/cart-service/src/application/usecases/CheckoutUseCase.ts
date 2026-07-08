@@ -4,6 +4,7 @@ import { CartRepository } from '../../domain/repositories/CartRepository';
 import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
 import { CartMapper } from '../mappers/CartMapper';
+import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
 export class CheckoutUseCase implements UseCase<Input, Output> {
   constructor(
@@ -63,13 +64,7 @@ export class CheckoutUseCase implements UseCase<Input, Output> {
         total: finalTotal,
       };
     } catch (error) {
-      return {
-        status: Status.ERROR,
-        message:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred.',
-      };
+      return handleUnexpectedError(error);
     }
   }
 }
