@@ -35,6 +35,8 @@ const openapiSpec = readFileSync(
   'utf-8',
 );
 
+const docsHtml = readFileSync(join(__dirname, 'static/docs.html'), 'utf-8');
+
 export function buildRouter(deps: Dependencies): Hono {
   const app = new Hono();
 
@@ -57,24 +59,7 @@ export function buildRouter(deps: Dependencies): Hono {
     c.text(openapiSpec, 200, { 'Content-Type': 'application/yaml' }),
   );
 
-  app.get('/docs', (c) =>
-    c.html(`<!DOCTYPE html>
-<html>
-  <head>
-    <title>Cart Service API</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css" />
-  </head>
-  <body>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
-    <script>
-      SwaggerUIBundle({ url: 'openapi.yml', dom_id: '#swagger-ui' });
-    </script>
-  </body>
-</html>`),
-  );
+  app.get('/docs', (c) => c.html(docsHtml));
 
   app.use('/carts', requireAuth);
   app.use('/carts/*', requireAuth);
