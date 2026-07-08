@@ -120,6 +120,27 @@ describe('AddItemToCartUseCase', () => {
       expect(cartRepositoryMock.save).toHaveBeenCalledTimes(0);
     });
 
+    it('should return the same message as "cart not found" when the cart belongs to another user', async () => {
+      const product = createProduct({ id: createIdFromString('product-1') });
+
+      (cartRepositoryMock.findById as jest.Mock).mockResolvedValue(cartMock);
+      (productRepositoryMock.findByIds as jest.Mock).mockResolvedValue([
+        product,
+      ]);
+
+      const result = await useCase.execute({
+        cartId,
+        userId: 'someone-else',
+        products: [{ id: 'product-1', quantity: 1 }],
+      });
+
+      expect(result.status).toBe(Status.ERROR);
+      if (result.status === Status.ERROR) {
+        expect(result.message).toBe('Cart not found');
+      }
+      expect(cartRepositoryMock.save).toHaveBeenCalledTimes(0);
+    });
+
     it('should return error when any requested product is not found', async () => {
       const product1 = createProduct({ id: createIdFromString('product-1') });
 

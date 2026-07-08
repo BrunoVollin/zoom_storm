@@ -102,6 +102,22 @@ describe('RemoveItemFromCartUseCase', () => {
       expect(cartRepositoryMock.save).toHaveBeenCalledTimes(0);
     });
 
+    it('should return the same message as "cart not found" when the cart belongs to another user', async () => {
+      (cartRepositoryMock.findById as jest.Mock).mockResolvedValue(cartMock);
+
+      const result = await useCase.execute({
+        cartId,
+        userId: 'someone-else',
+        itemId,
+      });
+
+      expect(result.status).toBe(Status.ERROR);
+      if (result.status === Status.ERROR) {
+        expect(result.message).toBe('Cart not found');
+      }
+      expect(cartRepositoryMock.save).toHaveBeenCalledTimes(0);
+    });
+
     it('should return error when item is not found in cart', async () => {
       (cartRepositoryMock.findById as jest.Mock).mockResolvedValue(cartMock);
       (cartMock.getItems as jest.Mock).mockReturnValue([
