@@ -6,6 +6,7 @@ export class Cart {
   constructor(
     readonly userId: IdType,
     readonly id: IdType,
+    readonly version: number = 0,
   ) {}
 
   private items: Array<CartItem> = [];
@@ -62,6 +63,10 @@ export class Cart {
 
   getUserId() {
     return this.userId;
+  }
+
+  getVersion() {
+    return this.version;
   }
 
   calcSubtotal() {

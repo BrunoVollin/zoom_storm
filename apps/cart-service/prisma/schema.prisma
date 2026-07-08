@@ -24,6 +24,7 @@ model Coupon {
 model Cart {
   id      String       @id
   userId  String
+  version Int          @default(0)
   items   CartItem[]
   coupons CartCoupon[]
 }

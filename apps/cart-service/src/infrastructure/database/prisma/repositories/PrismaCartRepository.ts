@@ -6,6 +6,7 @@ import { CouponPercentByTime } from '../../../../domain/entities/coupon/Coupon';
 import { IdType } from '../../../../domain/shared/IdType';
 import { CartRepository } from '../../../../domain/repositories/CartRepository';
 import { DomainEvent } from '../../../../domain/events/DomainEvent';
+import { ConcurrencyConflictError } from '../../../../domain/errors/ConcurrencyConflictError';
 import { prisma } from '../prisma-connection';
 import { Prisma } from '../../../../generated/prisma/client';
 
@@ -32,11 +33,25 @@ export class PrismaCartRepository implements CartRepository {
     const couponIds = cart.getCoupons().map((c) => c.id.toString());
 
     await prisma.$transaction(async (tx) => {
-      await tx.cart.upsert({
+      const existingCart = await tx.cart.findUnique({
         where: { id: cartId },
-        create: { id: cartId, userId: cart.getUserId().toString() },
-        update: {},
+        select: { version: true },
       });
+
+      if (!existingCart) {
+        await tx.cart.create({
+          data: { id: cartId, userId: cart.getUserId().toString() },
+        });
+      } else {
+        const updated = await tx.cart.updateMany({
+          where: { id: cartId, version: cart.getVersion() },
+          data: { version: { increment: 1 } },
+        });
+
+        if (updated.count === 0) {
+          throw new ConcurrencyConflictError(cartId);
+        }
+      }
 
       const itemIds = items.map((item) => item.id);
 
@@ -94,6 +109,7 @@ export class PrismaCartRepository implements CartRepository {
     const cart = new Cart(
       IdType.create(dbCart.userId),
       IdType.create(dbCart.id),
+      dbCart.version,
     );
 
     for (const it of dbCart.items) {
