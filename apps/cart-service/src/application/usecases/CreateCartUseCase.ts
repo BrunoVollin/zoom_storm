@@ -7,6 +7,7 @@ import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
 import { DomainEvent, DomainEventName } from '../../domain/events/DomainEvent';
 import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
+import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
 export class CreateCartUseCase implements UseCase<Input, Output> {
   constructor(
@@ -74,13 +75,7 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
         cart: CartMapper.toPrimitives(cart),
       };
     } catch (error) {
-      return {
-        status: Status.ERROR,
-        message:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred.',
-      };
+      return handleUnexpectedError(error);
     }
   }
 }

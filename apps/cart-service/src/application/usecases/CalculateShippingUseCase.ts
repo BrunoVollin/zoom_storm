@@ -3,6 +3,7 @@ import { Shipment } from '../../domain/entities/freight/Freight';
 import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
 import { Freight } from '../../domain/entities/freight/Freight';
+import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
 export class CalculateShippingUseCase implements UseCase<Input, Output> {
   constructor(
@@ -55,13 +56,7 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
         shipping,
       };
     } catch (error) {
-      return {
-        status: Status.ERROR,
-        message:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred.',
-      };
+      return handleUnexpectedError(error);
     }
   }
 }

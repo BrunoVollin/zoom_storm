@@ -6,6 +6,7 @@ import { ProductRepository } from '../../domain/repositories/ProductRepository';
 import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
 import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
+import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
 export class UpdateItemQuantityUseCase implements UseCase<Input, Output> {
   constructor(
@@ -78,13 +79,7 @@ export class UpdateItemQuantityUseCase implements UseCase<Input, Output> {
         cart: CartMapper.toPrimitives(cart),
       };
     } catch (error) {
-      return {
-        status: Status.ERROR,
-        message:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred.',
-      };
+      return handleUnexpectedError(error);
     }
   }
 }
