@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const STORAGE_KEY = "zoom-storm:cart-id";
+export const CART_ID_STORAGE_KEY = "zoom-storm:cart-id";
+const STORAGE_KEY = CART_ID_STORAGE_KEY;
 
 /**
  * Persists the active cart id in `localStorage` so the same cart survives
