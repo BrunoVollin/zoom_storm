@@ -31,6 +31,7 @@ jest.mock('../../src/infrastructure/database/prisma/prisma-connection', () => ({
 }));
 
 import { PrismaCartRepository } from '../../src/infrastructure/database/prisma/repositories/PrismaCartRepository';
+import { ConcurrencyConflictError } from '../../src/domain/errors/ConcurrencyConflictError';
 
 describe('PrismaCartRepository', () => {
   beforeEach(() => {
@@ -103,6 +104,63 @@ describe('PrismaCartRepository', () => {
       });
       expect(cartItemUpsert).not.toHaveBeenCalled();
       expect(cartCouponUpsert).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('optimistic locking', () => {
+    it('creates the cart row without a version check when it does not exist yet', async () => {
+      const cart = new Cart(
+        createIdFromString('user-1'),
+        createIdFromString('cart-1'),
+      );
+
+      cartFindUnique.mockResolvedValue(null);
+
+      const repository = new PrismaCartRepository();
+      await repository.save(cart);
+
+      expect(cartCreate).toHaveBeenCalledWith({
+        data: { id: 'cart-1', userId: 'user-1' },
+      });
+      expect(cartUpdateMany).not.toHaveBeenCalled();
+    });
+
+    it('bumps the version guarded by the version it was read with', async () => {
+      const cart = new Cart(
+        createIdFromString('user-1'),
+        createIdFromString('cart-1'),
+        3,
+      );
+
+      cartFindUnique.mockResolvedValue({ version: 3 });
+      cartUpdateMany.mockResolvedValue({ count: 1 });
+
+      const repository = new PrismaCartRepository();
+      await repository.save(cart);
+
+      expect(cartUpdateMany).toHaveBeenCalledWith({
+        where: { id: 'cart-1', version: 3 },
+        data: { version: { increment: 1 } },
+      });
+      expect(cartCreate).not.toHaveBeenCalled();
+    });
+
+    it('throws ConcurrencyConflictError when another write already bumped the version', async () => {
+      const cart = new Cart(
+        createIdFromString('user-1'),
+        createIdFromString('cart-1'),
+        3,
+      );
+
+      cartFindUnique.mockResolvedValue({ version: 4 });
+      cartUpdateMany.mockResolvedValue({ count: 0 });
+
+      const repository = new PrismaCartRepository();
+
+      await expect(repository.save(cart)).rejects.toThrow(
+        ConcurrencyConflictError,
+      );
+      expect(cartItemDeleteMany).not.toHaveBeenCalled();
     });
   });
 });
