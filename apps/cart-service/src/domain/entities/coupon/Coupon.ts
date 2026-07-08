@@ -9,12 +9,6 @@ export interface Coupon {
 }
 
 export class CouponPercentByTime implements Coupon {
-  /**
-   * `today` is a snapshot passed in by the caller rather than read from a
-   * clock internally, so callers (repositories) must pass the current time
-   * on every read for validity to be re-evaluated on each use, instead of
-   * relying on a value cached from when the coupon was first applied.
-   */
   constructor(
     readonly id: IdType,
     readonly name: string,
