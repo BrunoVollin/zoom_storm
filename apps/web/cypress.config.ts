@@ -15,6 +15,7 @@ export default defineConfig({
       keycloakRealm: "zoom-storm",
       testUser: "test",
       testPassword: "test123",
+      mockApi: false,
     },
   },
 });

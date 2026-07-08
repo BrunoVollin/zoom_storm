@@ -12,10 +12,14 @@ declare global {
 }
 
 Cypress.Commands.add("login", () => {
+  if (!Cypress.env("mockApi")) return;
+
   cy.intercept("GET", "/api/auth/me", { fixture: "user.json" }).as("getMe");
 });
 
 Cypress.Commands.add("stubApi", () => {
+  if (!Cypress.env("mockApi")) return;
+
   cy.intercept("GET", "/api/products/products*", { fixture: "products.json" }).as("getProducts");
   cy.intercept("GET", "/api/cart/carts/*", { fixture: "cart.json" }).as("getCart");
   cy.intercept("POST", "/api/cart/carts", { fixture: "cart.json" }).as("createCart");
