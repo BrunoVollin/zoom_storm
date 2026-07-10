@@ -1,0 +1,9 @@
+{
+  "status": "SUCCESS",
+  "cart": {
+    "id": "cart-1",
+    "userId": "test-user-id",
+    "items": [],
+    "coupons": []
+  }
+}

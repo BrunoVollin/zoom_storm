@@ -2,7 +2,6 @@ import { http } from "@/lib/http";
 import type { Cart, CartResponse, ShippingResponse } from "@/types/cart";
 
 interface CreateCartInput {
-  userId: string;
   products?: { id: string; quantity: number }[];
 }
 
@@ -51,10 +50,10 @@ export const cartService = {
     const { data } = await http.get<ShippingResponse>(`/cart/carts/${cartId}/shipping`, {
       params: { distance },
     });
-    if (data.status === "ERROR" || data.cost === undefined) {
+    if (data.status === "ERROR" || data.shipping === undefined) {
       throw new Error(data.message ?? "Não foi possível calcular o frete");
     }
-    return data.cost;
+    return data.shipping;
   },
 
   async checkout(cartId: string, shipping: number): Promise<Cart> {

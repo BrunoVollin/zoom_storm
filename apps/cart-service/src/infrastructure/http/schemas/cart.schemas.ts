@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Status } from '@application/contracts/UseCase';
+import { OutputUseCase, Status } from '@application/contracts/UseCase';
 import type { Context } from 'hono';
 
 const ProductInputSchema = z.object({
@@ -8,7 +8,6 @@ const ProductInputSchema = z.object({
 });
 
 export const CreateCartSchema = z.object({
-  userId: z.string().min(1),
   products: z.array(ProductInputSchema).optional().default([]),
   coupons: z.array(z.string().min(1)).optional().default([]),
 });
@@ -48,4 +47,13 @@ export function validate<T>(
 
 export function validationError(c: Context, message: string) {
   return c.json({ status: Status.ERROR, message }, 400);
+}
+
+export function httpStatus(
+  result: OutputUseCase,
+  successStatus: 200 | 201 = 200,
+): 200 | 201 | 409 | 422 {
+  if (result.status === Status.SUCCESS) return successStatus;
+
+  return result.code === 'CONCURRENCY_CONFLICT' ? 409 : 422;
 }

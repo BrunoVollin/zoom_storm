@@ -20,4 +20,16 @@ model Product {
   transportHeight Int
   transportWidth  Int
   transportLength Int
+  weight          Float  @default(0)
+}
+
+model OutboxEvent {
+  id          String    @id @default(uuid())
+  eventType   String
+  payload     Json
+  occurredAt  DateTime
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([publishedAt])
 }

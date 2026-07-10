@@ -5,13 +5,11 @@ import {
 } from '../factories/CouponFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
 import { CouponRepository } from '../../src/domain/repositories/CouponRepository';
-import { EventPublisher } from '../../src/domain/events/EventPublisher';
 import { Status } from '../../src/application/contracts/UseCase';
 
 describe('ApplyCouponUseCase', () => {
   let cartRepositoryMock: CartRepository;
   let couponRepositoryMock: CouponRepository;
-  let eventPublisherMock: EventPublisher;
   let useCase: ApplyCouponUseCase;
   let cartMock: any;
 
@@ -30,13 +28,10 @@ describe('ApplyCouponUseCase', () => {
       findByIds: jest.fn(),
     };
 
-    eventPublisherMock = {
-      publish: jest.fn(),
-    };
-
     cartMock = {
       id: { toString: () => 'cart-1' },
       userId: { toString: () => 'user-1' },
+      getUserId: jest.fn(() => ({ toString: () => 'user-1' })),
       getItems: jest.fn(() => []),
       getCoupons: jest.fn(() => []),
       calcSubtotal: jest.fn(() => 0),
@@ -45,11 +40,7 @@ describe('ApplyCouponUseCase', () => {
       addCoupon: jest.fn(),
     };
 
-    useCase = new ApplyCouponUseCase(
-      cartRepositoryMock,
-      couponRepositoryMock,
-      eventPublisherMock,
-    );
+    useCase = new ApplyCouponUseCase(cartRepositoryMock, couponRepositoryMock);
 
     jest.clearAllMocks();
   });
@@ -66,6 +57,7 @@ describe('ApplyCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
@@ -79,7 +71,10 @@ describe('ApplyCouponUseCase', () => {
       expect(cartRepositoryMock.findById).toHaveBeenCalledTimes(1);
       expect(couponRepositoryMock.findById).toHaveBeenCalledTimes(1);
       expect(cartMock.addCoupon).toHaveBeenCalledWith(validCoupon);
-      expect(cartRepositoryMock.save).toHaveBeenCalledWith(cartMock);
+      expect(cartRepositoryMock.save).toHaveBeenCalledWith(
+        cartMock,
+        expect.objectContaining({ name: 'cart.updated' }),
+      );
     });
   });
 
@@ -94,6 +89,7 @@ describe('ApplyCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
@@ -110,6 +106,7 @@ describe('ApplyCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
@@ -130,12 +127,15 @@ describe('ApplyCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe('Error: ' + invalidCoupon.getName());
+        expect(result.message).toBe(
+          `Coupon "${invalidCoupon.getName()}" is not valid`,
+        );
       }
       expect(cartMock.addCoupon).toHaveBeenCalledTimes(0);
       expect(cartRepositoryMock.save).toHaveBeenCalledTimes(0);
@@ -151,12 +151,15 @@ describe('ApplyCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
     });
 
@@ -174,12 +177,15 @@ describe('ApplyCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
     });
   });

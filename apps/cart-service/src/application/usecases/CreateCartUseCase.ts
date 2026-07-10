@@ -1,22 +1,19 @@
-import { EventPublisher } from '../../domain/events/EventPublisher';
 import { Cart } from '../../domain/entities/cart/Cart';
 import { CartItem } from '../../domain/entities/cart/CartItem';
 import { CartRepository } from '../../domain/repositories/CartRepository';
 import { CouponRepository } from '../../domain/repositories/CouponRepository';
 import { ProductRepository } from '../../domain/repositories/ProductRepository';
 import { IdType } from '../../domain/shared/IdType';
-import { Status, UseCase } from '../contracts/UseCase';
+import { ErrorOutput, Status, UseCase } from '../contracts/UseCase';
 import { DomainEvent, DomainEventName } from '../../domain/events/DomainEvent';
 import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
+import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
 export class CreateCartUseCase implements UseCase<Input, Output> {
   constructor(
     private readonly cartRepository: CartRepository,
     private readonly couponRepository: CouponRepository,
     private readonly productRepository: ProductRepository,
-    private readonly eventPublisher: EventPublisher = {
-      publish: async () => undefined,
-    },
   ) {}
   async execute(input: Input): Promise<Output> {
     try {
@@ -59,13 +56,11 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
         if (!coupon.isValid()) {
           return {
             status: Status.ERROR,
-            message: 'Error: ' + coupon.getName(),
+            message: `Coupon "${coupon.getName()}" is not valid`,
           };
         }
         cart.addCoupon(coupon);
       }
-
-      await this.cartRepository.save(cart);
 
       const event = new DomainEvent(
         DomainEventName.CART_CREATED,
@@ -73,20 +68,14 @@ export class CreateCartUseCase implements UseCase<Input, Output> {
         new Date(),
       );
 
-      await this.eventPublisher.publish(event);
+      await this.cartRepository.save(cart, event);
 
       return {
         status: Status.SUCCESS,
         cart: CartMapper.toPrimitives(cart),
       };
     } catch (error) {
-      return {
-        status: Status.ERROR,
-        message:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred.',
-      };
+      return handleUnexpectedError(error);
     }
   }
 }
@@ -100,11 +89,6 @@ interface Input {
 interface SuccessOutput {
   status: Status.SUCCESS;
   cart: CartPrimitives;
-}
-
-interface ErrorOutput {
-  status: Status.ERROR;
-  message: string;
 }
 
 type Output = SuccessOutput | ErrorOutput;

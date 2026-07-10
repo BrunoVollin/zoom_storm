@@ -1,15 +1,12 @@
 import { DomainEvent, DomainEventName } from '@src/domain/events/DomainEvent';
-import { EventPublisher } from '@src/domain/events/EventPublisher';
 import { CartRepository } from '../../domain/repositories/CartRepository';
 import { IdType } from '../../domain/shared/IdType';
-import { Status, UseCase } from '../contracts/UseCase';
-import { CartMapper } from '../mappers/CartMapper';
+import { ErrorOutput, Status, UseCase } from '../contracts/UseCase';
+import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
+import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
 export class CheckoutUseCase implements UseCase<Input, Output> {
-  constructor(
-    private readonly cartRepository: CartRepository,
-    private readonly eventPublisher: EventPublisher,
-  ) {}
+  constructor(private readonly cartRepository: CartRepository) {}
 
   async execute(input: Input): Promise<Output> {
     try {
@@ -18,6 +15,13 @@ export class CheckoutUseCase implements UseCase<Input, Output> {
       );
 
       if (!cart) {
+        return {
+          status: Status.ERROR,
+          message: 'Cart not found',
+        };
+      }
+
+      if (cart.getUserId().toString() !== input.userId) {
         return {
           status: Status.ERROR,
           message: 'Cart not found',
@@ -40,49 +44,58 @@ export class CheckoutUseCase implements UseCase<Input, Output> {
 
       const finalTotal = total + shipping;
 
-      const event = new DomainEvent(
+      const checkoutSnapshot = {
+        ...CartMapper.toPrimitives(cart),
+        shipping,
+        total: finalTotal,
+      };
+
+      const checkedOutEvent = new DomainEvent(
         DomainEventName.CART_CHECKED_OUT,
-        { ...CartMapper.toPrimitives(cart), shipping, total: finalTotal },
+        checkoutSnapshot,
         new Date(),
       );
 
-      await this.eventPublisher.publish(event);
+      cart.clear();
+
+      const clearedCartEvent = new DomainEvent(
+        DomainEventName.CART_UPDATED,
+        CartMapper.toPrimitives(cart),
+        new Date(),
+      );
+
+      await this.cartRepository.save(cart, [
+        checkedOutEvent,
+        clearedCartEvent,
+      ]);
 
       return {
         status: Status.SUCCESS,
+        cart: CartMapper.toPrimitives(cart),
         subtotal,
         discount,
         shipping,
         total: finalTotal,
       };
     } catch (error) {
-      return {
-        status: Status.ERROR,
-        message:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred.',
-      };
+      return handleUnexpectedError(error);
     }
   }
 }
 
 interface Input {
   cartId: string;
+  userId: string;
   shipping: number;
 }
 
 interface SuccessOutput {
   status: Status.SUCCESS;
+  cart: CartPrimitives;
   subtotal: number;
   discount: number;
   shipping: number;
   total: number;
-}
-
-interface ErrorOutput {
-  status: Status.ERROR;
-  message: string;
 }
 
 type Output = SuccessOutput | ErrorOutput;

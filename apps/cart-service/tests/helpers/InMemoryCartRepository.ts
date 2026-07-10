@@ -1,0 +1,26 @@
+import { Cart } from '../../src/domain/entities/cart/Cart';
+import { IdType } from '../../src/domain/shared/IdType';
+import { CartRepository } from '../../src/domain/repositories/CartRepository';
+import { DomainEvent } from '../../src/domain/events/DomainEvent';
+
+export class InMemoryCartRepository implements CartRepository {
+  private readonly carts = new Map<string, Cart>();
+  public readonly publishedEvents: Array<DomainEvent> = [];
+
+  async save(
+    cart: Cart,
+    events?: DomainEvent | Array<DomainEvent>,
+  ): Promise<void> {
+    this.carts.set(cart.getId().toString(), cart);
+
+    if (events) this.publishedEvents.push(...[events].flat());
+  }
+
+  async findById(id: IdType): Promise<Cart | null> {
+    return this.carts.get(id.toString()) ?? null;
+  }
+
+  seed(cart: Cart) {
+    this.carts.set(cart.getId().toString(), cart);
+  }
+}

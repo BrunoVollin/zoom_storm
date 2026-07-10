@@ -12,6 +12,7 @@ export class ProductMapper {
       transportHeight: product.transportHeight,
       transportWidth: product.transportWidth,
       transportLength: product.transportLength,
+      weight: product.weight,
     };
   }
 }

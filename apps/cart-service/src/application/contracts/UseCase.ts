@@ -9,6 +9,7 @@ export interface SuccessOutput {
 export interface ErrorOutput {
   status: Status.ERROR;
   message: string;
+  code?: 'CONCURRENCY_CONFLICT';
 }
 
 export type OutputUseCase = SuccessOutput | ErrorOutput;

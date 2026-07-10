@@ -3,15 +3,14 @@ import { CartItem } from '../../domain/entities/cart/CartItem';
 import { CartRepository } from '../../domain/repositories/CartRepository';
 import { ProductRepository } from '../../domain/repositories/ProductRepository';
 import { IdType } from '../../domain/shared/IdType';
-import { Status, UseCase } from '../contracts/UseCase';
+import { ErrorOutput, Status, UseCase } from '../contracts/UseCase';
 import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
-import { EventPublisher } from '@src/domain/events/EventPublisher';
+import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
 export class AddItemToCartUseCase implements UseCase<Input, Output> {
   constructor(
     private readonly productRepository: ProductRepository,
     private readonly cartRepository: CartRepository,
-    private readonly eventPublisher: EventPublisher,
   ) {}
   async execute(input: Input): Promise<Output> {
     try {
@@ -23,6 +22,13 @@ export class AddItemToCartUseCase implements UseCase<Input, Output> {
       ]);
 
       if (!cart) {
+        return {
+          status: Status.ERROR,
+          message: 'Cart not found',
+        };
+      }
+
+      if (cart.getUserId().toString() !== input.userId) {
         return {
           status: Status.ERROR,
           message: 'Cart not found',
@@ -46,45 +52,33 @@ export class AddItemToCartUseCase implements UseCase<Input, Output> {
         }
       }
 
-      await this.cartRepository.save(cart);
-
       const event = new DomainEvent(
         DomainEventName.CART_ITEM_ADDED,
         CartMapper.toPrimitives(cart),
         new Date(),
       );
 
-      await this.eventPublisher.publish(event);
+      await this.cartRepository.save(cart, event);
 
       return {
         status: Status.SUCCESS,
         cart: CartMapper.toPrimitives(cart),
       };
     } catch (error) {
-      return {
-        status: Status.ERROR,
-        message:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred.',
-      };
+      return handleUnexpectedError(error);
     }
   }
 }
 
 interface Input {
   cartId: string;
+  userId: string;
   products: Array<{ id: string; quantity: number }>;
 }
 
 interface SuccessOutput {
   status: Status.SUCCESS;
   cart: CartPrimitives;
-}
-
-interface ErrorOutput {
-  status: Status.ERROR;
-  message: string;
 }
 
 type Output = SuccessOutput | ErrorOutput;

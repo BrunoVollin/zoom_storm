@@ -6,6 +6,7 @@ export class Cart {
   constructor(
     readonly userId: IdType,
     readonly id: IdType,
+    readonly version: number = 0,
   ) {}
 
   private items: Array<CartItem> = [];
@@ -37,6 +38,12 @@ export class Cart {
   }
 
   addCoupon(coupon: Coupon) {
+    const alreadyApplied = this.coupons.some((currentCoupon) =>
+      currentCoupon.id.equals(coupon.id),
+    );
+
+    if (alreadyApplied) return;
+
     this.coupons.push(coupon);
   }
 
@@ -52,6 +59,11 @@ export class Cart {
     this.items = this.items.filter((item) => !item.id.equals(id));
   }
 
+  clear() {
+    this.items = [];
+    this.coupons = [];
+  }
+
   getItems() {
     return this.items;
   }
@@ -62,6 +74,10 @@ export class Cart {
 
   getUserId() {
     return this.userId;
+  }
+
+  getVersion() {
+    return this.version;
   }
 
   calcSubtotal() {

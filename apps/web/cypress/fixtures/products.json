@@ -1,0 +1,23 @@
+{
+  "status": "SUCCESS",
+  "products": [
+    {
+      "id": "product-1",
+      "name": "The Legend of Zelda: Breath of the Wild",
+      "description": "Open-world adventure game",
+      "category": "Action-Adventure",
+      "price": 29990,
+      "stock": 10,
+      "transport": { "weight": 0.1, "volume": 0.5 }
+    },
+    {
+      "id": "product-2",
+      "name": "Super Mario Odyssey",
+      "description": "3D platformer",
+      "category": "Platformer",
+      "price": 24990,
+      "stock": 5,
+      "transport": { "weight": 0.1, "volume": 0.5 }
+    }
+  ]
+}

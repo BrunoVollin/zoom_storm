@@ -18,7 +18,7 @@ interface AddToCartButtonProps {
 export function AddToCartButton({ productId, className, disabled }: AddToCartButtonProps) {
   const { user } = useAuth();
   const { addItem } = useCart();
-  const [justAdded, setJustAdded] = useState(false);
+  const [feedback, setFeedback] = useState<"idle" | "added" | "error">("idle");
 
   if (!user) {
     return (
@@ -31,8 +31,17 @@ export function AddToCartButton({ productId, className, disabled }: AddToCartBut
     );
   }
 
+  const label =
+    feedback === "added"
+      ? "Adicionado!"
+      : feedback === "error"
+        ? (addItem.error?.message ?? "Erro ao adicionar")
+        : "Adicionar ao carrinho";
+
   return (
     <Button
+      data-testid="add-to-cart-btn"
+      variant={feedback === "error" ? "destructive" : "default"}
       className={cn(className)}
       disabled={disabled || addItem.isPending}
       onClick={(event) => {
@@ -41,15 +50,19 @@ export function AddToCartButton({ productId, className, disabled }: AddToCartBut
           { productId, quantity: 1 },
           {
             onSuccess: () => {
-              setJustAdded(true);
-              setTimeout(() => setJustAdded(false), 1500);
+              setFeedback("added");
+              setTimeout(() => setFeedback("idle"), 1500);
+            },
+            onError: () => {
+              setFeedback("error");
+              setTimeout(() => setFeedback("idle"), 3000);
             },
           },
         );
       }}
     >
       {addItem.isPending ? <Loader2 className="animate-spin" /> : <ShoppingCart />}
-      {justAdded ? "Adicionado!" : "Adicionar ao carrinho"}
+      {label}
     </Button>
   );
 }

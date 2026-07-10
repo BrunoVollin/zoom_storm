@@ -15,8 +15,15 @@ export const env = {
   },
   kafka: {
     clientId: process.env.CART_SERVICE_KAFKA_CLIENT_ID || 'cart-service',
-    brokers: (process.env.CART_SERVICE_KAFKA_BROKERS ?? 'localhost:9092').split(
+    brokers: (process.env.CART_SERVICE_KAFKA_BROKERS ?? 'localhost:9022').split(
       ',',
     ),
+  },
+  keycloak: {
+    issuerUrl: process.env.KEYCLOAK_ISSUER_URL || '',
+    jwksUri: process.env.KEYCLOAK_JWKS_URI || '',
+  },
+  auth: {
+    skip: process.env.CART_SERVICE_SKIP_AUTH === 'true',
   },
 };

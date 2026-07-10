@@ -2,6 +2,7 @@ import { Kafka } from 'kafkajs';
 import { MongoDbClient } from './src/config/mongodb';
 
 import { CartRepository } from './src/repository/cart.repository';
+import { OrderRepository } from './src/repository/order.repository';
 import { CartSavedHandler } from './src/handlers/cart-saved.handler';
 import { setupGracefulShutdown } from './src/shutdown';
 import { env } from './src/config/env';
@@ -18,9 +19,15 @@ async function bootstrap() {
   try {
     const cartRepository = new CartRepository(mongoClient);
     await cartRepository.init();
+
+    const orderRepository = new OrderRepository(mongoClient);
+    await orderRepository.init();
     console.log('[Database] MongoDB connected.');
 
-    const cartSavedHandler = new CartSavedHandler(cartRepository);
+    const cartSavedHandler = new CartSavedHandler(
+      cartRepository,
+      orderRepository,
+    );
 
     await consumer.connect();
     console.log('[Kafka] Consumer connected.');

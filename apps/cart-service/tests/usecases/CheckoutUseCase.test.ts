@@ -3,12 +3,10 @@ import { createIdFromString } from '../factories/IdFactory';
 import { createProduct } from '../factories/ProductFactory';
 import { createValidCoupon } from '../factories/CouponFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
-import { EventPublisher } from '../../src/domain/events/EventPublisher';
 import { Status } from '../../src/application/contracts/UseCase';
 
 describe('CheckoutUseCase', () => {
   let cartRepositoryMock: CartRepository;
-  let eventPublisherMock: EventPublisher;
   let useCase: CheckoutUseCase;
   let cartMock: any;
 
@@ -19,10 +17,6 @@ describe('CheckoutUseCase', () => {
     cartRepositoryMock = {
       save: jest.fn(),
       findById: jest.fn(),
-    };
-
-    eventPublisherMock = {
-      publish: jest.fn(),
     };
 
     const product = createProduct({
@@ -40,14 +34,16 @@ describe('CheckoutUseCase', () => {
     cartMock = {
       id: { toString: () => 'cart-1' },
       userId: { toString: () => 'user-1' },
+      getUserId: jest.fn(() => ({ toString: () => 'user-1' })),
       getItems: jest.fn(() => [mockItem]),
       calcSubtotal: jest.fn(() => 2000),
       calcTotalDiscount: jest.fn(() => 200),
       calcTotal: jest.fn(() => 1800),
       getCoupons: jest.fn(() => []),
+      clear: jest.fn(),
     };
 
-    useCase = new CheckoutUseCase(cartRepositoryMock, eventPublisherMock);
+    useCase = new CheckoutUseCase(cartRepositoryMock);
 
     jest.clearAllMocks();
   });
@@ -58,6 +54,7 @@ describe('CheckoutUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         shipping,
       });
 
@@ -67,8 +64,14 @@ describe('CheckoutUseCase', () => {
         expect(result.discount).toBe(200);
         expect(result.shipping).toBe(shipping);
         expect(result.total).toBe(6800);
+        expect(result.cart).toBeDefined();
       }
       expect(cartRepositoryMock.findById).toHaveBeenCalledTimes(1);
+      expect(cartMock.clear).toHaveBeenCalledTimes(1);
+      expect(cartRepositoryMock.save).toHaveBeenCalledWith(cartMock, [
+        expect.objectContaining({ name: 'cart.checked_out' }),
+        expect.objectContaining({ name: 'cart.updated' }),
+      ]);
     });
 
     it('should checkout with zero discount', async () => {
@@ -78,6 +81,7 @@ describe('CheckoutUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         shipping,
       });
 
@@ -94,6 +98,7 @@ describe('CheckoutUseCase', () => {
       const largeShipping = 10000;
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         shipping: largeShipping,
       });
 
@@ -111,6 +116,7 @@ describe('CheckoutUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         shipping,
       });
 
@@ -126,6 +132,7 @@ describe('CheckoutUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         shipping,
       });
 
@@ -145,12 +152,15 @@ describe('CheckoutUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         shipping,
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
     });
 
@@ -163,12 +173,15 @@ describe('CheckoutUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         shipping,
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
     });
   });
