@@ -15,6 +15,9 @@ export interface Cart {
   userId: string;
   items: CartItem[];
   coupons: Coupon[];
+  subtotal: number;
+  totalDiscount: number;
+  total: number;
 }
 
 export interface CartResponse {
@@ -25,6 +28,6 @@ export interface CartResponse {
 
 export interface ShippingResponse {
   status: "SUCCESS" | "ERROR";
-  cost?: number;
+  shipping?: number;
   message?: string;
 }
