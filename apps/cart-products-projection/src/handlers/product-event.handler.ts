@@ -24,6 +24,13 @@ export class ProductEventHandler {
       const event = JSON.parse(rawMessage);
       const { name, payload } = event;
 
+      if (!payload?.id) {
+        console.warn(
+          '[ProductEventHandler] Event payload has no id, skipping.',
+        );
+        return;
+      }
+
       if (name === 'product.created' || name === 'product.updated') {
         await this.productRepository.save(payload);
         console.log(
@@ -39,6 +46,7 @@ export class ProductEventHandler {
       }
     } catch (error) {
       console.error('[ProductEventHandler] Error processing message:', error);
+      throw error;
     }
   };
 }
