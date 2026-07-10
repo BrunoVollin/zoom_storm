@@ -7,10 +7,13 @@ export class InMemoryCartRepository implements CartRepository {
   private readonly carts = new Map<string, Cart>();
   public readonly publishedEvents: Array<DomainEvent> = [];
 
-  async save(cart: Cart, event?: DomainEvent): Promise<void> {
+  async save(
+    cart: Cart,
+    events?: DomainEvent | Array<DomainEvent>,
+  ): Promise<void> {
     this.carts.set(cart.getId().toString(), cart);
 
-    if (event) this.publishedEvents.push(event);
+    if (events) this.publishedEvents.push(...[events].flat());
   }
 
   async findById(id: IdType): Promise<Cart | null> {

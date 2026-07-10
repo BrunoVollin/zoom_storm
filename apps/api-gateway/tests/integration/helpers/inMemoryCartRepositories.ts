@@ -70,8 +70,6 @@ export class InMemoryCartProductRepository implements CartProductRepository {
 
     return products;
   }
-
-  async save(): Promise<void> {}
 }
 
 function toCartProduct(

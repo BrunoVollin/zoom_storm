@@ -1,10 +1,9 @@
 import { DomainEvent, DomainEventName } from '@src/domain/events/DomainEvent';
-import { EventPublisher } from '@src/domain/events/EventPublisher';
 import { CartItem } from '../../domain/entities/cart/CartItem';
 import { CartRepository } from '../../domain/repositories/CartRepository';
 import { ProductRepository } from '../../domain/repositories/ProductRepository';
 import { IdType } from '../../domain/shared/IdType';
-import { Status, UseCase } from '../contracts/UseCase';
+import { ErrorOutput, Status, UseCase } from '../contracts/UseCase';
 import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
 import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
@@ -12,7 +11,6 @@ export class UpdateItemQuantityUseCase implements UseCase<Input, Output> {
   constructor(
     private readonly cartRepository: CartRepository,
     private readonly productRepository: ProductRepository,
-    private readonly eventPublisher: EventPublisher,
   ) {}
 
   async execute(input: Input): Promise<Output> {
@@ -64,15 +62,13 @@ export class UpdateItemQuantityUseCase implements UseCase<Input, Output> {
         new CartItem(IdType.create(input.itemId), product, input.quantity),
       );
 
-      await this.cartRepository.save(cart);
-
       const event = new DomainEvent(
         DomainEventName.CART_UPDATED,
         CartMapper.toPrimitives(cart),
         new Date(),
       );
 
-      await this.eventPublisher.publish(event);
+      await this.cartRepository.save(cart, event);
 
       return {
         status: Status.SUCCESS,
@@ -94,11 +90,6 @@ interface Input {
 interface SuccessOutput {
   status: Status.SUCCESS;
   cart: CartPrimitives;
-}
-
-interface ErrorOutput {
-  status: Status.ERROR;
-  message: string;
 }
 
 type Output = SuccessOutput | ErrorOutput;

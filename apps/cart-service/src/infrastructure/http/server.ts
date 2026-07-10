@@ -6,6 +6,7 @@ import { PrismaCouponRepository } from '../database/prisma/repositories/PrismaCo
 import { MongoProductRepository } from '../database/mongodb/repositories/MongoProductRepository';
 import { KafkaProducerClient } from '../messaging/KafkaProducerClient';
 import { KafkaEventPublisher } from '../messaging/KafkaEventPublisher';
+import { OutboxRelay } from '../messaging/OutboxRelay';
 import { FreightRoadCalculator } from '../../domain/entities/freight/FreightCalculator';
 import { CreateCartUseCase } from '../../application/usecases/CreateCartUseCase';
 import { AddItemToCartUseCase } from '../../application/usecases/AddItemToCartUseCase';
@@ -31,6 +32,7 @@ const couponRepository = new PrismaCouponRepository();
 
 const kafkaProducer = new KafkaProducerClient();
 const eventPublisher = new KafkaEventPublisher(kafkaProducer);
+const outboxRelay = new OutboxRelay(eventPublisher);
 
 const freightCalculator = new FreightRoadCalculator();
 
@@ -42,42 +44,32 @@ const app = buildRouter({
     cartRepository,
     couponRepository,
     productRepository,
-    eventPublisher,
   ),
-  addItemToCart: new AddItemToCartUseCase(
-    productRepository,
-    cartRepository,
-    eventPublisher,
-  ),
-  removeItemFromCart: new RemoveItemFromCartUseCase(
-    cartRepository,
-    eventPublisher,
-  ),
+  addItemToCart: new AddItemToCartUseCase(productRepository, cartRepository),
+  removeItemFromCart: new RemoveItemFromCartUseCase(cartRepository),
   updateItemQuantity: new UpdateItemQuantityUseCase(
     cartRepository,
     productRepository,
-    eventPublisher,
   ),
-  applyCoupon: new ApplyCouponUseCase(
-    cartRepository,
-    couponRepository,
-    eventPublisher,
-  ),
-  removeCoupon: new RemoveCouponUseCase(cartRepository, eventPublisher),
+  applyCoupon: new ApplyCouponUseCase(cartRepository, couponRepository),
+  removeCoupon: new RemoveCouponUseCase(cartRepository),
   calculateShipping: new CalculateShippingUseCase(
     cartRepository,
     freightCalculator,
   ),
-  checkout: new CheckoutUseCase(cartRepository, eventPublisher),
+  checkout: new CheckoutUseCase(cartRepository),
 });
 
 mongoClient.connect().then(() => {
+  outboxRelay.start();
+
   const server = serve({ fetch: app.fetch, port: PORT }, () => {
     console.log(`cart-service HTTP API running on http://localhost:${PORT}`);
   });
 
   async function shutdown() {
     server.close();
+    outboxRelay.stop();
     await kafkaProducer.disconnect();
     await closeDatabaseConnections();
     await closeMongoConnection();

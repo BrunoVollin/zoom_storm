@@ -16,7 +16,6 @@ describe('AddItemToCartUseCase', () => {
 
   beforeEach(() => {
     productRepositoryMock = {
-      save: jest.fn(),
       findById: jest.fn(),
       findByIds: jest.fn(),
     };

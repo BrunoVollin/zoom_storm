@@ -11,8 +11,12 @@ import { prisma } from '../prisma-connection';
 import { Prisma } from '../../../../generated/prisma/client';
 
 export class PrismaCartRepository implements CartRepository {
-  async save(cart: Cart, event?: DomainEvent): Promise<void> {
+  async save(
+    cart: Cart,
+    events?: DomainEvent | Array<DomainEvent>,
+  ): Promise<void> {
     const cartId = cart.getId().toString();
+    const eventList = events ? [events].flat() : [];
 
     const items = cart.getItems().map((item) => ({
       id: item.id.toString(),
@@ -23,7 +27,7 @@ export class PrismaCartRepository implements CartRepository {
       productDescription: item.product.description,
       productCategory: item.product.category,
       productStock: item.product.stock,
-      productWeight: item.product.weight,
+      productWeight: item.product.weight ?? 0,
       transportHeight: item.product.transport.height,
       transportWidth: item.product.transport.width,
       transportLength: item.product.transport.length,
@@ -83,7 +87,7 @@ export class PrismaCartRepository implements CartRepository {
         ),
       );
 
-      if (event) {
+      for (const event of eventList) {
         await tx.outboxEvent.create({
           data: {
             eventType: event.name,
