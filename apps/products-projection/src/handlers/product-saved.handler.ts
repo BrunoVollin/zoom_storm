@@ -22,13 +22,33 @@ export class ProductSavedHandler {
     }
 
     try {
-      const data = JSON.parse(rawMessage);
-      console.log(data.payload);
-      await this.productRepository.save(data.payload);
+      const event = JSON.parse(rawMessage);
+      const { name, payload } = event;
 
-      console.log(`[ProductSavedHandler] Product processed successfully.`);
+      if (!payload?.id) {
+        console.warn(
+          '[ProductSavedHandler] Event payload has no id, skipping.',
+        );
+
+        return;
+      }
+
+      if (name === 'product.created' || name === 'product.updated') {
+        await this.productRepository.save(payload);
+        console.log(
+          `[ProductSavedHandler] Product upserted (${name}): ${payload.id}`,
+        );
+      } else if (name === 'product.deleted') {
+        await this.productRepository.delete(payload.id);
+        console.log(`[ProductSavedHandler] Product deleted: ${payload.id}`);
+      } else {
+        console.warn(
+          `[ProductSavedHandler] Unknown event name: ${name}, skipping.`,
+        );
+      }
     } catch (error) {
       console.error('[ProductSavedHandler] Error processing message:', error);
+      throw error;
     }
   };
 }
