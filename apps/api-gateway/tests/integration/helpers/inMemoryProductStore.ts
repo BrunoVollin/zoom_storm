@@ -64,4 +64,10 @@ export class InMemoryProductQueryRepository implements ProductQueryRepository {
       .getAll()
       .map((product) => ProductMapper.toPrimitives(product));
   }
+
+  async findById(id: string): Promise<ProductDTO | null> {
+    const product = this.store.get(id);
+
+    return product ? ProductMapper.toPrimitives(product) : null;
+  }
 }
