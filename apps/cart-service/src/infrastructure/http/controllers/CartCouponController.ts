@@ -1,10 +1,10 @@
 import type { Context } from 'hono';
 import { ApplyCouponUseCase } from '@application/usecases/ApplyCouponUseCase';
 import { RemoveCouponUseCase } from '@application/usecases/RemoveCouponUseCase';
-import { Status } from '@application/contracts/UseCase';
 import {
   validate,
   validationError,
+  httpStatus,
   ApplyCouponSchema,
 } from '../schemas/cart.schemas';
 
@@ -23,9 +23,8 @@ export class CartCouponController {
       userId: c.get('userId') as string,
       couponId: parsed.data.couponId,
     });
-    const status = result.status === Status.SUCCESS ? 200 : 422;
 
-    return c.json(result, status);
+    return c.json(result, httpStatus(result));
   }
 
   async remove(c: Context) {
@@ -34,8 +33,7 @@ export class CartCouponController {
       userId: c.get('userId') as string,
       couponId: c.req.param('couponId')!,
     });
-    const status = result.status === Status.SUCCESS ? 200 : 422;
 
-    return c.json(result, status);
+    return c.json(result, httpStatus(result));
   }
 }
