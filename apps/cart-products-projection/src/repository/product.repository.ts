@@ -10,6 +10,7 @@ interface ProductDocument {
   transportHeight: number;
   transportWidth: number;
   transportLength: number;
+  weight: number;
 }
 
 export class ProductRepository {
@@ -25,7 +26,13 @@ export class ProductRepository {
   }
 
   async save(data: ProductDocument): Promise<void> {
-    await this.collection.replaceOne({ id: data.id }, data, { upsert: true });
+    const normalized = { ...data, weight: data.weight ?? 0 };
+
+    await this.collection.replaceOne(
+      { id: normalized.id },
+      normalized,
+      { upsert: true },
+    );
   }
 
   async delete(id: string): Promise<void> {

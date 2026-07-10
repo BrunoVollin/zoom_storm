@@ -3,13 +3,11 @@ import { createIdFromString } from '../factories/IdFactory';
 import { createProduct } from '../factories/ProductFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
 import { ProductRepository } from '../../src/domain/repositories/ProductRepository';
-import { EventPublisher } from '../../src/domain/events/EventPublisher';
 import { Status } from '../../src/application/contracts/UseCase';
 
 describe('UpdateItemQuantityUseCase', () => {
   let cartRepositoryMock: CartRepository;
   let productRepositoryMock: ProductRepository;
-  let eventPublisherMock: EventPublisher;
   let useCase: UpdateItemQuantityUseCase;
   let cartMock: any;
 
@@ -24,13 +22,8 @@ describe('UpdateItemQuantityUseCase', () => {
     };
 
     productRepositoryMock = {
-      save: jest.fn(),
       findById: jest.fn(),
       findByIds: jest.fn(),
-    };
-
-    eventPublisherMock = {
-      publish: jest.fn(),
     };
 
     const mockItem = {
@@ -43,6 +36,7 @@ describe('UpdateItemQuantityUseCase', () => {
     cartMock = {
       id: { toString: () => 'cart-1' },
       userId: { toString: () => 'user-1' },
+      getUserId: jest.fn(() => ({ toString: () => 'user-1' })),
       getItems: jest.fn(() => [mockItem]),
       getCoupons: jest.fn(() => []),
       calcSubtotal: jest.fn(() => 0),
@@ -55,7 +49,6 @@ describe('UpdateItemQuantityUseCase', () => {
     useCase = new UpdateItemQuantityUseCase(
       cartRepositoryMock,
       productRepositoryMock,
-      eventPublisherMock,
     );
 
     jest.clearAllMocks();
@@ -71,6 +64,7 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity,
       });
@@ -99,6 +93,7 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity: newQuantity,
       });
@@ -114,6 +109,7 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity,
       });
@@ -133,6 +129,7 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity,
       });
@@ -150,6 +147,7 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity,
       });
@@ -171,13 +169,16 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity,
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
     });
 
@@ -193,13 +194,16 @@ describe('UpdateItemQuantityUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
         quantity,
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
     });
   });

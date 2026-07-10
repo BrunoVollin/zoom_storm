@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriceTag } from "@/components/shared/price-tag";
 import { cartService } from "@/services/cart-service";
+import { useCart } from "@/hooks/use-cart";
 import { shippingEstimateSchema, type ShippingEstimateInput } from "@/schemas/cart.schema";
 import type { Cart } from "@/types/cart";
 
@@ -25,6 +26,7 @@ function getSubtotal(cart: Cart): number {
 export function CartSummary({ cart }: CartSummaryProps) {
   const [shipping, setShipping] = useState<number | null>(null);
   const subtotal = getSubtotal(cart);
+  const { checkout } = useCart();
 
   const {
     register,
@@ -85,11 +87,13 @@ export function CartSummary({ cart }: CartSummaryProps) {
       </div>
 
       <Button
+        data-testid="checkout-btn"
         size="lg"
-        disabled={shipping === null || cart.items.length === 0}
+        disabled={shipping === null || cart.items.length === 0 || checkout.isPending}
         title={shipping === null ? "Calcule o frete antes de finalizar" : undefined}
+        onClick={() => shipping !== null && checkout.mutate(shipping)}
       >
-        Finalizar compra
+        {checkout.isPending ? <Loader2 className="animate-spin" /> : "Finalizar compra"}
       </Button>
     </div>
   );

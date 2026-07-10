@@ -2,12 +2,10 @@ import { RemoveCouponUseCase } from '../../src/application/usecases/RemoveCoupon
 import { createIdFromString } from '../factories/IdFactory';
 import { createValidCoupon } from '../factories/CouponFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
-import { EventPublisher } from '../../src/domain/events/EventPublisher';
 import { Status } from '../../src/application/contracts/UseCase';
 
 describe('RemoveCouponUseCase', () => {
   let cartRepositoryMock: CartRepository;
-  let eventPublisherMock: EventPublisher;
   let useCase: RemoveCouponUseCase;
   let cartMock: any;
 
@@ -20,15 +18,12 @@ describe('RemoveCouponUseCase', () => {
       findById: jest.fn(),
     };
 
-    eventPublisherMock = {
-      publish: jest.fn(),
-    };
-
     const validCoupon = createValidCoupon();
 
     cartMock = {
       id: { toString: () => 'cart-1' },
       userId: { toString: () => 'user-1' },
+      getUserId: jest.fn(() => ({ toString: () => 'user-1' })),
       getItems: jest.fn(() => []),
       getCoupons: jest.fn(() => [validCoupon]),
       calcSubtotal: jest.fn(() => 0),
@@ -37,7 +32,7 @@ describe('RemoveCouponUseCase', () => {
       removeCoupon: jest.fn(),
     };
 
-    useCase = new RemoveCouponUseCase(cartRepositoryMock, eventPublisherMock);
+    useCase = new RemoveCouponUseCase(cartRepositoryMock);
 
     jest.clearAllMocks();
   });
@@ -54,6 +49,7 @@ describe('RemoveCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
@@ -83,6 +79,7 @@ describe('RemoveCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId: 'coupon-1',
       });
 
@@ -97,6 +94,7 @@ describe('RemoveCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
@@ -117,6 +115,7 @@ describe('RemoveCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
@@ -137,12 +136,15 @@ describe('RemoveCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
     });
 
@@ -160,12 +162,15 @@ describe('RemoveCouponUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         couponId,
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
     });
   });

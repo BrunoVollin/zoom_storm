@@ -11,6 +11,7 @@ export const CreateProductSchema = z.object({
   transportHeight: z.int().min(0),
   transportWidth: z.int().min(0),
   transportLength: z.int().min(0),
+  weight: z.number().min(0),
 });
 
 export const UpdateProductSchema = z.object({
@@ -22,6 +23,7 @@ export const UpdateProductSchema = z.object({
   transportHeight: z.int().min(0),
   transportWidth: z.int().min(0),
   transportLength: z.int().min(0),
+  weight: z.number().min(0),
 });
 
 export function validate<T>(

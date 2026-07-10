@@ -65,6 +65,26 @@ describe('Cart', () => {
     });
   });
 
+  describe('CartItem invariants', () => {
+    it('should throw when quantity is zero', () => {
+      expect(
+        () => new CartItem(createIdFromString('item-1'), product1, 0),
+      ).toThrow('CartItem quantity must be a positive integer');
+    });
+
+    it('should throw when quantity is negative', () => {
+      expect(
+        () => new CartItem(createIdFromString('item-1'), product1, -1),
+      ).toThrow('CartItem quantity must be a positive integer');
+    });
+
+    it('should throw when quantity is not an integer', () => {
+      expect(
+        () => new CartItem(createIdFromString('item-1'), product1, 1.5),
+      ).toThrow('CartItem quantity must be a positive integer');
+    });
+  });
+
   describe('Remove Items', () => {
     it('should remove item and recalculate subtotal', () => {
       const cart = new Cart(userId, cartId);

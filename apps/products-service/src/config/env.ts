@@ -18,7 +18,7 @@ export const env = {
     clientId:
       process.env.PRODUCTS_SERVICE_KAFKA_CLIENT_ID || 'products-service',
     brokers: (
-      process.env.PRODUCTS_SERVICE_KAFKA_BROKERS ?? 'localhost:9092'
+      process.env.PRODUCTS_SERVICE_KAFKA_BROKERS ?? 'localhost:9022'
     ).split(','),
   },
   keycloak: {

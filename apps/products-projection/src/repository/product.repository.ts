@@ -11,12 +11,14 @@ export class ProductRepository {
   }
 
   async save(
-    productData: { id?: string } & Record<string, unknown>,
+    productData: { id: string } & Record<string, unknown>,
   ): Promise<void> {
-    const filter = productData.id
-      ? { id: productData.id }
-      : { 'id.value': productData.id };
+    await this.collection.replaceOne({ id: productData.id }, productData, {
+      upsert: true,
+    });
+  }
 
-    await this.collection.replaceOne(filter, productData, { upsert: true });
+  async delete(id: string): Promise<void> {
+    await this.collection.deleteOne({ id });
   }
 }

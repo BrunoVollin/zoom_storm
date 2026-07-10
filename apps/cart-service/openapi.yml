@@ -67,6 +67,10 @@ paths:
                         description: High-performance running shoe
                         category: Footwear
                         stock: 10
+                        weight: 1.5
+                        transportHeight: 20
+                        transportWidth: 15
+                        transportLength: 30
                       subtotal: 9998
                   coupons: []
                   subtotal: 9998
@@ -492,6 +496,22 @@ components:
           type: integer
           description: Units in stock
           example: 10
+        weight:
+          type: number
+          description: Product weight (used in shipping calculation)
+          example: 1.5
+        transportHeight:
+          type: integer
+          description: Transport packaging height in centimeters
+          example: 20
+        transportWidth:
+          type: integer
+          description: Transport packaging width in centimeters
+          example: 15
+        transportLength:
+          type: integer
+          description: Transport packaging length in centimeters
+          example: 30
 
     CartItem:
       type: object

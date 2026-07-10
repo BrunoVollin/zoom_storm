@@ -19,6 +19,7 @@ export class CartShippingController {
 
     const result = await this.calculateShippingUseCase.execute({
       cartId: c.req.param('cartId')!,
+      userId: c.get('userId') as string,
       distance,
     });
     const status = result.status === Status.SUCCESS ? 200 : 422;

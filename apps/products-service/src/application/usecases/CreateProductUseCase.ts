@@ -1,11 +1,7 @@
 import { Product } from '../../domain/entities/Product';
 import { IdType } from '../../domain/shared/IdType';
 import { ProductRepository } from '../../domain/repositories/ProductRepository';
-import {
-  DomainEvent,
-  DomainEventName,
-  EventPublisher,
-} from '../../domain/events/DomainEvent';
+import { DomainEvent, DomainEventName } from '../../domain/events/DomainEvent';
 import { UseCase, Status } from '../contracts/UseCase';
 import { ProductMapper, ProductPrimitives } from '../mappers/ProductMapper';
 
@@ -18,6 +14,7 @@ interface Input {
   transportHeight: number;
   transportWidth: number;
   transportLength: number;
+  weight: number;
 }
 
 interface SuccessOutput {
@@ -33,12 +30,7 @@ interface ErrorOutput {
 type Output = SuccessOutput | ErrorOutput;
 
 export class CreateProductUseCase implements UseCase<Input, Output> {
-  constructor(
-    private readonly productRepository: ProductRepository,
-    private readonly eventPublisher: EventPublisher = {
-      publish: async () => undefined,
-    },
-  ) {}
+  constructor(private readonly productRepository: ProductRepository) {}
 
   async execute(input: Input): Promise<Output> {
     const product = new Product(
@@ -51,16 +43,16 @@ export class CreateProductUseCase implements UseCase<Input, Output> {
       input.transportHeight,
       input.transportWidth,
       input.transportLength,
+      input.weight,
     );
-
-    await this.productRepository.save(product);
 
     const event = new DomainEvent(
       DomainEventName.PRODUCT_CREATED,
       ProductMapper.toPrimitives(product),
       new Date(),
     );
-    await this.eventPublisher.publish(event);
+
+    await this.productRepository.save(product, event);
 
     return {
       status: Status.SUCCESS,

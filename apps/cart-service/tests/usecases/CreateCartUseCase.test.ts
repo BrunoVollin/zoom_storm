@@ -14,13 +14,11 @@ describe('CreateCartUseCase', () => {
   let productRepositoryMock: ProductRepository;
   let couponRepositoryMock: CouponRepository;
   let cartRepositoryMock: CartRepository;
-  let eventPublisherMock: { publish: jest.Mock };
   let useCase: CreateCartUseCase;
   const userId = 'user-1';
 
   beforeEach(() => {
     productRepositoryMock = {
-      save: jest.fn(),
       findById: jest.fn(),
       findByIds: jest.fn(),
     };
@@ -36,15 +34,10 @@ describe('CreateCartUseCase', () => {
       findById: jest.fn(),
     };
 
-    eventPublisherMock = {
-      publish: jest.fn().mockResolvedValue(undefined),
-    };
-
     useCase = new CreateCartUseCase(
       cartRepositoryMock,
       couponRepositoryMock,
       productRepositoryMock,
-      eventPublisherMock,
     );
 
     jest.clearAllMocks();
@@ -184,7 +177,9 @@ describe('CreateCartUseCase', () => {
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(`Error: ${invalidCoupon.getName()}`);
+        expect(result.message).toBe(
+          `Coupon "${invalidCoupon.getName()}" is not valid`,
+        );
       }
 
       expect(cartRepositoryMock.save).toHaveBeenCalledTimes(0);
@@ -208,7 +203,9 @@ describe('CreateCartUseCase', () => {
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
 
       expect(cartRepositoryMock.save).toHaveBeenCalledTimes(0);
@@ -233,7 +230,9 @@ describe('CreateCartUseCase', () => {
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
 
       expect(cartRepositoryMock.save).toHaveBeenCalledTimes(0);
@@ -262,7 +261,9 @@ describe('CreateCartUseCase', () => {
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
 
       expect(cartRepositoryMock.save).toHaveBeenCalledTimes(1);
@@ -281,7 +282,9 @@ describe('CreateCartUseCase', () => {
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe('An unexpected error occurred.');
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
     });
   });

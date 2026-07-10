@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { ListProductsQuery } from '../../../application/queries/ListProductsQuery';
+import { GetProductByIdQuery } from '../../../application/queries/GetProductByIdQuery';
 import { CreateProductUseCase } from '../../../application/usecases/CreateProductUseCase';
 import { UpdateProductUseCase } from '../../../application/usecases/UpdateProductUseCase';
 import { DeleteProductUseCase } from '../../../application/usecases/DeleteProductUseCase';
@@ -15,6 +16,7 @@ import {
 export class ProductController {
   constructor(
     private readonly listProductsQuery: ListProductsQuery,
+    private readonly getProductByIdQuery: GetProductByIdQuery,
     private readonly createProductUseCase: CreateProductUseCase,
     private readonly updateProductUseCase: UpdateProductUseCase,
     private readonly deleteProductUseCase: DeleteProductUseCase,
@@ -27,6 +29,15 @@ export class ProductController {
   async list(c: Context) {
     const result = await this.listProductsQuery.execute({});
     const status = result.status === QueryStatus.SUCCESS ? 200 : 422;
+
+    return c.json(result, status);
+  }
+
+  async getById(c: Context) {
+    const id = c.req.param('id');
+
+    const result = await this.getProductByIdQuery.execute({ id });
+    const status = result.status === QueryStatus.SUCCESS ? 200 : 404;
 
     return c.json(result, status);
   }

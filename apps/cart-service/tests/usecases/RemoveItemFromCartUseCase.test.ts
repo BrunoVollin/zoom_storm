@@ -1,69 +1,37 @@
 import { RemoveItemFromCartUseCase } from '../../src/application/usecases/RemoveItemFromCartUseCase';
 import { createIdFromString } from '../factories/IdFactory';
-import { CartRepository } from '../../src/domain/repositories/CartRepository';
-import { EventPublisher } from '../../src/domain/events/EventPublisher';
+import { createProduct } from '../factories/ProductFactory';
 import { Status } from '../../src/application/contracts/UseCase';
+import { Cart } from '../../src/domain/entities/cart/Cart';
+import { CartItem } from '../../src/domain/entities/cart/CartItem';
+import { InMemoryCartRepository } from '../helpers/InMemoryCartRepository';
 
 describe('RemoveItemFromCartUseCase', () => {
-  let cartRepositoryMock: CartRepository;
-  let eventPublisherMock: EventPublisher;
+  let cartRepository: InMemoryCartRepository;
   let useCase: RemoveItemFromCartUseCase;
-  let cartMock: any;
+  let cart: Cart;
 
   const cartId = 'cart-1';
   const itemId = 'item-1';
 
   beforeEach(() => {
-    cartRepositoryMock = {
-      save: jest.fn(),
-      findById: jest.fn(),
-    };
+    cartRepository = new InMemoryCartRepository();
+    cart = new Cart(createIdFromString('user-1'), createIdFromString(cartId));
+    cartRepository.seed(cart);
 
-    eventPublisherMock = {
-      publish: jest.fn(),
-    };
-
-    cartMock = {
-      id: { toString: () => 'cart-1' },
-      userId: { toString: () => 'user-1' },
-      getItems: jest.fn(),
-      getCoupons: jest.fn(() => []),
-      calcSubtotal: jest.fn(() => 0),
-      calcTotalDiscount: jest.fn(() => 0),
-      calcTotal: jest.fn(() => 0),
-      removeItem: jest.fn(),
-    };
-
-    useCase = new RemoveItemFromCartUseCase(
-      cartRepositoryMock,
-      eventPublisherMock,
-    );
+    useCase = new RemoveItemFromCartUseCase(cartRepository);
 
     jest.clearAllMocks();
   });
 
   describe('Success Scenario', () => {
     it('should remove item from cart successfully', async () => {
-      const itemWithId = {
-        id: createIdFromString(itemId),
-        quantity: 2,
-        product: {
-          id: createIdFromString('product-1'),
-          name: 'Product 1',
-          price: 10,
-          description: 'Desc',
-          category: 'cat',
-          stock: 5,
-        },
-        getPrice: jest.fn(() => 20),
-      };
-
-      (cartRepositoryMock.findById as jest.Mock).mockResolvedValue(cartMock);
-      (cartMock.getItems as jest.Mock).mockReturnValue([itemWithId]);
-      (cartRepositoryMock.save as jest.Mock).mockResolvedValue(undefined);
+      const product = createProduct({ id: createIdFromString('product-1') });
+      cart.addItem(new CartItem(createIdFromString(itemId), product, 2));
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
       });
 
@@ -74,19 +42,18 @@ describe('RemoveItemFromCartUseCase', () => {
           cart: expect.anything(),
         }),
       );
-      expect(cartRepositoryMock.findById).toHaveBeenCalledTimes(1);
-      expect(cartMock.getItems).toHaveBeenCalledTimes(2);
-      expect(cartMock.removeItem).toHaveBeenCalledTimes(1);
-      expect(cartRepositoryMock.save).toHaveBeenCalledWith(cartMock);
+
+      const savedCart = await cartRepository.findById(cart.getId());
+      expect(savedCart?.getItems()).toHaveLength(0);
+      expect(cartRepository.publishedEvents).toHaveLength(1);
     });
   });
 
   describe('Business Rule Violations', () => {
     it('should return error when cart is not found', async () => {
-      (cartRepositoryMock.findById as jest.Mock).mockResolvedValue(null);
-
       const result = await useCase.execute({
-        cartId,
+        cartId: 'unknown-cart',
+        userId: 'user-1',
         itemId,
       });
 
@@ -94,65 +61,74 @@ describe('RemoveItemFromCartUseCase', () => {
       if (result.status === Status.ERROR) {
         expect(result.message).toBe('Cart not found');
       }
-      expect(cartRepositoryMock.save).toHaveBeenCalledTimes(0);
+    });
+
+    it('should return the same message as "cart not found" when the cart belongs to another user', async () => {
+      const result = await useCase.execute({
+        cartId,
+        userId: 'someone-else',
+        itemId,
+      });
+
+      expect(result.status).toBe(Status.ERROR);
+      if (result.status === Status.ERROR) {
+        expect(result.message).toBe('Cart not found');
+      }
     });
 
     it('should return error when item is not found in cart', async () => {
-      (cartRepositoryMock.findById as jest.Mock).mockResolvedValue(cartMock);
-      (cartMock.getItems as jest.Mock).mockReturnValue([
-        { id: createIdFromString('other-item') },
-      ]);
-
       const result = await useCase.execute({
         cartId,
-        itemId,
+        userId: 'user-1',
+        itemId: 'other-item',
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
         expect(result.message).toBe('Item not found in cart');
       }
-      expect(cartMock.removeItem).toHaveBeenCalledTimes(0);
-      expect(cartRepositoryMock.save).toHaveBeenCalledTimes(0);
     });
   });
 
   describe('Exception Handling Scenario', () => {
     it('should return error when cartRepository.findById throws exception', async () => {
-      const errorMessage = 'Database failure';
-      (cartRepositoryMock.findById as jest.Mock).mockRejectedValue(
-        new Error(errorMessage),
-      );
+      jest
+        .spyOn(cartRepository, 'findById')
+        .mockRejectedValue(new Error('Database failure'));
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
     });
 
     it('should return error when cartRepository.save throws exception', async () => {
-      const errorMessage = 'Save failed';
-      const itemWithId = { id: createIdFromString(itemId) };
+      const product = createProduct({ id: createIdFromString('product-1') });
+      cart.addItem(new CartItem(createIdFromString(itemId), product, 1));
 
-      (cartRepositoryMock.findById as jest.Mock).mockResolvedValue(cartMock);
-      (cartMock.getItems as jest.Mock).mockReturnValue([itemWithId]);
-      (cartRepositoryMock.save as jest.Mock).mockRejectedValue(
-        new Error(errorMessage),
-      );
+      jest
+        .spyOn(cartRepository, 'save')
+        .mockRejectedValue(new Error('Save failed'));
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         itemId,
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
     });
   });

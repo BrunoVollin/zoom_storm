@@ -3,6 +3,7 @@ import { Shipment } from '../../domain/entities/freight/Freight';
 import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
 import { Freight } from '../../domain/entities/freight/Freight';
+import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
 export class CalculateShippingUseCase implements UseCase<Input, Output> {
   constructor(
@@ -23,6 +24,13 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
         };
       }
 
+      if (cart.getUserId().toString() !== input.userId) {
+        return {
+          status: Status.ERROR,
+          message: 'Cart not found',
+        };
+      }
+
       const items = cart.getItems();
 
       if (items.length === 0) {
@@ -37,7 +45,7 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
       }, 0);
 
       const totalWeight = items.reduce((acc, item) => {
-        return acc + item.quantity;
+        return acc + item.getWeight();
       }, 0);
 
       const shipment = new Shipment(input.distance, totalVolume, totalWeight);
@@ -48,19 +56,14 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
         shipping,
       };
     } catch (error) {
-      return {
-        status: Status.ERROR,
-        message:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred.',
-      };
+      return handleUnexpectedError(error);
     }
   }
 }
 
 interface Input {
   cartId: string;
+  userId: string;
   distance: number;
 }
 

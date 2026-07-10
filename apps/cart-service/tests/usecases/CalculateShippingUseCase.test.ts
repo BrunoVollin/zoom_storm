@@ -23,6 +23,7 @@ describe('CalculateShippingUseCase', () => {
     };
 
     cartMock = {
+      getUserId: jest.fn(() => ({ toString: () => 'user-1' })),
       getItems: jest.fn(),
     };
 
@@ -43,6 +44,7 @@ describe('CalculateShippingUseCase', () => {
 
       const mockItem = {
         getVolume: jest.fn(() => 1000),
+        getWeight: jest.fn(() => 2),
         quantity: 2,
         product,
       };
@@ -52,6 +54,7 @@ describe('CalculateShippingUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         distance,
       });
 
@@ -73,12 +76,14 @@ describe('CalculateShippingUseCase', () => {
 
       const mockItem1 = {
         getVolume: jest.fn(() => 1000),
+        getWeight: jest.fn(() => 2),
         quantity: 2,
         product: product1,
       };
 
       const mockItem2 = {
         getVolume: jest.fn(() => 1000),
+        getWeight: jest.fn(() => 3),
         quantity: 3,
         product: product2,
       };
@@ -88,6 +93,7 @@ describe('CalculateShippingUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         distance,
       });
 
@@ -104,6 +110,7 @@ describe('CalculateShippingUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         distance,
       });
 
@@ -119,6 +126,7 @@ describe('CalculateShippingUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         distance,
       });
 
@@ -138,12 +146,15 @@ describe('CalculateShippingUseCase', () => {
 
       const result = await useCase.execute({
         cartId,
+        userId: 'user-1',
         distance,
       });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toBe(errorMessage);
+        expect(result.message).toBe(
+          'An unexpected error occurred. Please try again later.',
+        );
       }
     });
   });

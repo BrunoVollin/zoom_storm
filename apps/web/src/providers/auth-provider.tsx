@@ -2,6 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { clearCartId } from "@/hooks/use-cart-id";
 import { authService } from "@/services/auth-service";
 import type { SessionUser } from "@/types/user";
 
@@ -23,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loginUrl: authService.loginUrl,
     logout: async (global = false) => {
       await authService.logout(global);
+      clearCartId();
       window.location.assign("/");
     },
   };

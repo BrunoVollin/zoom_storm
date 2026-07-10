@@ -11,6 +11,7 @@ interface ProductDocument {
   description: string;
   category: string;
   stock: number;
+  weight: number;
   transportHeight: number;
   transportWidth: number;
   transportLength: number;
@@ -25,6 +26,7 @@ function toDomain(doc: ProductDocument): Product {
     doc.category,
     doc.stock,
     new Transport(doc.transportHeight, doc.transportWidth, doc.transportLength),
+    doc.weight ?? 0,
   );
 }
 
@@ -48,6 +50,4 @@ export class MongoProductRepository implements ProductRepository {
 
     return docs.map((doc) => toDomain(doc as unknown as ProductDocument));
   }
-
-  async save(_product: Product): Promise<void> {}
 }

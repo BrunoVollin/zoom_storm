@@ -1,0 +1,10 @@
+{
+  "status": "SUCCESS",
+  "user": {
+    "id": "test-user-id",
+    "username": "test",
+    "email": "test@test.com",
+    "firstName": "Test",
+    "lastName": "User"
+  }
+}
