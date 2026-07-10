@@ -12,7 +12,22 @@ declare global {
 }
 
 Cypress.Commands.add("login", () => {
-  if (!Cypress.env("mockApi")) return;
+  if (!Cypress.env("mockApi")) {
+    cy.session(
+      "authenticated-user",
+      () => {
+        cy.visit("/api/auth/login");
+
+        cy.get("#username").type(Cypress.env("testUser"));
+        cy.get("#password").type(Cypress.env("testPassword"));
+        cy.get("#kc-login").click();
+
+        cy.url().should("eq", `${Cypress.config("baseUrl")}/`);
+      },
+      { cacheAcrossSpecs: true },
+    );
+    return;
+  }
 
   cy.intercept("GET", "/api/auth/me", { fixture: "user.json" }).as("getMe");
 });
