@@ -1,11 +1,7 @@
 import { Product } from '../../domain/entities/Product';
 import { IdType } from '../../domain/shared/IdType';
 import { ProductRepository } from '../../domain/repositories/ProductRepository';
-import {
-  DomainEvent,
-  DomainEventName,
-  EventPublisher,
-} from '../../domain/events/DomainEvent';
+import { DomainEvent, DomainEventName } from '../../domain/events/DomainEvent';
 import { UseCase, Status } from '../contracts/UseCase';
 import { ProductMapper, ProductPrimitives } from '../mappers/ProductMapper';
 
@@ -35,12 +31,7 @@ interface ErrorOutput {
 type Output = SuccessOutput | ErrorOutput;
 
 export class UpdateProductUseCase implements UseCase<Input, Output> {
-  constructor(
-    private readonly productRepository: ProductRepository,
-    private readonly eventPublisher: EventPublisher = {
-      publish: async () => undefined,
-    },
-  ) {}
+  constructor(private readonly productRepository: ProductRepository) {}
 
   async execute(input: Input): Promise<Output> {
     const existing = await this.productRepository.findById(
@@ -63,14 +54,13 @@ export class UpdateProductUseCase implements UseCase<Input, Output> {
       input.weight,
     );
 
-    await this.productRepository.save(updated);
-
     const event = new DomainEvent(
       DomainEventName.PRODUCT_UPDATED,
       ProductMapper.toPrimitives(updated),
       new Date(),
     );
-    await this.eventPublisher.publish(event);
+
+    await this.productRepository.save(updated, event);
 
     return {
       status: Status.SUCCESS,
