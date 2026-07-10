@@ -1,7 +1,8 @@
-import { ProductRepository } from '../../domain/repositories/ProductRepository';
-import { IdType } from '../../domain/shared/IdType';
+import {
+  ProductDTO,
+  ProductQueryRepository,
+} from '../../domain/repositories/ProductQueryRepository';
 import { Query, Status } from '../contracts/Query';
-import { ProductMapper, ProductPrimitives } from '../mappers/ProductMapper';
 
 interface Input {
   id: string;
@@ -9,7 +10,7 @@ interface Input {
 
 interface SuccessOutput {
   status: Status.SUCCESS;
-  product: ProductPrimitives;
+  product: ProductDTO;
 }
 
 interface ErrorOutput {
@@ -20,12 +21,12 @@ interface ErrorOutput {
 type Output = SuccessOutput | ErrorOutput;
 
 export class GetProductByIdQuery implements Query<Input, Output> {
-  constructor(private readonly productRepository: ProductRepository) {}
+  constructor(
+    private readonly productQueryRepository: ProductQueryRepository,
+  ) {}
 
   async execute(input: Input): Promise<Output> {
-    const product = await this.productRepository.findById(
-      IdType.create(input.id),
-    );
+    const product = await this.productQueryRepository.findById(input.id);
 
     if (!product) {
       return { status: Status.ERROR, message: 'Product not found' };
@@ -33,7 +34,7 @@ export class GetProductByIdQuery implements Query<Input, Output> {
 
     return {
       status: Status.SUCCESS,
-      product: ProductMapper.toPrimitives(product),
+      product,
     };
   }
 }
