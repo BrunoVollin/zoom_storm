@@ -10,6 +10,7 @@ import {
 import { MongoProductQueryRepository } from '../database/mongodb/repositories/MongoProductQueryRepository';
 import { KafkaProducerClient } from '../messaging/KafkaProducerClient';
 import { KafkaEventPublisher } from '../messaging/KafkaEventPublisher';
+import { OutboxRelay } from '../messaging/OutboxRelay';
 import { CreateProductUseCase } from '../../application/usecases/CreateProductUseCase';
 import { UpdateProductUseCase } from '../../application/usecases/UpdateProductUseCase';
 import { DeleteProductUseCase } from '../../application/usecases/DeleteProductUseCase';
@@ -23,16 +24,19 @@ const productQueryRepository = new MongoProductQueryRepository();
 
 const kafkaProducer = new KafkaProducerClient();
 const eventPublisher = new KafkaEventPublisher(kafkaProducer);
+const outboxRelay = new OutboxRelay(eventPublisher);
 
 const app = buildRouter({
   listProducts: new ListProductsQuery(productQueryRepository),
-  getProductById: new GetProductByIdQuery(productRepository),
-  createProduct: new CreateProductUseCase(productRepository, eventPublisher),
-  updateProduct: new UpdateProductUseCase(productRepository, eventPublisher),
-  deleteProduct: new DeleteProductUseCase(productRepository, eventPublisher),
+  getProductById: new GetProductByIdQuery(productQueryRepository),
+  createProduct: new CreateProductUseCase(productRepository),
+  updateProduct: new UpdateProductUseCase(productRepository),
+  deleteProduct: new DeleteProductUseCase(productRepository),
 });
 
 mongoClient.connect().then(() => {
+  outboxRelay.start();
+
   const server = serve({ fetch: app.fetch, port: PORT }, () => {
     console.log(
       `products-service HTTP API running on http://localhost:${PORT}`,
@@ -41,6 +45,7 @@ mongoClient.connect().then(() => {
 
   async function shutdown() {
     server.close();
+    outboxRelay.stop();
     await kafkaProducer.disconnect();
     await closeDatabaseConnections();
     await closeMongoConnection();
