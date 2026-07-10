@@ -1,11 +1,9 @@
-# Zoom Storm — Architecture Overview
+# Zoom Storm . Architecture Overview
 
 Game store (current and retro titles) built as a TypeScript microservices
 monorepo, following **Clean Architecture** per service and a **CQRS +
 Event-Driven** pattern with asynchronous projections via Kafka.
 
-> This document is the index of the technical documentation. Each business
-> flow is detailed in its own file (links at the bottom).
 
 ---
 
