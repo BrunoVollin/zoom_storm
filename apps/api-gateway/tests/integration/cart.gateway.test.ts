@@ -58,6 +58,17 @@ async function removeItem(gatewayUrl: string, cartId: string, itemId: string) {
   return { response, body };
 }
 
+async function checkout(gatewayUrl: string, cartId: string, shipping: number) {
+  const response = await fetch(`${gatewayUrl}/cart/carts/${cartId}/checkout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ shipping }),
+  });
+  const body = await response.json();
+
+  return { response, body };
+}
+
 describe('API Gateway → Cart flow', () => {
   let env: TestEnvironment;
   let productA: { id: string; price: number };
@@ -365,6 +376,106 @@ describe('API Gateway → Cart flow', () => {
 
       const { body: fetched } = await getCart(env.gatewayUrl, created.cart.id);
       expect(fetched.cartData.items).toEqual([]);
+    });
+  });
+
+  describe('POST /cart/carts/:cartId/checkout', () => {
+    it('Given a cart with items, when checking out, then returns 200 with totals and an emptied cart', async () => {
+      const { body: created } = await createCart(env.gatewayUrl, {
+        products: [
+          { id: productA.id, quantity: 2 },
+          { id: productB.id, quantity: 1 },
+        ],
+      });
+      const subtotal = productA.price * 2 + productB.price * 1;
+
+      const { response, body } = await checkout(
+        env.gatewayUrl,
+        created.cart.id,
+        500,
+      );
+
+      expect(response.status).toBe(200);
+      expect(body).toEqual(
+        expect.objectContaining({
+          status: 'SUCCESS',
+          subtotal,
+          discount: 0,
+          shipping: 500,
+          total: subtotal + 500,
+          cart: expect.objectContaining({ id: created.cart.id, items: [] }),
+        }),
+      );
+
+      const { body: fetched } = await getCart(env.gatewayUrl, created.cart.id);
+      expect(fetched.cartData.items).toEqual([]);
+    });
+
+    it('Given products were added to a cart in separate requests, when checking out, then the full flow (create → add → checkout) succeeds', async () => {
+      const { body: created } = await createCart(env.gatewayUrl);
+
+      await addItem(env.gatewayUrl, created.cart.id, [
+        { id: productA.id, quantity: 1 },
+      ]);
+      const { body: withItemB } = await addItem(
+        env.gatewayUrl,
+        created.cart.id,
+        [{ id: productB.id, quantity: 2 }],
+      );
+      expect(withItemB.cart.items).toHaveLength(2);
+
+      const { response, body } = await checkout(
+        env.gatewayUrl,
+        created.cart.id,
+        0,
+      );
+
+      expect(response.status).toBe(200);
+      expect(body.total).toBe(productA.price * 1 + productB.price * 2);
+      expect(body.cart.items).toEqual([]);
+    });
+
+    it('Given an empty cart, when checking out, then returns 422 with an error message', async () => {
+      const { body: created } = await createCart(env.gatewayUrl);
+
+      const { response, body } = await checkout(
+        env.gatewayUrl,
+        created.cart.id,
+        500,
+      );
+
+      expect(response.status).toBe(422);
+      expect(body).toEqual({ status: 'ERROR', message: 'Cart is empty' });
+    });
+
+    it('Given a non-existent cart id, when checking out, then returns 422 with an error message', async () => {
+      const { response, body } = await checkout(
+        env.gatewayUrl,
+        'does-not-exist',
+        500,
+      );
+
+      expect(response.status).toBe(422);
+      expect(body).toEqual({ status: 'ERROR', message: 'Cart not found' });
+    });
+
+    it('Given a negative shipping value, when checking out, then returns 400 with a validation error', async () => {
+      const { body: created } = await createCart(env.gatewayUrl, {
+        products: [{ id: productA.id, quantity: 1 }],
+      });
+
+      const response = await fetch(
+        `${env.gatewayUrl}/cart/carts/${created.cart.id}/checkout`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ shipping: -10 }),
+        },
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(body.status).toBe('ERROR');
     });
   });
 
