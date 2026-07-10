@@ -8,6 +8,7 @@ export function handleUnexpectedError(error: unknown): ErrorOutput {
     return {
       status: Status.ERROR,
       message: 'Cart was modified concurrently, please retry.',
+      code: 'CONCURRENCY_CONFLICT',
     };
   }
 

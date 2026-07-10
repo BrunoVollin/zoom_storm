@@ -5,6 +5,7 @@ import { Status } from '@application/contracts/UseCase';
 import {
   validate,
   validationError,
+  httpStatus,
   CreateCartSchema,
 } from '../schemas/cart.schemas';
 
@@ -33,8 +34,6 @@ export class CartController {
       userId: c.get('userId') as string,
     });
 
-    const status = result.status === Status.SUCCESS ? 201 : 422;
-
-    return c.json(result, status);
+    return c.json(result, httpStatus(result, 201));
   }
 }

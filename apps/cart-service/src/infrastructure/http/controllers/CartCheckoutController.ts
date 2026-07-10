@@ -1,9 +1,9 @@
 import type { Context } from 'hono';
 import { CheckoutUseCase } from '@application/usecases/CheckoutUseCase';
-import { Status } from '@application/contracts/UseCase';
 import {
   validate,
   validationError,
+  httpStatus,
   CheckoutSchema,
 } from '../schemas/cart.schemas';
 
@@ -19,8 +19,7 @@ export class CartCheckoutController {
       userId: c.get('userId') as string,
       shipping: parsed.data.shipping,
     });
-    const status = result.status === Status.SUCCESS ? 200 : 422;
 
-    return c.json(result, status);
+    return c.json(result, httpStatus(result));
   }
 }

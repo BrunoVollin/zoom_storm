@@ -2,10 +2,10 @@ import type { Context } from 'hono';
 import { AddItemToCartUseCase } from '@application/usecases/AddItemToCartUseCase';
 import { RemoveItemFromCartUseCase } from '@application/usecases/RemoveItemFromCartUseCase';
 import { UpdateItemQuantityUseCase } from '@application/usecases/UpdateItemQuantityUseCase';
-import { Status } from '@application/contracts/UseCase';
 import {
   validate,
   validationError,
+  httpStatus,
   AddItemsSchema,
   UpdateQuantitySchema,
 } from '../schemas/cart.schemas';
@@ -26,9 +26,8 @@ export class CartItemController {
       userId: c.get('userId') as string,
       products: parsed.data.products,
     });
-    const status = result.status === Status.SUCCESS ? 200 : 422;
 
-    return c.json(result, status);
+    return c.json(result, httpStatus(result));
   }
 
   async remove(c: Context) {
@@ -37,9 +36,8 @@ export class CartItemController {
       userId: c.get('userId') as string,
       itemId: c.req.param('itemId')!,
     });
-    const status = result.status === Status.SUCCESS ? 200 : 422;
 
-    return c.json(result, status);
+    return c.json(result, httpStatus(result));
   }
 
   async updateQuantity(c: Context) {
@@ -52,8 +50,7 @@ export class CartItemController {
       itemId: c.req.param('itemId')!,
       quantity: parsed.data.quantity,
     });
-    const status = result.status === Status.SUCCESS ? 200 : 422;
 
-    return c.json(result, status);
+    return c.json(result, httpStatus(result));
   }
 }
