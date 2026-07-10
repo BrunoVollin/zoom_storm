@@ -1,16 +1,12 @@
 import { DomainEvent, DomainEventName } from '@src/domain/events/DomainEvent';
-import { EventPublisher } from '@src/domain/events/EventPublisher';
 import { CartRepository } from '../../domain/repositories/CartRepository';
 import { IdType } from '../../domain/shared/IdType';
-import { Status, UseCase } from '../contracts/UseCase';
+import { ErrorOutput, Status, UseCase } from '../contracts/UseCase';
 import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
 import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
 export class CheckoutUseCase implements UseCase<Input, Output> {
-  constructor(
-    private readonly cartRepository: CartRepository,
-    private readonly eventPublisher: EventPublisher,
-  ) {}
+  constructor(private readonly cartRepository: CartRepository) {}
 
   async execute(input: Input): Promise<Output> {
     try {
@@ -48,17 +44,30 @@ export class CheckoutUseCase implements UseCase<Input, Output> {
 
       const finalTotal = total + shipping;
 
-      const event = new DomainEvent(
+      const checkoutSnapshot = {
+        ...CartMapper.toPrimitives(cart),
+        shipping,
+        total: finalTotal,
+      };
+
+      const checkedOutEvent = new DomainEvent(
         DomainEventName.CART_CHECKED_OUT,
-        { ...CartMapper.toPrimitives(cart), shipping, total: finalTotal },
+        checkoutSnapshot,
         new Date(),
       );
 
-      await this.eventPublisher.publish(event);
-
       cart.clear();
 
-      await this.cartRepository.save(cart);
+      const clearedCartEvent = new DomainEvent(
+        DomainEventName.CART_UPDATED,
+        CartMapper.toPrimitives(cart),
+        new Date(),
+      );
+
+      await this.cartRepository.save(cart, [
+        checkedOutEvent,
+        clearedCartEvent,
+      ]);
 
       return {
         status: Status.SUCCESS,
@@ -87,11 +96,6 @@ interface SuccessOutput {
   discount: number;
   shipping: number;
   total: number;
-}
-
-interface ErrorOutput {
-  status: Status.ERROR;
-  message: string;
 }
 
 type Output = SuccessOutput | ErrorOutput;

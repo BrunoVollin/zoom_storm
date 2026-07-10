@@ -3,12 +3,10 @@ import { createIdFromString } from '../factories/IdFactory';
 import { createProduct } from '../factories/ProductFactory';
 import { createValidCoupon } from '../factories/CouponFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
-import { EventPublisher } from '../../src/domain/events/EventPublisher';
 import { Status } from '../../src/application/contracts/UseCase';
 
 describe('CheckoutUseCase', () => {
   let cartRepositoryMock: CartRepository;
-  let eventPublisherMock: EventPublisher;
   let useCase: CheckoutUseCase;
   let cartMock: any;
 
@@ -19,10 +17,6 @@ describe('CheckoutUseCase', () => {
     cartRepositoryMock = {
       save: jest.fn(),
       findById: jest.fn(),
-    };
-
-    eventPublisherMock = {
-      publish: jest.fn(),
     };
 
     const product = createProduct({
@@ -49,7 +43,7 @@ describe('CheckoutUseCase', () => {
       clear: jest.fn(),
     };
 
-    useCase = new CheckoutUseCase(cartRepositoryMock, eventPublisherMock);
+    useCase = new CheckoutUseCase(cartRepositoryMock);
 
     jest.clearAllMocks();
   });
@@ -74,7 +68,10 @@ describe('CheckoutUseCase', () => {
       }
       expect(cartRepositoryMock.findById).toHaveBeenCalledTimes(1);
       expect(cartMock.clear).toHaveBeenCalledTimes(1);
-      expect(cartRepositoryMock.save).toHaveBeenCalledWith(cartMock);
+      expect(cartRepositoryMock.save).toHaveBeenCalledWith(cartMock, [
+        expect.objectContaining({ name: 'cart.checked_out' }),
+        expect.objectContaining({ name: 'cart.updated' }),
+      ]);
     });
 
     it('should checkout with zero discount', async () => {

@@ -8,7 +8,9 @@ export const env = {
     brokers: (process.env.CART_PROJECTION_KAFKA_BROKERS ?? '').split(','),
     groupId:
       process.env.CART_PROJECTION_KAFKA_GROUP_ID || 'cart-projection-worker',
-    topics: (process.env.CART_PROJECTION_KAFKA_TOPICS ?? '').split(','),
+    topics: (
+      process.env.CART_PROJECTION_KAFKA_TOPICS || 'cart-events,checkout-events'
+    ).split(','),
   },
   mongo: {
     uri: process.env.CART_PROJECTION_MONGO_URI || '',

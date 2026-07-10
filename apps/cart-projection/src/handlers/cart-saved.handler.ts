@@ -1,8 +1,12 @@
 import { EachMessagePayload } from 'kafkajs';
 import { CartRepository } from '../repository/cart.repository';
+import { OrderRepository } from '../repository/order.repository';
 
 export class CartSavedHandler {
-  constructor(private cartRepository: CartRepository) {}
+  constructor(
+    private cartRepository: CartRepository,
+    private orderRepository: OrderRepository,
+  ) {}
 
   public handle = async ({
     topic,
@@ -23,12 +27,33 @@ export class CartSavedHandler {
 
     try {
       const data = JSON.parse(rawMessage);
-      console.log(data.payload);
-      await this.cartRepository.save(data.payload);
+      const { name, occurredAt, payload } = data;
+
+      if (!payload?.id) {
+        console.warn('[CartSavedHandler] Event payload has no id, skipping.');
+
+        return;
+      }
+
+      if (name === 'cart.checked_out') {
+        const { id, ...orderData } = payload;
+        await this.orderRepository.save({
+          ...orderData,
+          cartId: id,
+          occurredAt,
+        });
+
+        console.log(`[CartSavedHandler] Order recorded for cart ${id}.`);
+
+        return;
+      }
+
+      await this.cartRepository.save(payload);
 
       console.log(`[CartSavedHandler] Cart processed successfully.`);
     } catch (error) {
       console.error('[CartSavedHandler] Error processing message:', error);
+      throw error;
     }
   };
 }
