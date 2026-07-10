@@ -3,13 +3,11 @@ import { createIdFromString } from '../factories/IdFactory';
 import { createProduct } from '../factories/ProductFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
 import { ProductRepository } from '../../src/domain/repositories/ProductRepository';
-import { EventPublisher } from '../../src/domain/events/EventPublisher';
 import { Status } from '../../src/application/contracts/UseCase';
 
 describe('UpdateItemQuantityUseCase', () => {
   let cartRepositoryMock: CartRepository;
   let productRepositoryMock: ProductRepository;
-  let eventPublisherMock: EventPublisher;
   let useCase: UpdateItemQuantityUseCase;
   let cartMock: any;
 
@@ -24,13 +22,8 @@ describe('UpdateItemQuantityUseCase', () => {
     };
 
     productRepositoryMock = {
-      save: jest.fn(),
       findById: jest.fn(),
       findByIds: jest.fn(),
-    };
-
-    eventPublisherMock = {
-      publish: jest.fn(),
     };
 
     const mockItem = {
@@ -56,7 +49,6 @@ describe('UpdateItemQuantityUseCase', () => {
     useCase = new UpdateItemQuantityUseCase(
       cartRepositoryMock,
       productRepositoryMock,
-      eventPublisherMock,
     );
 
     jest.clearAllMocks();

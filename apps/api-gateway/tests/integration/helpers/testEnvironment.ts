@@ -23,8 +23,6 @@ import {
 } from './inMemoryCartRepositories';
 import { InMemoryCouponRepository } from './inMemoryCouponRepository';
 
-const noopPublisher = { publish: async () => undefined };
-
 interface RunningServer {
   port: number;
   close: () => Promise<void>;
@@ -91,7 +89,7 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
 
   const productsApp = buildProductsRouter({
     listProducts: new ListProductsQuery(productQueryRepository),
-    getProductById: new GetProductByIdQuery(productRepository),
+    getProductById: new GetProductByIdQuery(productQueryRepository),
     createProduct: new CreateProductUseCase(productRepository),
     updateProduct: new UpdateProductUseCase(productRepository),
     deleteProduct: new DeleteProductUseCase(productRepository),
@@ -110,33 +108,23 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
       cartRepository,
       couponRepository,
       cartProductRepository,
-      noopPublisher,
     ),
     addItemToCart: new AddItemToCartUseCase(
       cartProductRepository,
       cartRepository,
-      noopPublisher,
     ),
-    removeItemFromCart: new RemoveItemFromCartUseCase(
-      cartRepository,
-      noopPublisher,
-    ),
+    removeItemFromCart: new RemoveItemFromCartUseCase(cartRepository),
     updateItemQuantity: new UpdateItemQuantityUseCase(
       cartRepository,
       cartProductRepository,
-      noopPublisher,
     ),
-    applyCoupon: new ApplyCouponUseCase(
-      cartRepository,
-      couponRepository,
-      noopPublisher,
-    ),
-    removeCoupon: new RemoveCouponUseCase(cartRepository, noopPublisher),
+    applyCoupon: new ApplyCouponUseCase(cartRepository, couponRepository),
+    removeCoupon: new RemoveCouponUseCase(cartRepository),
     calculateShipping: new CalculateShippingUseCase(
       cartRepository,
       new FreightRoadCalculator(),
     ),
-    checkout: new CheckoutUseCase(cartRepository, noopPublisher),
+    checkout: new CheckoutUseCase(cartRepository),
   });
 
   const cartServer = await startServer(cartApp);

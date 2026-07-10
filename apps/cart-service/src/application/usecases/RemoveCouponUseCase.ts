@@ -1,16 +1,12 @@
 import { DomainEvent, DomainEventName } from '@src/domain/events/DomainEvent';
-import { EventPublisher } from '@src/domain/events/EventPublisher';
 import { CartRepository } from '../../domain/repositories/CartRepository';
 import { IdType } from '../../domain/shared/IdType';
-import { Status, UseCase } from '../contracts/UseCase';
+import { ErrorOutput, Status, UseCase } from '../contracts/UseCase';
 import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
 import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
 export class RemoveCouponUseCase implements UseCase<Input, Output> {
-  constructor(
-    private readonly cartRepository: CartRepository,
-    private readonly eventPublisher: EventPublisher,
-  ) {}
+  constructor(private readonly cartRepository: CartRepository) {}
 
   async execute(input: Input): Promise<Output> {
     try {
@@ -45,7 +41,6 @@ export class RemoveCouponUseCase implements UseCase<Input, Output> {
       }
 
       cart.removeCoupon(IdType.create(input.couponId));
-      await this.cartRepository.save(cart);
 
       const cartPrimitives = CartMapper.toPrimitives(cart);
 
@@ -55,7 +50,7 @@ export class RemoveCouponUseCase implements UseCase<Input, Output> {
         new Date(),
       );
 
-      await this.eventPublisher.publish(event);
+      await this.cartRepository.save(cart, event);
 
       return {
         status: Status.SUCCESS,
@@ -76,11 +71,6 @@ interface Input {
 interface SuccessOutput {
   status: Status.SUCCESS;
   cart: CartPrimitives;
-}
-
-interface ErrorOutput {
-  status: Status.ERROR;
-  message: string;
 }
 
 type Output = SuccessOutput | ErrorOutput;
