@@ -38,6 +38,12 @@ export class Cart {
   }
 
   addCoupon(coupon: Coupon) {
+    const alreadyApplied = this.coupons.some((currentCoupon) =>
+      currentCoupon.id.equals(coupon.id),
+    );
+
+    if (alreadyApplied) return;
+
     this.coupons.push(coupon);
   }
 
