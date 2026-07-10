@@ -26,7 +26,7 @@ function toDomain(doc: ProductDocument): Product {
     doc.category,
     doc.stock,
     new Transport(doc.transportHeight, doc.transportWidth, doc.transportLength),
-    doc.weight,
+    doc.weight ?? 0,
   );
 }
 
@@ -50,6 +50,4 @@ export class MongoProductRepository implements ProductRepository {
 
     return docs.map((doc) => toDomain(doc as unknown as ProductDocument));
   }
-
-  async save(_product: Product): Promise<void> {}
 }
