@@ -28,11 +28,9 @@ export class ProductRepository {
   async save(data: ProductDocument): Promise<void> {
     const normalized = { ...data, weight: data.weight ?? 0 };
 
-    await this.collection.replaceOne(
-      { id: normalized.id },
-      normalized,
-      { upsert: true },
-    );
+    await this.collection.replaceOne({ id: normalized.id }, normalized, {
+      upsert: true,
+    });
   }
 
   async delete(id: string): Promise<void> {

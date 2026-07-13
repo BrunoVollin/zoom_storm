@@ -11,10 +11,7 @@ export class OrderRepository {
   }
 
   async save(
-    orderData: { cartId: string; occurredAt: string } & Record<
-      string,
-      unknown
-    >,
+    orderData: { cartId: string; occurredAt: string } & Record<string, unknown>,
   ): Promise<void> {
     await this.collection.replaceOne(
       { cartId: orderData.cartId, occurredAt: orderData.occurredAt },
