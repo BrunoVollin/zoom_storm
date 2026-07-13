@@ -39,7 +39,9 @@ Cypress.Commands.add("stubApi", () => {
   cy.intercept("GET", "/api/cart/carts/*", { fixture: "cart.json" }).as("getCart");
   cy.intercept("POST", "/api/cart/carts", { fixture: "cart.json" }).as("createCart");
   cy.intercept("POST", "/api/cart/carts/*/items", { fixture: "cart.json" }).as("addItem");
-  cy.intercept("GET", "/api/cart/carts/*/shipping*", { fixture: "shipping.json" }).as("getShipping");
+  cy.intercept("GET", "/api/cart/carts/*/shipping*", { fixture: "shipping.json" }).as(
+    "getShipping",
+  );
   cy.intercept("POST", "/api/cart/carts/*/checkout", { fixture: "cart-empty.json" }).as("checkout");
 });
 

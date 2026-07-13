@@ -124,7 +124,11 @@ export class PrismaCartRepository implements CartRepository {
         it.productDescription,
         it.productCategory,
         it.productStock,
-        new Transport(it.transportHeight, it.transportWidth, it.transportLength),
+        new Transport(
+          it.transportHeight,
+          it.transportWidth,
+          it.transportLength,
+        ),
         it.productWeight,
       );
       cart.addItem(

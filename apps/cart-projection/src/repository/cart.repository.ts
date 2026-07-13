@@ -10,7 +10,9 @@ export class CartRepository {
     this.collection = this.mongoClient.getCollection('cart');
   }
 
-  async save(cartData: { id: string } & Record<string, unknown>): Promise<void> {
+  async save(
+    cartData: { id: string } & Record<string, unknown>,
+  ): Promise<void> {
     await this.collection.replaceOne({ id: cartData.id }, cartData, {
       upsert: true,
     });

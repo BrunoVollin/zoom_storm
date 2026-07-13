@@ -64,10 +64,7 @@ export class CheckoutUseCase implements UseCase<Input, Output> {
         new Date(),
       );
 
-      await this.cartRepository.save(cart, [
-        checkedOutEvent,
-        clearedCartEvent,
-      ]);
+      await this.cartRepository.save(cart, [checkedOutEvent, clearedCartEvent]);
 
       return {
         status: Status.SUCCESS,

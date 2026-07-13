@@ -82,7 +82,9 @@ describe('PrismaCartRepository', () => {
       expect(cartCouponUpsert).toHaveBeenCalledTimes(1);
       expect(cartCouponUpsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { cartId_couponId: { cartId: 'cart-1', couponId: 'coupon-1' } },
+          where: {
+            cartId_couponId: { cartId: 'cart-1', couponId: 'coupon-1' },
+          },
         }),
       );
     });
