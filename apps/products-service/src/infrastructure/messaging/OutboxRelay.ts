@@ -31,7 +31,10 @@ export class OutboxRelay {
 
     try {
       const pendingEvents = await prisma.outboxEvent.findMany({
-        where: { publishedAt: null },
+        where: {
+          publishedAt: null,
+          eventType: { in: Object.values(DomainEventName) },
+        },
         orderBy: { createdAt: 'asc' },
         take: BATCH_SIZE,
       });
