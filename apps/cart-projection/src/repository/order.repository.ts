@@ -1,13 +1,14 @@
+import { Collection, Document } from 'mongodb';
 import { MongoDbClient } from 'apps/cart-projection/src/config/mongodb';
 
 export class OrderRepository {
-  private collection: any;
+  private collection!: Collection<Document>;
 
   constructor(private mongoClient: MongoDbClient) {}
 
   async init() {
     await this.mongoClient.connect();
-    this.collection = this.mongoClient.getCollection('orders');
+    this.collection = this.mongoClient.getCollection<Document>('orders');
   }
 
   async save(

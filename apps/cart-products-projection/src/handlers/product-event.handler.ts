@@ -17,6 +17,7 @@ export class ProductEventHandler {
 
     if (!rawMessage) {
       console.warn('[Kafka] Empty message payload, skipping.');
+
       return;
     }
 
@@ -28,6 +29,7 @@ export class ProductEventHandler {
         console.warn(
           '[ProductEventHandler] Event payload has no id, skipping.',
         );
+
         return;
       }
 

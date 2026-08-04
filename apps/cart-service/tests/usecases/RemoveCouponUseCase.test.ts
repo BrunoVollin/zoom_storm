@@ -7,7 +7,7 @@ import { Status } from '../../src/application/contracts/UseCase';
 describe('RemoveCouponUseCase', () => {
   let cartRepositoryMock: CartRepository;
   let useCase: RemoveCouponUseCase;
-  let cartMock: any;
+  let cartMock: Record<string, unknown>;
 
   const cartId = 'cart-1';
   const couponId = 'coupon-1';

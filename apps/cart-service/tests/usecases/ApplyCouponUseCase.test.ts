@@ -11,7 +11,7 @@ describe('ApplyCouponUseCase', () => {
   let cartRepositoryMock: CartRepository;
   let couponRepositoryMock: CouponRepository;
   let useCase: ApplyCouponUseCase;
-  let cartMock: any;
+  let cartMock: Record<string, unknown>;
 
   const cartId = 'cart-1';
   const couponId = 'coupon-1';

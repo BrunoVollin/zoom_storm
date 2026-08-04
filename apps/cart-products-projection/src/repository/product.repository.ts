@@ -1,3 +1,4 @@
+import { Collection } from 'mongodb';
 import { MongoDbClient } from '../config/mongodb';
 
 interface ProductDocument {
@@ -14,15 +15,14 @@ interface ProductDocument {
 }
 
 export class ProductRepository {
-  private collection: any;
+  private collection!: Collection<ProductDocument>;
 
   constructor(private readonly mongoClient: MongoDbClient) {}
 
   async init(): Promise<void> {
     await this.mongoClient.connect();
-    this.collection = this.mongoClient.getCollection<
-      ProductDocument & Document
-    >('products');
+    this.collection =
+      this.mongoClient.getCollection<ProductDocument>('products');
   }
 
   async save(data: ProductDocument): Promise<void> {

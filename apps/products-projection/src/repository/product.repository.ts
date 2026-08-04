@@ -1,13 +1,14 @@
+import { Collection, Document } from 'mongodb';
 import { MongoDbClient } from '../config/mongodb';
 
 export class ProductRepository {
-  private collection: any;
+  private collection!: Collection<Document>;
 
   constructor(private mongoClient: MongoDbClient) {}
 
   async init() {
     await this.mongoClient.connect();
-    this.collection = this.mongoClient.getCollection('products');
+    this.collection = this.mongoClient.getCollection<Document>('products');
   }
 
   async save(

@@ -1,7 +1,7 @@
 import { ProductQueryRepository } from '../../domain/repositories/ProductQueryRepository';
 import { Query, Status } from '../contracts/Query';
 
-interface Input {}
+type Input = Record<string, never>;
 
 interface SuccessOutput {
   status: Status.SUCCESS;

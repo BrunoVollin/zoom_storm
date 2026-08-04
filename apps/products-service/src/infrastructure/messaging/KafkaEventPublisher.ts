@@ -31,6 +31,7 @@ export class KafkaEventPublisher implements EventPublisher {
       [DomainEventName.PRODUCT_UPDATED]: 'product-events',
       [DomainEventName.PRODUCT_DELETED]: 'product-events',
     };
+
     return map[eventName];
   }
 }

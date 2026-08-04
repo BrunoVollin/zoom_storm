@@ -9,7 +9,7 @@ describe('UpdateItemQuantityUseCase', () => {
   let cartRepositoryMock: CartRepository;
   let productRepositoryMock: ProductRepository;
   let useCase: UpdateItemQuantityUseCase;
-  let cartMock: any;
+  let cartMock: Record<string, unknown>;
 
   const cartId = 'cart-1';
   const itemId = 'item-1';

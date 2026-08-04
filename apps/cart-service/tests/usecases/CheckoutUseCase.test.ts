@@ -1,14 +1,13 @@
 import { CheckoutUseCase } from '../../src/application/usecases/CheckoutUseCase';
 import { createIdFromString } from '../factories/IdFactory';
 import { createProduct } from '../factories/ProductFactory';
-import { createValidCoupon } from '../factories/CouponFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
 import { Status } from '../../src/application/contracts/UseCase';
 
 describe('CheckoutUseCase', () => {
   let cartRepositoryMock: CartRepository;
   let useCase: CheckoutUseCase;
-  let cartMock: any;
+  let cartMock: Record<string, unknown>;
 
   const cartId = 'cart-1';
   const shipping = 5000;

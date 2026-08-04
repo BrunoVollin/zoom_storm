@@ -13,6 +13,7 @@ function getJwks() {
 export const requireAuth: MiddlewareHandler = async (c, next) => {
   if (env.auth.skip) {
     c.set('userId', 'local-dev-user');
+
     return next();
   }
 

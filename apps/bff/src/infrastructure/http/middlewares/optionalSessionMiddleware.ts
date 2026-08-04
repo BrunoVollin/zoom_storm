@@ -27,6 +27,7 @@ export function optionalSessionMiddleware(
     const session = await sessionRepository.findById(sessionId);
     if (!session) {
       deleteCookie(c, env.session.cookieName, sessionCookieOptions());
+
       return next();
     }
 
@@ -34,6 +35,7 @@ export function optionalSessionMiddleware(
 
     if (refreshResult.outcome === 'expired') {
       deleteCookie(c, env.session.cookieName, sessionCookieOptions());
+
       return next();
     }
 

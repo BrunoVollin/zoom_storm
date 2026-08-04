@@ -12,6 +12,13 @@ const eslintConfig = [
       "@typescript-eslint/no-explicit-any": "error",
     },
   },
+  {
+    files: ["cypress/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-namespace": "off",
+      "@typescript-eslint/triple-slash-reference": "off",
+    },
+  },
 ];
 
 export default eslintConfig;

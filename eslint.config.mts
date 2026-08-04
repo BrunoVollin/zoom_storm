@@ -6,7 +6,7 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default defineConfig([
   {
-    ignores: ['**/sandbox/**', '**/sandbox.*', '**/*sandbox*'],
+    ignores: ['**/sandbox/**', '**/sandbox.*', '**/*sandbox*', 'apps/web/**'],
   },
 
   js.configs.recommended,
@@ -23,6 +23,14 @@ export default defineConfig([
       curly: ['error', 'all'],
       'no-var': 'error',
       'prefer-const': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+        },
+      ],
       'padding-line-between-statements': [
         'error',
         { blankLine: 'always', prev: '*', next: 'function' },
@@ -32,5 +40,17 @@ export default defineConfig([
       ],
     },
   },
+
+  {
+    files: ['jest.config.js'],
+    languageOptions: {
+      globals: globals.node,
+      sourceType: 'commonjs',
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+
   eslintConfigPrettier,
 ]);

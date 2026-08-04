@@ -9,16 +9,16 @@ export class MongoProductQueryRepository implements ProductQueryRepository {
     const collection = mongoClient.getCollection('products');
     const docs = await collection.find({}).toArray();
 
-    return docs.map(({ _id, ...productData }: any) => productData);
+    return docs.map(({ _id, ...productData }) => productData);
   }
 
   async findById(id: string): Promise<ProductDTO | null> {
     const collection = mongoClient.getCollection('products');
-    const doc = await collection.findOne({ id } as any);
+    const doc = await collection.findOne({ id });
 
     if (!doc) return null;
 
-    const { _id, ...productData } = doc as any;
+    const { _id, ...productData } = doc;
 
     return productData;
   }

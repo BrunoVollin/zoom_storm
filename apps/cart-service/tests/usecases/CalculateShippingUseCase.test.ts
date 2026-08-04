@@ -8,7 +8,7 @@ import { FreightRoadCalculator } from '../../src/domain/entities/freight/Freight
 describe('CalculateShippingUseCase', () => {
   let cartRepositoryMock: CartRepository;
   let useCase: CalculateShippingUseCase;
-  let cartMock: any;
+  let cartMock: Record<string, unknown>;
   let freightCalculator: FreightRoadCalculator;
 
   const cartId = 'cart-1';
