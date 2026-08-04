@@ -85,10 +85,84 @@ services:
     networks:
       - zoom-network
 
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.116.1
+    container_name: zoom-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    depends_on:
+      - tempo
+      - loki
+      - prometheus
+    networks:
+      - zoom-network
+
+  tempo:
+    image: grafana/tempo:2.6.1
+    container_name: zoom-tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "3200:3200"
+    networks:
+      - zoom-network
+
+  loki:
+    image: grafana/loki:3.3.2
+    container_name: zoom-loki
+    command: ["-config.file=/etc/loki/loki-config.yaml"]
+    volumes:
+      - ./observability/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "3060:3100"
+    networks:
+      - zoom-network
+
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    container_name: zoom-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-remote-write-receiver"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - zoom-network
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: zoom-grafana
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3080:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    networks:
+      - zoom-network
+
 volumes:
   mongo_data:
   postgres_data:
   redis_data:
+  tempo_data:
+  loki_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
   zoom-network:

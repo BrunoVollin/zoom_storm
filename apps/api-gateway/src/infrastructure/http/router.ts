@@ -8,6 +8,11 @@ export function buildRouter(): Hono {
 
   app.use('*', cors());
 
+  app.use('*', async (c, next) => {
+    console.log('[DEBUG-OTEL] gateway received traceparent:', c.req.header('traceparent'));
+    await next();
+  });
+
   app.get('/health', (c) => c.json({ status: 'ok' }, 200));
 
   app.all('/cart/*', (c) => {
