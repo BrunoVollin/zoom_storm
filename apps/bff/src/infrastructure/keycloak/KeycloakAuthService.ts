@@ -1,4 +1,5 @@
 import * as client from 'openid-client';
+import { decodeJwt } from 'jose';
 import { env } from '../../config/env';
 import { SessionTokens, SessionUser } from '@bff-domain/entities/Session';
 
@@ -135,8 +136,21 @@ export class KeycloakAuthService {
       subject: String(claims.sub),
       name: typeof claims.name === 'string' ? claims.name : undefined,
       email: typeof claims.email === 'string' ? claims.email : undefined,
+      roles: this.extractRoles(tokens.accessToken),
     };
 
     return { tokens, user };
+  }
+
+  private extractRoles(accessToken: string): string[] {
+    try {
+      const payload = decodeJwt(accessToken) as {
+        realm_access?: { roles?: string[] };
+      };
+
+      return payload.realm_access?.roles ?? [];
+    } catch {
+      return [];
+    }
   }
 }

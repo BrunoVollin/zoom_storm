@@ -10,6 +10,7 @@ export interface SessionUser {
   subject: string;
   name?: string;
   email?: string;
+  roles: string[];
 }
 
 export interface Session {

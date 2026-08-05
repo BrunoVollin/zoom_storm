@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { Redis } from 'ioredis';
+import { createNodeWebSocket } from '@hono/node-ws';
 import { env } from '../../config/env';
 import { KeycloakAuthService } from '@bff-infrastructure/keycloak/KeycloakAuthService';
 import { RedisSessionRepository } from '@bff-infrastructure/session/RedisSessionRepository';
@@ -14,9 +15,13 @@ import { sessionAuthMiddleware } from './middlewares/sessionAuthMiddleware';
 import { optionalSessionMiddleware } from './middlewares/optionalSessionMiddleware';
 import { AuthController } from './controllers/AuthController';
 import { ProxyController } from './controllers/ProxyController';
+import { NotificationsSocketGateway } from './ws/NotificationsSocketGateway';
+import { notificationsWebSocketHandler } from './ws/notificationsWebSocketRoute';
+import { subscribeToNotifications } from '../redis/NotificationsSubscriber';
 
-export function buildRouter(redis: Redis): Hono {
+export function buildRouter(redis: Redis, notificationsRedis: Redis) {
   const app = new Hono();
+  const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
   const keycloakAuthService = new KeycloakAuthService();
   const sessionRepository = new RedisSessionRepository(redis);
@@ -50,6 +55,9 @@ export function buildRouter(redis: Redis): Hono {
     refreshTokenUseCase,
   );
 
+  const notificationsGateway = new NotificationsSocketGateway();
+  subscribeToNotifications(notificationsRedis, notificationsGateway);
+
   app.use(
     '*',
     cors({
@@ -73,5 +81,20 @@ export function buildRouter(redis: Redis): Hono {
     proxyController.forward(c, c.req.path),
   );
 
-  return app;
+  app.all('/flash-offers/*', optionalSession, (c) =>
+    proxyController.forward(c, c.req.path),
+  );
+
+  app.all('/notifications/*', optionalSession, (c) =>
+    proxyController.forward(c, c.req.path),
+  );
+
+  app.get(
+    '/ws',
+    upgradeWebSocket(
+      notificationsWebSocketHandler(sessionRepository, refreshTokenUseCase, notificationsGateway),
+    ),
+  );
+
+  return { app, injectWebSocket };
 }
