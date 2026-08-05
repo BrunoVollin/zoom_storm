@@ -1,4 +1,4 @@
-import { Order } from '../../../../domain/entities/order/Order';
+import { Order, STATUS_PROGRESSION } from '../../../../domain/entities/order/Order';
 import { OrderItem } from '../../../../domain/entities/order/OrderItem';
 import { OrderStatus } from '../../../../domain/entities/order/OrderStatus';
 import { IdType } from '../../../../domain/shared/IdType';
@@ -80,6 +80,22 @@ export class PrismaOrderRepository implements OrderRepository {
     return dbOrders.map((dbOrder) => this.toDomain(dbOrder));
   }
 
+  async findInProgress(): Promise<Array<Order>> {
+    const lastStatus = STATUS_PROGRESSION[STATUS_PROGRESSION.length - 1];
+    const firstStatus = STATUS_PROGRESSION[0];
+
+    const dbOrders = await prisma.order.findMany({
+      where: {
+        status: {
+          notIn: [firstStatus, lastStatus],
+        },
+      },
+      include: { items: true },
+    });
+
+    return dbOrders.map((dbOrder) => this.toDomain(dbOrder));
+  }
+
   private toDomain(dbOrder: OrderWithItems): Order {
     const items = dbOrder.items.map(
       (item) =>
@@ -105,6 +121,7 @@ export class PrismaOrderRepository implements OrderRepository {
       dbOrder.createdAt,
       dbOrder.originCity,
       dbOrder.destinationCity,
+      dbOrder.updatedAt,
     );
   }
 }

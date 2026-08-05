@@ -20,6 +20,12 @@ import { AddToWishlistUseCase } from '@application/usecases/AddToWishlistUseCase
 import { RemoveFromWishlistUseCase } from '@application/usecases/RemoveFromWishlistUseCase';
 import { GetLoyaltyBalanceQuery } from '@application/Queries/GetLoyaltyBalanceQuery';
 import { RedeemLoyaltyPointsUseCase } from '@application/usecases/RedeemLoyaltyPointsUseCase';
+import { GetUserProfileQuery } from '@application/Queries/GetUserProfileQuery';
+import { UpdateUserProfileUseCase } from '@application/usecases/UpdateUserProfileUseCase';
+import { ListSavedCardsQuery } from '@application/Queries/ListSavedCardsQuery';
+import { AddSavedCardUseCase } from '@application/usecases/AddSavedCardUseCase';
+import { DeleteSavedCardUseCase } from '@application/usecases/DeleteSavedCardUseCase';
+import { LookupCepQuery } from '@application/Queries/LookupCepQuery';
 import { CartController } from './controllers/CartController';
 import { CartItemController } from './controllers/CartItemController';
 import { CartCouponController } from './controllers/CartCouponController';
@@ -28,6 +34,9 @@ import { CartCheckoutController } from './controllers/CartCheckoutController';
 import { OrderController } from './controllers/OrderController';
 import { WishlistController } from './controllers/WishlistController';
 import { LoyaltyController } from './controllers/LoyaltyController';
+import { UserProfileController } from './controllers/UserProfileController';
+import { SavedCardController } from './controllers/SavedCardController';
+import { CepLookupController } from './controllers/CepLookupController';
 import { requireAuth } from './middlewares/requireAuthMiddleware';
 import { requireAdmin } from './middlewares/requireAdminMiddleware';
 
@@ -50,6 +59,12 @@ interface Dependencies {
   removeFromWishlist: RemoveFromWishlistUseCase;
   getLoyaltyBalance: GetLoyaltyBalanceQuery;
   redeemLoyaltyPoints: RedeemLoyaltyPointsUseCase;
+  getUserProfile: GetUserProfileQuery;
+  updateUserProfile: UpdateUserProfileUseCase;
+  listSavedCards: ListSavedCardsQuery;
+  addSavedCard: AddSavedCardUseCase;
+  deleteSavedCard: DeleteSavedCardUseCase;
+  lookupCep: LookupCepQuery;
 }
 
 const openapiSpec = readFileSync(
@@ -91,6 +106,16 @@ export function buildRouter(deps: Dependencies): Hono {
     deps.getLoyaltyBalance,
     deps.redeemLoyaltyPoints,
   );
+  const userProfile = new UserProfileController(
+    deps.getUserProfile,
+    deps.updateUserProfile,
+  );
+  const savedCard = new SavedCardController(
+    deps.listSavedCards,
+    deps.addSavedCard,
+    deps.deleteSavedCard,
+  );
+  const cepLookup = new CepLookupController(deps.lookupCep);
 
   app.get('/openapi.yml', (c) =>
     c.text(openapiSpec, 200, { 'Content-Type': 'application/yaml' }),
@@ -135,6 +160,21 @@ export function buildRouter(deps: Dependencies): Hono {
 
   app.get('/loyalty/balance', (c) => loyalty.balance(c));
   app.post('/carts/:cartId/loyalty/redeem', (c) => loyalty.redeem(c));
+
+  app.use('/profile', requireAuth);
+  app.use('/profile/*', requireAuth);
+
+  app.get('/profile', (c) => userProfile.get(c));
+  app.put('/profile', (c) => userProfile.update(c));
+
+  app.get('/profile/cards', (c) => savedCard.list(c));
+  app.post('/profile/cards', (c) => savedCard.add(c));
+  app.delete('/profile/cards/:cardId', (c) => savedCard.remove(c));
+
+  app.use('/cep', requireAuth);
+  app.use('/cep/*', requireAuth);
+
+  app.get('/cep/:cep', (c) => cepLookup.lookup(c));
 
   return app;
 }

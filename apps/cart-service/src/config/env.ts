@@ -28,5 +28,11 @@ export const env = {
   },
   order: {
     originCity: process.env.ORDER_ORIGIN_CITY || 'São Paulo',
+    // How long a paid order sits in each simulated transit step
+    // (PAID -> IN_TRANSIT -> OUT_FOR_DELIVERY -> DELIVERED) before the
+    // OrderDeliverySimulatorWorker advances it automatically.
+    transitStepMinutes: Number(process.env.ORDER_TRANSIT_STEP_MINUTES) || 2,
+    simulatorPollIntervalMs:
+      Number(process.env.ORDER_SIMULATOR_POLL_INTERVAL_MS) || 30_000,
   },
 };

@@ -2,7 +2,7 @@ import { IdType } from '../../shared/IdType';
 import { OrderItem } from './OrderItem';
 import { OrderStatus } from './OrderStatus';
 
-const STATUS_PROGRESSION: OrderStatus[] = [
+export const STATUS_PROGRESSION: OrderStatus[] = [
   OrderStatus.CREATED,
   OrderStatus.PAID,
   OrderStatus.IN_TRANSIT,
@@ -24,6 +24,7 @@ export class Order {
     readonly createdAt: Date = new Date(),
     private originCity: string | null = null,
     readonly destinationCity: string | null = null,
+    readonly updatedAt: Date = createdAt,
   ) {}
 
   getStatus(): OrderStatus {
@@ -36,6 +37,15 @@ export class Order {
 
   belongsTo(userId: IdType): boolean {
     return this.userId.equals(userId);
+  }
+
+  /** Next step in the fixed status progression, or null once DELIVERED. */
+  getNextStatus(): OrderStatus | null {
+    const nextIndex = STATUS_PROGRESSION.indexOf(this.status) + 1;
+
+    return nextIndex < STATUS_PROGRESSION.length
+      ? STATUS_PROGRESSION[nextIndex]
+      : null;
   }
 
   advanceTo(status: OrderStatus, originCity?: string) {

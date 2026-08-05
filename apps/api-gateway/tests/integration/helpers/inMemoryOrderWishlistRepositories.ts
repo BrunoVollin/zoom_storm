@@ -1,6 +1,9 @@
 import { Order } from '@domain/entities/order/Order';
+import { OrderStatus } from '@domain/entities/order/OrderStatus';
 import { WishlistItem } from '@domain/entities/wishlist/WishlistItem';
 import { LoyaltyAccount } from '@domain/entities/loyalty/LoyaltyAccount';
+import { UserProfile } from '@domain/entities/profile/UserProfile';
+import { SavedCard } from '@domain/entities/payment/SavedCard';
 import { IdType } from '@domain/shared/IdType';
 import { OrderRepository } from '@domain/repositories/OrderRepository';
 import { WishlistRepository } from '@domain/repositories/WishlistRepository';
@@ -8,6 +11,8 @@ import {
   LoyaltyRepository,
   LoyaltyTransactionType,
 } from '@domain/repositories/LoyaltyRepository';
+import { UserProfileRepository } from '@domain/repositories/UserProfileRepository';
+import { SavedCardRepository } from '@domain/repositories/SavedCardRepository';
 import { CepAddress, CepLookupService } from '@domain/repositories/CepLookupService';
 
 /** In-memory replacement for PrismaOrderRepository. */
@@ -25,6 +30,14 @@ export class InMemoryOrderRepository implements OrderRepository {
   async findByUserId(userId: IdType): Promise<Order[]> {
     return [...this.orders.values()].filter((order) =>
       order.belongsTo(userId),
+    );
+  }
+
+  async findInProgress(): Promise<Order[]> {
+    return [...this.orders.values()].filter(
+      (order) =>
+        order.getStatus() !== OrderStatus.CREATED &&
+        order.getStatus() !== OrderStatus.DELIVERED,
     );
   }
 }
@@ -69,6 +82,40 @@ export class InMemoryLoyaltyRepository implements LoyaltyRepository {
     _transaction: { type: LoyaltyTransactionType; points: number; orderId?: string },
   ): Promise<void> {
     this.accounts.set(account.userId.toString(), account);
+  }
+}
+
+/** In-memory replacement for PrismaUserProfileRepository. */
+export class InMemoryUserProfileRepository implements UserProfileRepository {
+  private readonly profiles = new Map<string, UserProfile>();
+
+  async findByUserId(userId: IdType): Promise<UserProfile | null> {
+    return this.profiles.get(userId.toString()) ?? null;
+  }
+
+  async save(profile: UserProfile): Promise<void> {
+    this.profiles.set(profile.userId.toString(), profile);
+  }
+}
+
+/** In-memory replacement for PrismaSavedCardRepository. */
+export class InMemorySavedCardRepository implements SavedCardRepository {
+  private readonly cards = new Map<string, SavedCard>();
+
+  async save(card: SavedCard): Promise<void> {
+    this.cards.set(card.id.toString(), card);
+  }
+
+  async findByUserId(userId: IdType): Promise<SavedCard[]> {
+    return [...this.cards.values()].filter((card) => card.belongsTo(userId));
+  }
+
+  async findById(id: IdType): Promise<SavedCard | null> {
+    return this.cards.get(id.toString()) ?? null;
+  }
+
+  async delete(id: IdType): Promise<void> {
+    this.cards.delete(id.toString());
   }
 }
 

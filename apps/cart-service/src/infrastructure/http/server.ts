@@ -6,10 +6,13 @@ import { PrismaCouponRepository } from '../database/prisma/repositories/PrismaCo
 import { PrismaOrderRepository } from '../database/prisma/repositories/PrismaOrderRepository';
 import { PrismaWishlistRepository } from '../database/prisma/repositories/PrismaWishlistRepository';
 import { PrismaLoyaltyRepository } from '../database/prisma/repositories/PrismaLoyaltyRepository';
+import { PrismaUserProfileRepository } from '../database/prisma/repositories/PrismaUserProfileRepository';
+import { PrismaSavedCardRepository } from '../database/prisma/repositories/PrismaSavedCardRepository';
 import { MongoProductRepository } from '../database/mongodb/repositories/MongoProductRepository';
 import { KafkaProducerClient } from '../messaging/KafkaProducerClient';
 import { KafkaEventPublisher } from '../messaging/KafkaEventPublisher';
 import { OutboxRelay } from '../messaging/OutboxRelay';
+import { OrderDeliverySimulatorWorker } from '../messaging/OrderDeliverySimulatorWorker';
 import { FreightRoadCalculator } from '../../domain/entities/freight/FreightCalculator';
 import { ViaCepAdapter } from '../http/adapters/ViaCepAdapter';
 import { CreateCartUseCase } from '../../application/usecases/CreateCartUseCase';
@@ -26,6 +29,12 @@ import { AddToWishlistUseCase } from '../../application/usecases/AddToWishlistUs
 import { RemoveFromWishlistUseCase } from '../../application/usecases/RemoveFromWishlistUseCase';
 import { GetLoyaltyBalanceQuery } from '../../application/Queries/GetLoyaltyBalanceQuery';
 import { RedeemLoyaltyPointsUseCase } from '../../application/usecases/RedeemLoyaltyPointsUseCase';
+import { GetUserProfileQuery } from '../../application/Queries/GetUserProfileQuery';
+import { UpdateUserProfileUseCase } from '../../application/usecases/UpdateUserProfileUseCase';
+import { ListSavedCardsQuery } from '../../application/Queries/ListSavedCardsQuery';
+import { AddSavedCardUseCase } from '../../application/usecases/AddSavedCardUseCase';
+import { DeleteSavedCardUseCase } from '../../application/usecases/DeleteSavedCardUseCase';
+import { LookupCepQuery } from '../../application/Queries/LookupCepQuery';
 import { closeDatabaseConnections } from '../database/prisma/prisma-connection';
 import {
   mongoClient,
@@ -45,10 +54,23 @@ const couponRepository = new PrismaCouponRepository();
 const orderRepository = new PrismaOrderRepository();
 const wishlistRepository = new PrismaWishlistRepository();
 const loyaltyRepository = new PrismaLoyaltyRepository();
+const userProfileRepository = new PrismaUserProfileRepository();
+const savedCardRepository = new PrismaSavedCardRepository();
 
 const kafkaProducer = new KafkaProducerClient();
 const eventPublisher = new KafkaEventPublisher(kafkaProducer);
 const outboxRelay = new OutboxRelay(eventPublisher);
+
+const updateOrderStatusUseCase = new UpdateOrderStatusUseCase(
+  orderRepository,
+  env.order.originCity,
+);
+const orderDeliverySimulatorWorker = new OrderDeliverySimulatorWorker(
+  orderRepository,
+  updateOrderStatusUseCase,
+  env.order.transitStepMinutes * 60_000,
+  env.order.simulatorPollIntervalMs,
+);
 
 const freightCalculator = new FreightRoadCalculator();
 const cepLookupService = new ViaCepAdapter();
@@ -78,7 +100,7 @@ const app = buildRouter({
   checkout: new CheckoutUseCase(cartRepository, orderRepository, cepLookupService),
   listOrders: new ListOrdersQuery(orderRepository),
   getOrder: new OrderQuery(orderRepository),
-  updateOrderStatus: new UpdateOrderStatusUseCase(orderRepository, env.order.originCity),
+  updateOrderStatus: updateOrderStatusUseCase,
   payOrder: new PayOrderUseCase(orderRepository, loyaltyRepository),
   listWishlist: new ListWishlistQuery(wishlistRepository),
   addToWishlist: new AddToWishlistUseCase(productRepository, wishlistRepository),
@@ -89,10 +111,17 @@ const app = buildRouter({
     couponRepository,
     loyaltyRepository,
   ),
+  getUserProfile: new GetUserProfileQuery(userProfileRepository),
+  updateUserProfile: new UpdateUserProfileUseCase(userProfileRepository),
+  listSavedCards: new ListSavedCardsQuery(savedCardRepository),
+  addSavedCard: new AddSavedCardUseCase(savedCardRepository),
+  deleteSavedCard: new DeleteSavedCardUseCase(savedCardRepository),
+  lookupCep: new LookupCepQuery(cepLookupService),
 });
 
 mongoClient.connect().then(() => {
   outboxRelay.start();
+  orderDeliverySimulatorWorker.start();
 
   const server = serve({ fetch: app.fetch, port: PORT }, () => {
     console.log(`cart-service HTTP API running on http://localhost:${PORT}`);
@@ -101,6 +130,7 @@ mongoClient.connect().then(() => {
   async function shutdown() {
     server.close();
     outboxRelay.stop();
+    orderDeliverySimulatorWorker.stop();
     await kafkaProducer.disconnect();
     await closeDatabaseConnections();
     await closeMongoConnection();

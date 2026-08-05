@@ -1,6 +1,8 @@
 import { CepAddress, CepLookupService } from '../../../domain/repositories/CepLookupService';
 
 interface ViaCepResponse {
+  logradouro?: string;
+  bairro?: string;
   localidade?: string;
   uf?: string;
   erro?: boolean;
@@ -30,7 +32,12 @@ export class ViaCepAdapter implements CepLookupService {
 
       if (data.erro || !data.localidade || !data.uf) return null;
 
-      return { city: data.localidade, state: data.uf };
+      return {
+        street: data.logradouro || undefined,
+        neighborhood: data.bairro || undefined,
+        city: data.localidade,
+        state: data.uf,
+      };
     } catch {
       return null;
     } finally {

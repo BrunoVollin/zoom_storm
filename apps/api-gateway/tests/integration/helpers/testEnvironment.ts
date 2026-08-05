@@ -19,6 +19,12 @@ import { AddToWishlistUseCase } from '@application/usecases/AddToWishlistUseCase
 import { RemoveFromWishlistUseCase } from '@application/usecases/RemoveFromWishlistUseCase';
 import { GetLoyaltyBalanceQuery } from '@application/Queries/GetLoyaltyBalanceQuery';
 import { RedeemLoyaltyPointsUseCase } from '@application/usecases/RedeemLoyaltyPointsUseCase';
+import { GetUserProfileQuery } from '@application/Queries/GetUserProfileQuery';
+import { UpdateUserProfileUseCase } from '@application/usecases/UpdateUserProfileUseCase';
+import { ListSavedCardsQuery } from '@application/Queries/ListSavedCardsQuery';
+import { AddSavedCardUseCase } from '@application/usecases/AddSavedCardUseCase';
+import { DeleteSavedCardUseCase } from '@application/usecases/DeleteSavedCardUseCase';
+import { LookupCepQuery } from '@application/Queries/LookupCepQuery';
 import { FreightRoadCalculator } from '@domain/entities/freight/FreightCalculator';
 import {
   InMemoryProductStore,
@@ -37,6 +43,8 @@ import {
   InMemoryOrderRepository,
   InMemoryWishlistRepository,
   InMemoryLoyaltyRepository,
+  InMemoryUserProfileRepository,
+  InMemorySavedCardRepository,
 } from './inMemoryOrderWishlistRepositories';
 
 interface RunningServer {
@@ -152,6 +160,9 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
   const orderRepository = new InMemoryOrderRepository();
   const wishlistRepository = new InMemoryWishlistRepository();
   const loyaltyRepository = new InMemoryLoyaltyRepository();
+  const userProfileRepository = new InMemoryUserProfileRepository();
+  const savedCardRepository = new InMemorySavedCardRepository();
+  const cepLookupService = new FakeCepLookupService();
 
   const cartApp = buildCartRouter({
     getCart: new CartQuery(cartQueryRepository),
@@ -190,6 +201,12 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
       couponRepository,
       loyaltyRepository,
     ),
+    getUserProfile: new GetUserProfileQuery(userProfileRepository),
+    updateUserProfile: new UpdateUserProfileUseCase(userProfileRepository),
+    listSavedCards: new ListSavedCardsQuery(savedCardRepository),
+    addSavedCard: new AddSavedCardUseCase(savedCardRepository),
+    deleteSavedCard: new DeleteSavedCardUseCase(savedCardRepository),
+    lookupCep: new LookupCepQuery(cepLookupService),
   });
 
   const cartServer = await startServer(cartApp);

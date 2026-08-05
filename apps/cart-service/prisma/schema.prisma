@@ -148,3 +148,29 @@ model LoyaltyTransaction {
 
   @@index([userId])
 }
+
+model UserProfile {
+  userId              String   @id
+  fullName            String
+  document            String
+  addressStreet       String
+  addressNumber       String
+  addressComplement   String?
+  addressNeighborhood String
+  addressCity         String
+  addressState        String
+  addressZip          String
+  updatedAt           DateTime @updatedAt
+}
+
+model SavedCard {
+  id         String   @id
+  userId     String
+  brand      String
+  lastFour   String
+  holderName String
+  expiry     String
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}

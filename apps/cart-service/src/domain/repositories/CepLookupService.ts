@@ -1,4 +1,6 @@
 export interface CepAddress {
+  street?: string;
+  neighborhood?: string;
   city: string;
   state: string;
 }
