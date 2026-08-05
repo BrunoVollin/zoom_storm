@@ -10,6 +10,15 @@ import { ApplyCouponUseCase } from '@application/usecases/ApplyCouponUseCase';
 import { RemoveCouponUseCase } from '@application/usecases/RemoveCouponUseCase';
 import { CalculateShippingUseCase } from '@application/usecases/CalculateShippingUseCase';
 import { CheckoutUseCase } from '@application/usecases/CheckoutUseCase';
+import { ListOrdersQuery } from '@application/Queries/ListOrdersQuery';
+import { OrderQuery } from '@application/Queries/OrderQuery';
+import { UpdateOrderStatusUseCase } from '@application/usecases/UpdateOrderStatusUseCase';
+import { PayOrderUseCase } from '@application/usecases/PayOrderUseCase';
+import { ListWishlistQuery } from '@application/Queries/ListWishlistQuery';
+import { AddToWishlistUseCase } from '@application/usecases/AddToWishlistUseCase';
+import { RemoveFromWishlistUseCase } from '@application/usecases/RemoveFromWishlistUseCase';
+import { GetLoyaltyBalanceQuery } from '@application/Queries/GetLoyaltyBalanceQuery';
+import { RedeemLoyaltyPointsUseCase } from '@application/usecases/RedeemLoyaltyPointsUseCase';
 import { FreightRoadCalculator } from '@domain/entities/freight/FreightCalculator';
 import {
   InMemoryProductStore,
@@ -22,6 +31,13 @@ import {
   InMemoryCartProductRepository,
 } from './inMemoryCartRepositories';
 import { InMemoryCouponRepository } from './inMemoryCouponRepository';
+import { InMemoryFlashOfferRepository } from './inMemoryFlashOfferRepository';
+import {
+  FakeCepLookupService,
+  InMemoryOrderRepository,
+  InMemoryWishlistRepository,
+  InMemoryLoyaltyRepository,
+} from './inMemoryOrderWishlistRepositories';
 
 interface RunningServer {
   port: number;
@@ -80,19 +96,51 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
     await import('../../../../products-service/src/application/queries/ListProductsQuery');
   const { GetProductByIdQuery } =
     await import('../../../../products-service/src/application/queries/GetProductByIdQuery');
+  const { ListCategoriesQuery } =
+    await import('../../../../products-service/src/application/queries/ListCategoriesQuery');
+  const { ListActiveFlashOffersQuery } =
+    await import('../../../../products-service/src/application/queries/ListActiveFlashOffersQuery');
+  const { ListFlashOffersQuery } =
+    await import('../../../../products-service/src/application/queries/ListFlashOffersQuery');
   const { CreateProductUseCase } =
     await import('../../../../products-service/src/application/usecases/CreateProductUseCase');
   const { UpdateProductUseCase } =
     await import('../../../../products-service/src/application/usecases/UpdateProductUseCase');
   const { DeleteProductUseCase } =
     await import('../../../../products-service/src/application/usecases/DeleteProductUseCase');
+  const { CreateProductVariantUseCase } =
+    await import('../../../../products-service/src/application/usecases/CreateProductVariantUseCase');
+  const { UpdateProductVariantUseCase } =
+    await import('../../../../products-service/src/application/usecases/UpdateProductVariantUseCase');
+  const { DeleteProductVariantUseCase } =
+    await import('../../../../products-service/src/application/usecases/DeleteProductVariantUseCase');
+  const { CreateReviewUseCase } =
+    await import('../../../../products-service/src/application/usecases/CreateReviewUseCase');
+  const { CreateFlashOfferUseCase } =
+    await import('../../../../products-service/src/application/usecases/CreateFlashOfferUseCase');
+  const { UpdateFlashOfferUseCase } =
+    await import('../../../../products-service/src/application/usecases/UpdateFlashOfferUseCase');
+  const { DeleteFlashOfferUseCase } =
+    await import('../../../../products-service/src/application/usecases/DeleteFlashOfferUseCase');
+
+  const flashOfferRepository = new InMemoryFlashOfferRepository();
 
   const productsApp = buildProductsRouter({
     listProducts: new ListProductsQuery(productQueryRepository),
     getProductById: new GetProductByIdQuery(productQueryRepository),
+    listCategories: new ListCategoriesQuery(productQueryRepository),
     createProduct: new CreateProductUseCase(productRepository),
     updateProduct: new UpdateProductUseCase(productRepository),
     deleteProduct: new DeleteProductUseCase(productRepository),
+    createProductVariant: new CreateProductVariantUseCase(productRepository),
+    updateProductVariant: new UpdateProductVariantUseCase(productRepository),
+    deleteProductVariant: new DeleteProductVariantUseCase(productRepository),
+    createReview: new CreateReviewUseCase(productRepository),
+    listActiveFlashOffers: new ListActiveFlashOffersQuery(flashOfferRepository),
+    listFlashOffers: new ListFlashOffersQuery(flashOfferRepository),
+    createFlashOffer: new CreateFlashOfferUseCase(flashOfferRepository),
+    updateFlashOffer: new UpdateFlashOfferUseCase(flashOfferRepository),
+    deleteFlashOffer: new DeleteFlashOfferUseCase(flashOfferRepository),
   });
 
   const productsServer = await startServer(productsApp);
@@ -101,6 +149,9 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
   const cartQueryRepository = new InMemoryCartQueryRepository(cartRepository);
   const cartProductRepository = new InMemoryCartProductRepository(productStore);
   const couponRepository = new InMemoryCouponRepository();
+  const orderRepository = new InMemoryOrderRepository();
+  const wishlistRepository = new InMemoryWishlistRepository();
+  const loyaltyRepository = new InMemoryLoyaltyRepository();
 
   const cartApp = buildCartRouter({
     getCart: new CartQuery(cartQueryRepository),
@@ -123,8 +174,22 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
     calculateShipping: new CalculateShippingUseCase(
       cartRepository,
       new FreightRoadCalculator(),
+      new FakeCepLookupService(),
     ),
-    checkout: new CheckoutUseCase(cartRepository),
+    checkout: new CheckoutUseCase(cartRepository, orderRepository),
+    listOrders: new ListOrdersQuery(orderRepository),
+    getOrder: new OrderQuery(orderRepository),
+    updateOrderStatus: new UpdateOrderStatusUseCase(orderRepository),
+    payOrder: new PayOrderUseCase(orderRepository, loyaltyRepository),
+    listWishlist: new ListWishlistQuery(wishlistRepository),
+    addToWishlist: new AddToWishlistUseCase(cartProductRepository, wishlistRepository),
+    removeFromWishlist: new RemoveFromWishlistUseCase(wishlistRepository),
+    getLoyaltyBalance: new GetLoyaltyBalanceQuery(loyaltyRepository),
+    redeemLoyaltyPoints: new RedeemLoyaltyPointsUseCase(
+      cartRepository,
+      couponRepository,
+      loyaltyRepository,
+    ),
   });
 
   const cartServer = await startServer(cartApp);

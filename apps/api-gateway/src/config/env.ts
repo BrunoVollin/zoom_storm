@@ -10,5 +10,6 @@ export const env = {
   services: {
     cart: process.env.CART_SERVICE_URL || 'http://localhost:3000',
     products: process.env.PRODUCTS_SERVICE_URL || 'http://localhost:3001',
+    notifications: process.env.NOTIFICATIONS_SERVICE_URL || 'http://localhost:3002',
   },
 };

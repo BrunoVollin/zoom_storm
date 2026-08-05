@@ -28,5 +28,17 @@ export function buildRouter(): Hono {
     return proxyRequest(c, `${env.services.products}${c.req.path}${query}`);
   });
 
+  app.all('/flash-offers/*', (c) => {
+    const query = new URL(c.req.url).search;
+
+    return proxyRequest(c, `${env.services.products}${c.req.path}${query}`);
+  });
+
+  app.all('/notifications/*', (c) => {
+    const query = new URL(c.req.url).search;
+
+    return proxyRequest(c, `${env.services.notifications}${c.req.path}${query}`);
+  });
+
   return app;
 }

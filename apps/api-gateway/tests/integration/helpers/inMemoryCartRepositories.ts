@@ -1,5 +1,5 @@
 import { Cart } from '@domain/entities/cart/Cart';
-import { Product as CartProduct } from '@domain/entities/product/Product';
+import { ProductVariant as CartProductVariant } from '@domain/entities/product/ProductVariant';
 import { Transport } from '@domain/entities/freight/Transport';
 import { IdType } from '@domain/shared/IdType';
 import { CartRepository } from '@domain/repositories/CartRepository';
@@ -47,47 +47,55 @@ export class InMemoryCartQueryRepository implements CartQueryRepository {
 
 /**
  * In-memory replacement for cart-service's MongoProductRepository (the
- * read-only product catalog snapshot normally populated asynchronously by
- * the cart-products-projection service). Backed by the same product store
- * used by the products-service test instance.
+ * read-only product-variant catalog snapshot normally populated
+ * asynchronously by the cart-products-projection service — one document per
+ * variant, denormalized with its parent product's display/freight data).
+ * Backed by the same product store used by the products-service test
+ * instance.
  */
 export class InMemoryCartProductRepository implements CartProductRepository {
   constructor(private readonly store: InMemoryProductStore) {}
 
-  async findById(id: IdType): Promise<CartProduct | null> {
-    const record = this.store.get(id.toString());
+  async findById(id: IdType): Promise<CartProductVariant | null> {
+    const product = this.store.getByVariantId(id.toString());
 
-    return record ? toCartProduct(record, id) : null;
+    return product ? toCartVariant(product, id.toString()) : null;
   }
 
-  async findByIds(ids: IdType[]): Promise<CartProduct[]> {
-    const products: CartProduct[] = [];
+  async findByIds(ids: IdType[]): Promise<CartProductVariant[]> {
+    const variants: CartProductVariant[] = [];
 
     for (const id of ids) {
-      const product = await this.findById(id);
-      if (product) products.push(product);
+      const variant = await this.findById(id);
+      if (variant) variants.push(variant);
     }
 
-    return products;
+    return variants;
   }
 }
 
-function toCartProduct(
-  record: ProductsServiceProduct,
-  id: IdType,
-): CartProduct {
-  return new CartProduct(
-    IdType.create(id.toString()),
-    record.name,
-    record.price,
-    record.description,
-    record.category,
-    record.stock,
+function toCartVariant(
+  product: ProductsServiceProduct,
+  variantId: string,
+): CartProductVariant | null {
+  const variant = product.variants.find((v) => v.id.toString() === variantId);
+  if (!variant) return null;
+
+  return new CartProductVariant(
+    IdType.create(variant.id.toString()),
+    IdType.create(product.getId().toString()),
+    product.name,
+    product.description,
+    product.category,
+    variant.sku,
+    variant.name,
+    variant.price,
+    variant.stock,
     new Transport(
-      record.transportHeight,
-      record.transportWidth,
-      record.transportLength,
+      product.transportHeight,
+      product.transportWidth,
+      product.transportLength,
     ),
-    record.weight,
+    product.weight,
   );
 }

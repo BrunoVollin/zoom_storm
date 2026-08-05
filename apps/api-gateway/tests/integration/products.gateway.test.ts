@@ -60,9 +60,9 @@ describe('API Gateway → Products flow', () => {
         expect.objectContaining({
           id: expect.any(String),
           name: 'Mechanical Keyboard',
-          price: 35990,
         }),
       );
+      expect(body.product.variants[0].price).toBe(35990);
     });
 
     it('Given an invalid payload, when creating a product, then returns 400 with a validation error', async () => {
@@ -128,7 +128,6 @@ describe('API Gateway → Products flow', () => {
         expect.objectContaining({
           id: created.product.id,
           name: 'New Name',
-          price: 2000,
         }),
       );
 

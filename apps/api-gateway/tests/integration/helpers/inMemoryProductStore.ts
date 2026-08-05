@@ -27,6 +27,16 @@ export class InMemoryProductStore {
     return this.products.get(id) ?? null;
   }
 
+  /** Finds the product owning the given variant id, mirroring how
+   * cart-products-projection denormalizes one Mongo document per variant. */
+  getByVariantId(variantId: string): Product | null {
+    return (
+      this.getAll().find((product) =>
+        product.variants.some((variant) => variant.id.toString() === variantId),
+      ) ?? null
+    );
+  }
+
   delete(id: string): void {
     this.products.delete(id);
   }
@@ -69,5 +79,9 @@ export class InMemoryProductQueryRepository implements ProductQueryRepository {
     const product = this.store.get(id);
 
     return product ? ProductMapper.toPrimitives(product) : null;
+  }
+
+  async findDistinctCategories(): Promise<string[]> {
+    return [...new Set(this.store.getAll().map((product) => product.category))];
   }
 }

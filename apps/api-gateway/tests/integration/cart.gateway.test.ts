@@ -83,17 +83,26 @@ describe('API Gateway → Cart flow', () => {
   });
 
   beforeEach(async () => {
+    // Cart items now reference a product *variant* id (price/stock moved off
+    // Product onto ProductVariant) — the default variant is what the
+    // cart-service read model resolves items by.
     const { body: created } = await createProduct(env.gatewayUrl, {
       name: 'Product A',
       price: 1000,
     });
-    productA = { id: created.product.id, price: created.product.price };
+    productA = {
+      id: created.product.variants[0].id,
+      price: created.product.variants[0].price,
+    };
 
     const { body: createdB } = await createProduct(env.gatewayUrl, {
       name: 'Product B',
       price: 2000,
     });
-    productB = { id: createdB.product.id, price: createdB.product.price };
+    productB = {
+      id: createdB.product.variants[0].id,
+      price: createdB.product.variants[0].price,
+    };
   });
 
   afterEach(() => {
@@ -115,7 +124,7 @@ describe('API Gateway → Cart flow', () => {
           items: [
             expect.objectContaining({
               quantity: 2,
-              product: expect.objectContaining({ id: productA.id }),
+              variant: expect.objectContaining({ id: productA.id }),
               subtotal: 2000,
             }),
           ],
@@ -151,7 +160,7 @@ describe('API Gateway → Cart flow', () => {
       const { response, body } = await getCart(env.gatewayUrl, created.cart.id);
 
       expect(response.status).toBe(200);
-      expect(body).toEqual({ status: 'SUCCESS', cartData: created.cart });
+      expect(body).toEqual({ status: 'SUCCESS', cart: created.cart });
     });
 
     it('Given a non-existent cart id, when fetching it, then returns 404 with an error message', async () => {
@@ -194,7 +203,7 @@ describe('API Gateway → Cart flow', () => {
       expect(body.cart.items).toEqual([
         expect.objectContaining({
           quantity: 3,
-          product: expect.objectContaining({ id: productA.id }),
+          variant: expect.objectContaining({ id: productA.id }),
           subtotal: productA.price * 3,
         }),
       ]);
@@ -375,7 +384,7 @@ describe('API Gateway → Cart flow', () => {
       expect(body.cart.total).toBe(0);
 
       const { body: fetched } = await getCart(env.gatewayUrl, created.cart.id);
-      expect(fetched.cartData.items).toEqual([]);
+      expect(fetched.cart.items).toEqual([]);
     });
   });
 
@@ -408,7 +417,7 @@ describe('API Gateway → Cart flow', () => {
       );
 
       const { body: fetched } = await getCart(env.gatewayUrl, created.cart.id);
-      expect(fetched.cartData.items).toEqual([]);
+      expect(fetched.cart.items).toEqual([]);
     });
 
     it('Given products were added to a cart in separate requests, when checking out, then the full flow (create → add → checkout) succeeds', async () => {

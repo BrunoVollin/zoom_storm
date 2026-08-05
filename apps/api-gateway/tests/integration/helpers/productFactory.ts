@@ -1,17 +1,27 @@
+let variantCounter = 0;
+
 export function buildProductPayload(
   overrides: Partial<Record<string, unknown>> = {},
 ) {
+  const { price = 4999, stock = 10, sku, ...rest } = overrides;
+
   return {
     name: 'Runner X Sneaker',
-    price: 4999,
     description: 'High-performance running shoe',
     category: 'Footwear',
-    stock: 10,
     transportHeight: 20,
     transportWidth: 15,
     transportLength: 30,
     weight: 1.5,
-    ...overrides,
+    variants: [
+      {
+        sku: (sku as string) ?? `TEST-SKU-${++variantCounter}`,
+        price,
+        stock,
+        isDefault: true,
+      },
+    ],
+    ...rest,
   };
 }
 
