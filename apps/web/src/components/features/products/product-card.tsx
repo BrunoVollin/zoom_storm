@@ -40,9 +40,9 @@ export function ProductCard({ product }: { product: Product }) {
           <PriceTag cents={variant.price} className="text-lg" />
         </CardContent>
       </Link>
-      <CardFooter>
+      {/* <CardFooter>
         <AddToCartButton productId={variant.id} className="w-full" disabled={variant.stock <= 0} />
-      </CardFooter>
+      </CardFooter> */}
     </Card>
   );
 }
