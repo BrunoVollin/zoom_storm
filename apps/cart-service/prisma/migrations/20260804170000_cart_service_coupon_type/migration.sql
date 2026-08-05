@@ -1,0 +1,7 @@
+-- CreateEnum
+CREATE TYPE "CouponType" AS ENUM ('PERCENT', 'FIXED');
+
+-- AlterTable
+ALTER TABLE "Coupon" ADD COLUMN "type" "CouponType" NOT NULL DEFAULT 'PERCENT';
+ALTER TABLE "Coupon" ADD COLUMN "amount" DOUBLE PRECISION;
+ALTER TABLE "Coupon" ALTER COLUMN "percent" DROP NOT NULL;

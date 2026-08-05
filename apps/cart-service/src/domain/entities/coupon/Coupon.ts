@@ -34,3 +34,28 @@ export class CouponPercentByTime implements Coupon {
     return 0;
   }
 }
+
+export class CouponFixedAmount implements Coupon {
+  constructor(
+    readonly id: IdType,
+    readonly name: string,
+    readonly today: Date,
+    readonly start: Date,
+    readonly end: Date,
+    readonly amount: number,
+  ) {}
+
+  isValid() {
+    return this.today >= this.start && this.today <= this.end;
+  }
+
+  getName() {
+    return this.name;
+  }
+
+  getDiscount(total: number) {
+    if (!this.isValid()) return 0;
+
+    return Math.min(this.amount, total);
+  }
+}

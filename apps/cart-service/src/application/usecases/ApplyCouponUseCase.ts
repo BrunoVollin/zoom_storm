@@ -47,6 +47,18 @@ export class ApplyCouponUseCase implements UseCase<Input, Output> {
         };
       }
 
+      const hasLoyaltyRedemption = cart
+        .getCoupons()
+        .some((applied) => applied.id.toString().startsWith('LOYALTY-'));
+
+      if (hasLoyaltyRedemption) {
+        return {
+          status: Status.ERROR,
+          message:
+            'Não é possível aplicar um cupom promocional com pontos de fidelidade já resgatados neste carrinho',
+        };
+      }
+
       cart.addCoupon(coupon);
 
       const event = new DomainEvent(

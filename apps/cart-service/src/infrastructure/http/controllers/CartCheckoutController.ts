@@ -18,6 +18,7 @@ export class CartCheckoutController {
       cartId: c.req.param('cartId')!,
       userId: c.get('userId') as string,
       shipping: parsed.data.shipping,
+      cep: parsed.data.cep,
     });
 
     return c.json(result, httpStatus(result));

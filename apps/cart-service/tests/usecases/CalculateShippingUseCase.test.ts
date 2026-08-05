@@ -2,17 +2,19 @@ import { CalculateShippingUseCase } from '../../src/application/usecases/Calcula
 import { createIdFromString } from '../factories/IdFactory';
 import { createProduct } from '../factories/ProductFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
+import { CepLookupService } from '../../src/domain/repositories/CepLookupService';
 import { Status } from '../../src/application/contracts/UseCase';
 import { FreightRoadCalculator } from '../../src/domain/entities/freight/FreightCalculator';
 
 describe('CalculateShippingUseCase', () => {
   let cartRepositoryMock: CartRepository;
+  let cepLookupServiceMock: CepLookupService;
   let useCase: CalculateShippingUseCase;
   let cartMock: Record<string, unknown>;
   let freightCalculator: FreightRoadCalculator;
 
   const cartId = 'cart-1';
-  const distance = 100;
+  const cep = '01310-100';
 
   beforeEach(() => {
     freightCalculator = new FreightRoadCalculator();
@@ -20,6 +22,10 @@ describe('CalculateShippingUseCase', () => {
     cartRepositoryMock = {
       save: jest.fn(),
       findById: jest.fn(),
+    };
+
+    cepLookupServiceMock = {
+      lookup: jest.fn().mockResolvedValue({ city: 'São Paulo', state: 'SP' }),
     };
 
     cartMock = {
@@ -30,9 +36,14 @@ describe('CalculateShippingUseCase', () => {
     useCase = new CalculateShippingUseCase(
       cartRepositoryMock,
       freightCalculator,
+      cepLookupServiceMock,
     );
 
     jest.clearAllMocks();
+    (cepLookupServiceMock.lookup as jest.Mock).mockResolvedValue({
+      city: 'São Paulo',
+      state: 'SP',
+    });
   });
 
   describe('Success Scenario', () => {
@@ -55,15 +66,19 @@ describe('CalculateShippingUseCase', () => {
       const result = await useCase.execute({
         cartId,
         userId: 'user-1',
-        distance,
+        cep,
       });
 
       expect(result.status).toBe(Status.SUCCESS);
       if (result.status === Status.SUCCESS) {
         expect(result.shipping).toBeGreaterThan(0);
+        expect(result.estimatedDays).toBeGreaterThan(0);
+        expect(result.city).toBe('São Paulo');
+        expect(result.state).toBe('SP');
       }
       expect(cartRepositoryMock.findById).toHaveBeenCalledTimes(1);
       expect(cartMock.getItems).toHaveBeenCalledTimes(1);
+      expect(cepLookupServiceMock.lookup).toHaveBeenCalledWith(cep);
     });
 
     it('should calculate shipping with multiple items', async () => {
@@ -94,12 +109,37 @@ describe('CalculateShippingUseCase', () => {
       const result = await useCase.execute({
         cartId,
         userId: 'user-1',
-        distance,
+        cep,
       });
 
       expect(result.status).toBe(Status.SUCCESS);
       if (result.status === Status.SUCCESS) {
         expect(result.shipping).toBeGreaterThan(0);
+      }
+    });
+
+    it('should use a larger distance estimate for a farther state', async () => {
+      const product = createProduct({ id: createIdFromString('product-1') });
+      const mockItem = {
+        getVolume: jest.fn(() => 1000),
+        getWeight: jest.fn(() => 2),
+        quantity: 1,
+        product,
+      };
+
+      (cartRepositoryMock.findById as jest.Mock).mockResolvedValue(cartMock);
+      (cartMock.getItems as jest.Mock).mockReturnValue([mockItem]);
+      (cepLookupServiceMock.lookup as jest.Mock).mockResolvedValue({
+        city: 'Manaus',
+        state: 'AM',
+      });
+
+      const result = await useCase.execute({ cartId, userId: 'user-1', cep: '69000-000' });
+
+      expect(result.status).toBe(Status.SUCCESS);
+      if (result.status === Status.SUCCESS) {
+        expect(result.state).toBe('AM');
+        expect(result.estimatedDays).toBeGreaterThan(1);
       }
     });
   });
@@ -108,11 +148,7 @@ describe('CalculateShippingUseCase', () => {
     it('should return error when cart is not found', async () => {
       (cartRepositoryMock.findById as jest.Mock).mockResolvedValue(null);
 
-      const result = await useCase.execute({
-        cartId,
-        userId: 'user-1',
-        distance,
-      });
+      const result = await useCase.execute({ cartId, userId: 'user-1', cep });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
@@ -124,15 +160,32 @@ describe('CalculateShippingUseCase', () => {
       (cartRepositoryMock.findById as jest.Mock).mockResolvedValue(cartMock);
       (cartMock.getItems as jest.Mock).mockReturnValue([]);
 
-      const result = await useCase.execute({
-        cartId,
-        userId: 'user-1',
-        distance,
-      });
+      const result = await useCase.execute({ cartId, userId: 'user-1', cep });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
         expect(result.message).toBe('Cart is empty');
+      }
+    });
+
+    it('should return error when cep is not found', async () => {
+      const product = createProduct({ id: createIdFromString('product-1') });
+      const mockItem = {
+        getVolume: jest.fn(() => 1000),
+        getWeight: jest.fn(() => 2),
+        quantity: 1,
+        product,
+      };
+
+      (cartRepositoryMock.findById as jest.Mock).mockResolvedValue(cartMock);
+      (cartMock.getItems as jest.Mock).mockReturnValue([mockItem]);
+      (cepLookupServiceMock.lookup as jest.Mock).mockResolvedValue(null);
+
+      const result = await useCase.execute({ cartId, userId: 'user-1', cep: '00000-000' });
+
+      expect(result.status).toBe(Status.ERROR);
+      if (result.status === Status.ERROR) {
+        expect(result.message).toBe('CEP inválido ou não encontrado');
       }
     });
   });
@@ -144,11 +197,7 @@ describe('CalculateShippingUseCase', () => {
         new Error(errorMessage),
       );
 
-      const result = await useCase.execute({
-        cartId,
-        userId: 'user-1',
-        distance,
-      });
+      const result = await useCase.execute({ cartId, userId: 'user-1', cep });
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {

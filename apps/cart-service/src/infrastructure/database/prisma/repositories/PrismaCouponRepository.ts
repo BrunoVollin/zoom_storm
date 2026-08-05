@@ -1,19 +1,13 @@
 import {
   Coupon,
+  CouponFixedAmount,
   CouponPercentByTime,
 } from '../../../../domain/entities/coupon/Coupon';
 import { IdType } from '../../../../domain/shared/IdType';
 import { CouponRepository } from '../../../../domain/repositories/CouponRepository';
 import { PrismaClient } from '../../../../generated/prisma/client';
 import { prisma } from '../prisma-connection';
-
-interface CouponRow {
-  id: string;
-  name: string;
-  start: Date;
-  end: Date;
-  percent: number;
-}
+import { couponFromRow } from './CouponFactory';
 
 export class PrismaCouponRepository implements CouponRepository {
   private prisma: PrismaClient;
@@ -23,21 +17,33 @@ export class PrismaCouponRepository implements CouponRepository {
   }
 
   async save(coupon: Coupon): Promise<void> {
+    const data =
+      coupon instanceof CouponFixedAmount
+        ? {
+            name: coupon.getName(),
+            start: coupon.start,
+            end: coupon.end,
+            type: 'FIXED' as const,
+            amount: coupon.amount,
+            percent: null,
+          }
+        : coupon instanceof CouponPercentByTime
+          ? {
+              name: coupon.getName(),
+              start: coupon.start,
+              end: coupon.end,
+              type: 'PERCENT' as const,
+              percent: coupon.percent,
+              amount: null,
+            }
+          : (() => {
+              throw new Error('Unknown coupon type');
+            })();
+
     await this.prisma.coupon.upsert({
       where: { id: coupon.id.toString() },
-      create: {
-        id: coupon.id.toString(),
-        name: coupon.getName(),
-        start: (coupon as unknown as CouponRow).start,
-        end: (coupon as unknown as CouponRow).end,
-        percent: (coupon as unknown as CouponRow).percent,
-      },
-      update: {
-        name: coupon.getName(),
-        start: (coupon as unknown as CouponRow).start,
-        end: (coupon as unknown as CouponRow).end,
-        percent: (coupon as unknown as CouponRow).percent,
-      },
+      create: { id: coupon.id.toString(), ...data },
+      update: data,
     });
   }
 
@@ -47,16 +53,7 @@ export class PrismaCouponRepository implements CouponRepository {
     });
     if (!row) return null;
 
-    const r = row as unknown as CouponRow;
-
-    return new CouponPercentByTime(
-      IdType.create(r.id),
-      r.name,
-      new Date(),
-      r.start,
-      r.end,
-      r.percent,
-    );
+    return couponFromRow(row);
   }
 
   async findByIds(ids: Array<IdType>): Promise<Array<Coupon>> {
@@ -65,17 +62,6 @@ export class PrismaCouponRepository implements CouponRepository {
       where: { id: { in: idsStr } },
     });
 
-    return rows.map((r: CouponRow) => {
-      const rr = r;
-
-      return new CouponPercentByTime(
-        IdType.create(rr.id),
-        rr.name,
-        new Date(),
-        rr.start,
-        rr.end,
-        rr.percent,
-      );
-    });
+    return rows.map((row) => couponFromRow(row));
   }
 }

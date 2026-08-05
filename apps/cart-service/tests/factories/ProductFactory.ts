@@ -1,5 +1,5 @@
 import { Transport } from '../../src/domain/entities/freight/Transport';
-import { Product } from '../../src/domain/entities/product/Product';
+import { ProductVariant } from '../../src/domain/entities/product/ProductVariant';
 import { IdType } from '../../src/domain/shared/IdType';
 import { createIdFromString } from './IdFactory';
 
@@ -14,32 +14,39 @@ export function createTransport(
 export function createProduct(
   overrides?: Partial<{
     id: IdType;
+    productId: IdType;
     name: string;
     price: number;
     description: string;
     category: string;
+    sku: string;
     stock: number;
     transport: Transport;
     weight: number;
   }>,
-): Product {
+): ProductVariant {
   const defaults = {
-    id: createIdFromString('product-1'),
+    id: createIdFromString('variant-1'),
+    productId: createIdFromString('product-1'),
     name: 'Bluza',
     price: 1000,
     description: 'Product description',
     category: 'Clothing',
+    sku: 'SKU-1',
     stock: 10,
     transport: createTransport(),
     weight: 1,
   };
 
-  return new Product(
+  return new ProductVariant(
     overrides?.id ?? defaults.id,
+    overrides?.productId ?? defaults.productId,
     overrides?.name ?? defaults.name,
-    overrides?.price ?? defaults.price,
     overrides?.description ?? defaults.description,
     overrides?.category ?? defaults.category,
+    overrides?.sku ?? defaults.sku,
+    null,
+    overrides?.price ?? defaults.price,
     overrides?.stock ?? defaults.stock,
     overrides?.transport ?? defaults.transport,
     overrides?.weight ?? defaults.weight,

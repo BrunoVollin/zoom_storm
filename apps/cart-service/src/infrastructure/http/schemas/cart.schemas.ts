@@ -26,6 +26,7 @@ export const ApplyCouponSchema = z.object({
 
 export const CheckoutSchema = z.object({
   shipping: z.int().min(0),
+  cep: z.string().min(1).optional(),
 });
 
 export function validate<T>(

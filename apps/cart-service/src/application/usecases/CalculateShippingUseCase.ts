@@ -1,5 +1,7 @@
 import { CartRepository } from '../../domain/repositories/CartRepository';
+import { CepLookupService } from '../../domain/repositories/CepLookupService';
 import { Shipment } from '../../domain/entities/freight/Freight';
+import { estimateFreightRegion } from '../../domain/entities/freight/FreightRegionEstimator';
 import { IdType } from '../../domain/shared/IdType';
 import { Status, UseCase } from '../contracts/UseCase';
 import { Freight } from '../../domain/entities/freight/Freight';
@@ -9,6 +11,7 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
   constructor(
     private readonly cartRepository: CartRepository,
     private readonly freightCalculator: Freight,
+    private readonly cepLookupService: CepLookupService,
   ) {}
 
   async execute(input: Input): Promise<Output> {
@@ -40,6 +43,15 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
         };
       }
 
+      const address = await this.cepLookupService.lookup(input.cep);
+
+      if (!address) {
+        return {
+          status: Status.ERROR,
+          message: 'CEP inválido ou não encontrado',
+        };
+      }
+
       const totalVolume = items.reduce((acc, item) => {
         return acc + item.getVolume();
       }, 0);
@@ -48,12 +60,16 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
         return acc + item.getWeight();
       }, 0);
 
-      const shipment = new Shipment(input.distance, totalVolume, totalWeight);
+      const region = estimateFreightRegion(address.state);
+      const shipment = new Shipment(region.distanceKm, totalVolume, totalWeight);
       const shipping = this.freightCalculator.calculate(shipment);
 
       return {
         status: Status.SUCCESS,
         shipping,
+        estimatedDays: region.days,
+        city: address.city,
+        state: address.state,
       };
     } catch (error) {
       return handleUnexpectedError(error);
@@ -64,12 +80,15 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
 interface Input {
   cartId: string;
   userId: string;
-  distance: number;
+  cep: string;
 }
 
 interface SuccessOutput {
   status: Status.SUCCESS;
   shipping: number;
+  estimatedDays: number;
+  city: string;
+  state: string;
 }
 
 interface ErrorOutput {

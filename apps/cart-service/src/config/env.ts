@@ -26,4 +26,7 @@ export const env = {
   auth: {
     skip: process.env.CART_SERVICE_SKIP_AUTH === 'true',
   },
+  order: {
+    originCity: process.env.ORDER_ORIGIN_CITY || 'São Paulo',
+  },
 };

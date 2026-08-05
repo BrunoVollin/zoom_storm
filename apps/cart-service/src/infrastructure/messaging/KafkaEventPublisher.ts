@@ -30,6 +30,8 @@ export class KafkaEventPublisher implements EventPublisher {
       [DomainEventName.CART_UPDATED]: 'cart-events',
       [DomainEventName.CART_ABANDONED]: 'cart-events',
       [DomainEventName.CART_CHECKED_OUT]: 'checkout-events',
+      [DomainEventName.ORDER_CREATED]: 'order-events',
+      [DomainEventName.ORDER_STATUS_CHANGED]: 'order-events',
     };
 
     return map[eventName];

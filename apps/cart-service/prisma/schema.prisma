@@ -12,12 +12,19 @@ datasource db {
   provider = "postgresql"
 }
 
+enum CouponType {
+  PERCENT
+  FIXED
+}
+
 model Coupon {
   id      String       @id
   name    String
   start   DateTime
   end     DateTime
-  percent Float
+  type    CouponType   @default(PERCENT)
+  percent Float?
+  amount  Float?
   carts   CartCoupon[]
 }
 
@@ -30,15 +37,18 @@ model Cart {
 }
 
 model CartItem {
-  id                 String @id
-  cart               Cart   @relation(fields: [cartId], references: [id])
+  id                 String  @id
+  cart               Cart    @relation(fields: [cartId], references: [id])
   cartId             String
   productId          String
   productName        String
-  productPrice       Float
   productDescription String
   productCategory    String
-  productStock       Int
+  variantId          String?
+  variantSku         String?
+  variantName        String?
+  variantPrice       Float
+  variantStock       Int
   productWeight      Float
   transportHeight    Int
   transportWidth     Int
@@ -66,4 +76,75 @@ model OutboxEvent {
   createdAt   DateTime  @default(now())
 
   @@index([publishedAt])
+}
+
+enum OrderStatus {
+  CREATED
+  PAID
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+}
+
+model Order {
+  id        String      @id
+  userId    String
+  cartId    String
+  subtotal  Float
+  discount  Float
+  shipping  Float
+  total     Float
+  status    OrderStatus @default(CREATED)
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  originCity      String?
+  destinationCity String?
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id           String @id
+  order        Order  @relation(fields: [orderId], references: [id])
+  orderId      String
+  productId    String
+  productName  String
+  productPrice Float
+  quantity     Int
+
+  @@index([orderId])
+}
+
+model WishlistItem {
+  id          String   @id
+  userId      String
+  productId   String
+  productName String
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+enum LoyaltyTransactionType {
+  EARN
+  REDEEM
+}
+
+model LoyaltyAccount {
+  userId    String   @id
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model LoyaltyTransaction {
+  id        String                 @id
+  userId    String
+  orderId   String?
+  type      LoyaltyTransactionType
+  points    Int
+  createdAt DateTime               @default(now())
+
+  @@index([userId])
 }

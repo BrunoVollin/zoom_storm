@@ -1,10 +1,10 @@
-import { Product } from '../product/Product';
+import { ProductVariant } from '../product/ProductVariant';
 import { IdType } from '../../shared/IdType';
 
 export class CartItem {
   constructor(
     readonly id: IdType,
-    readonly product: Product,
+    readonly product: ProductVariant,
     readonly quantity: number,
   ) {
     if (!Number.isInteger(quantity) || quantity <= 0) {

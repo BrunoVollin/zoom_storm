@@ -1,7 +1,7 @@
-import { Product } from '../entities/product/Product';
+import { ProductVariant } from '../entities/product/ProductVariant';
 import { IdType } from '../shared/IdType';
 
 export interface ProductRepository {
-  findById(id: IdType): Promise<Product | null>;
-  findByIds(ids: Array<IdType>): Promise<Array<Product>>;
+  findById(id: IdType): Promise<ProductVariant | null>;
+  findByIds(ids: Array<IdType>): Promise<Array<ProductVariant>>;
 }

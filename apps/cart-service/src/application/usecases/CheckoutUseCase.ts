@@ -1,12 +1,21 @@
 import { DomainEvent, DomainEventName } from '@src/domain/events/DomainEvent';
 import { CartRepository } from '../../domain/repositories/CartRepository';
+import { OrderRepository } from '../../domain/repositories/OrderRepository';
+import { CepLookupService } from '../../domain/repositories/CepLookupService';
+import { Order } from '../../domain/entities/order/Order';
+import { OrderItem } from '../../domain/entities/order/OrderItem';
 import { IdType } from '../../domain/shared/IdType';
 import { ErrorOutput, Status, UseCase } from '../contracts/UseCase';
 import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
+import { OrderMapper, OrderPrimitives } from '../mappers/OrderMapper';
 import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
 export class CheckoutUseCase implements UseCase<Input, Output> {
-  constructor(private readonly cartRepository: CartRepository) {}
+  constructor(
+    private readonly cartRepository: CartRepository,
+    private readonly orderRepository: OrderRepository,
+    private readonly cepLookupService?: CepLookupService,
+  ) {}
 
   async execute(input: Input): Promise<Output> {
     try {
@@ -44,6 +53,42 @@ export class CheckoutUseCase implements UseCase<Input, Output> {
 
       const finalTotal = total + shipping;
 
+      const destinationAddress = input.cep
+        ? await this.cepLookupService?.lookup(input.cep)
+        : null;
+
+      const order = new Order(
+        IdType.create(),
+        cart.getUserId(),
+        cart.getId(),
+        cart.getItems().map(
+          (item) =>
+            new OrderItem(
+              IdType.create(),
+              item.product.productId,
+              item.product.productName,
+              item.product.price,
+              item.quantity,
+            ),
+        ),
+        subtotal,
+        discount,
+        shipping,
+        finalTotal,
+        undefined,
+        undefined,
+        undefined,
+        destinationAddress?.city ?? null,
+      );
+
+      const orderCreatedEvent = new DomainEvent(
+        DomainEventName.ORDER_CREATED,
+        OrderMapper.toPrimitives(order),
+        new Date(),
+      );
+
+      await this.orderRepository.save(order, orderCreatedEvent);
+
       const checkoutSnapshot = {
         ...CartMapper.toPrimitives(cart),
         shipping,
@@ -69,6 +114,7 @@ export class CheckoutUseCase implements UseCase<Input, Output> {
       return {
         status: Status.SUCCESS,
         cart: CartMapper.toPrimitives(cart),
+        order: OrderMapper.toPrimitives(order),
         subtotal,
         discount,
         shipping,
@@ -84,11 +130,13 @@ interface Input {
   cartId: string;
   userId: string;
   shipping: number;
+  cep?: string;
 }
 
 interface SuccessOutput {
   status: Status.SUCCESS;
   cart: CartPrimitives;
+  order: OrderPrimitives;
   subtotal: number;
   discount: number;
   shipping: number;

@@ -11,12 +11,25 @@ import { ApplyCouponUseCase } from '@application/usecases/ApplyCouponUseCase';
 import { RemoveCouponUseCase } from '@application/usecases/RemoveCouponUseCase';
 import { CalculateShippingUseCase } from '@application/usecases/CalculateShippingUseCase';
 import { CheckoutUseCase } from '@application/usecases/CheckoutUseCase';
+import { ListOrdersQuery } from '@application/Queries/ListOrdersQuery';
+import { OrderQuery } from '@application/Queries/OrderQuery';
+import { UpdateOrderStatusUseCase } from '@application/usecases/UpdateOrderStatusUseCase';
+import { PayOrderUseCase } from '@application/usecases/PayOrderUseCase';
+import { ListWishlistQuery } from '@application/Queries/ListWishlistQuery';
+import { AddToWishlistUseCase } from '@application/usecases/AddToWishlistUseCase';
+import { RemoveFromWishlistUseCase } from '@application/usecases/RemoveFromWishlistUseCase';
+import { GetLoyaltyBalanceQuery } from '@application/Queries/GetLoyaltyBalanceQuery';
+import { RedeemLoyaltyPointsUseCase } from '@application/usecases/RedeemLoyaltyPointsUseCase';
 import { CartController } from './controllers/CartController';
 import { CartItemController } from './controllers/CartItemController';
 import { CartCouponController } from './controllers/CartCouponController';
 import { CartShippingController } from './controllers/CartShippingController';
 import { CartCheckoutController } from './controllers/CartCheckoutController';
+import { OrderController } from './controllers/OrderController';
+import { WishlistController } from './controllers/WishlistController';
+import { LoyaltyController } from './controllers/LoyaltyController';
 import { requireAuth } from './middlewares/requireAuthMiddleware';
+import { requireAdmin } from './middlewares/requireAdminMiddleware';
 
 interface Dependencies {
   getCart: CartQuery;
@@ -28,6 +41,15 @@ interface Dependencies {
   removeCoupon: RemoveCouponUseCase;
   calculateShipping: CalculateShippingUseCase;
   checkout: CheckoutUseCase;
+  listOrders: ListOrdersQuery;
+  getOrder: OrderQuery;
+  updateOrderStatus: UpdateOrderStatusUseCase;
+  payOrder: PayOrderUseCase;
+  listWishlist: ListWishlistQuery;
+  addToWishlist: AddToWishlistUseCase;
+  removeFromWishlist: RemoveFromWishlistUseCase;
+  getLoyaltyBalance: GetLoyaltyBalanceQuery;
+  redeemLoyaltyPoints: RedeemLoyaltyPointsUseCase;
 }
 
 const openapiSpec = readFileSync(
@@ -54,6 +76,21 @@ export function buildRouter(deps: Dependencies): Hono {
   );
   const cartShipping = new CartShippingController(deps.calculateShipping);
   const cartCheckout = new CartCheckoutController(deps.checkout);
+  const order = new OrderController(
+    deps.listOrders,
+    deps.getOrder,
+    deps.updateOrderStatus,
+    deps.payOrder,
+  );
+  const wishlist = new WishlistController(
+    deps.listWishlist,
+    deps.addToWishlist,
+    deps.removeFromWishlist,
+  );
+  const loyalty = new LoyaltyController(
+    deps.getLoyaltyBalance,
+    deps.redeemLoyaltyPoints,
+  );
 
   app.get('/openapi.yml', (c) =>
     c.text(openapiSpec, 200, { 'Content-Type': 'application/yaml' }),
@@ -77,6 +114,27 @@ export function buildRouter(deps: Dependencies): Hono {
   app.get('/carts/:cartId/shipping', (c) => cartShipping.calculate(c));
 
   app.post('/carts/:cartId/checkout', (c) => cartCheckout.handle(c));
+
+  app.use('/orders', requireAuth);
+  app.use('/orders/*', requireAuth);
+
+  app.get('/orders', (c) => order.list(c));
+  app.get('/orders/:orderId', (c) => order.getById(c));
+  app.patch('/orders/:orderId/status', requireAdmin, (c) => order.updateStatus(c));
+  app.post('/orders/:orderId/pay', (c) => order.pay(c));
+
+  app.use('/wishlist', requireAuth);
+  app.use('/wishlist/*', requireAuth);
+
+  app.get('/wishlist', (c) => wishlist.list(c));
+  app.post('/wishlist', (c) => wishlist.add(c));
+  app.delete('/wishlist/:productId', (c) => wishlist.remove(c));
+
+  app.use('/loyalty', requireAuth);
+  app.use('/loyalty/*', requireAuth);
+
+  app.get('/loyalty/balance', (c) => loyalty.balance(c));
+  app.post('/carts/:cartId/loyalty/redeem', (c) => loyalty.redeem(c));
 
   return app;
 }

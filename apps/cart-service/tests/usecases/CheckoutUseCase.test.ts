@@ -2,10 +2,12 @@ import { CheckoutUseCase } from '../../src/application/usecases/CheckoutUseCase'
 import { createIdFromString } from '../factories/IdFactory';
 import { createProduct } from '../factories/ProductFactory';
 import { CartRepository } from '../../src/domain/repositories/CartRepository';
+import { OrderRepository } from '../../src/domain/repositories/OrderRepository';
 import { Status } from '../../src/application/contracts/UseCase';
 
 describe('CheckoutUseCase', () => {
   let cartRepositoryMock: CartRepository;
+  let orderRepositoryMock: OrderRepository;
   let useCase: CheckoutUseCase;
   let cartMock: Record<string, unknown>;
 
@@ -16,6 +18,12 @@ describe('CheckoutUseCase', () => {
     cartRepositoryMock = {
       save: jest.fn(),
       findById: jest.fn(),
+    };
+
+    orderRepositoryMock = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findByUserId: jest.fn(),
     };
 
     const product = createProduct({
@@ -33,6 +41,7 @@ describe('CheckoutUseCase', () => {
     cartMock = {
       id: { toString: () => 'cart-1' },
       userId: { toString: () => 'user-1' },
+      getId: jest.fn(() => ({ toString: () => 'cart-1' })),
       getUserId: jest.fn(() => ({ toString: () => 'user-1' })),
       getItems: jest.fn(() => [mockItem]),
       calcSubtotal: jest.fn(() => 2000),
@@ -42,7 +51,7 @@ describe('CheckoutUseCase', () => {
       clear: jest.fn(),
     };
 
-    useCase = new CheckoutUseCase(cartRepositoryMock);
+    useCase = new CheckoutUseCase(cartRepositoryMock, orderRepositoryMock);
 
     jest.clearAllMocks();
   });
@@ -71,6 +80,13 @@ describe('CheckoutUseCase', () => {
         expect.objectContaining({ name: 'cart.checked_out' }),
         expect.objectContaining({ name: 'cart.updated' }),
       ]);
+      expect(orderRepositoryMock.save).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ name: 'order.created' }),
+      );
+      if (result.status === Status.SUCCESS) {
+        expect(result.order).toBeDefined();
+      }
     });
 
     it('should checkout with zero discount', async () => {

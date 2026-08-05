@@ -1,4 +1,4 @@
-import { Product } from '../../src/domain/entities/product/Product';
+import { ProductVariant } from '../../src/domain/entities/product/ProductVariant';
 import { CartItem } from '../../src/domain/entities/cart/CartItem';
 import { Cart } from '../../src/domain/entities/cart/Cart';
 import { IdType } from '../../src/domain/shared/IdType';
@@ -12,8 +12,8 @@ import {
 describe('Cart', () => {
   let userId: IdType;
   let cartId: IdType;
-  let product1: Product;
-  let product2: Product;
+  let product1: ProductVariant;
+  let product2: ProductVariant;
 
   beforeEach(() => {
     userId = createIdFromString('user-1');

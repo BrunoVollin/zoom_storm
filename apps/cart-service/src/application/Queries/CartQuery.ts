@@ -27,7 +27,7 @@ export class CartQuery implements Query<Input, Output> {
 
     return {
       status: Status.SUCCESS,
-      cartData: cartData,
+      cart: cartData,
     };
   }
 }
@@ -39,7 +39,7 @@ interface Input {
 
 interface SuccessOutput {
   status: Status.SUCCESS;
-  cartData: object;
+  cart: object;
 }
 
 interface ErrorOutput {

@@ -1,14 +1,14 @@
 import { Cart } from '../../../../domain/entities/cart/Cart';
 import { CartItem } from '../../../../domain/entities/cart/CartItem';
-import { Product } from '../../../../domain/entities/product/Product';
+import { ProductVariant } from '../../../../domain/entities/product/ProductVariant';
 import { Transport } from '../../../../domain/entities/freight/Transport';
-import { CouponPercentByTime } from '../../../../domain/entities/coupon/Coupon';
 import { IdType } from '../../../../domain/shared/IdType';
 import { CartRepository } from '../../../../domain/repositories/CartRepository';
 import { DomainEvent } from '../../../../domain/events/DomainEvent';
 import { ConcurrencyConflictError } from '../../../../domain/errors/ConcurrencyConflictError';
 import { prisma } from '../prisma-connection';
 import { Prisma } from '../../../../generated/prisma/client';
+import { couponFromRow } from './CouponFactory';
 
 export class PrismaCartRepository implements CartRepository {
   async save(
@@ -21,12 +21,15 @@ export class PrismaCartRepository implements CartRepository {
     const items = cart.getItems().map((item) => ({
       id: item.id.toString(),
       cartId,
-      productId: item.product.getId().toString(),
-      productName: item.product.name,
-      productPrice: item.product.price,
-      productDescription: item.product.description,
-      productCategory: item.product.category,
-      productStock: item.product.stock,
+      productId: item.product.productId.toString(),
+      productName: item.product.productName,
+      productDescription: item.product.productDescription,
+      productCategory: item.product.productCategory,
+      variantId: item.product.getId().toString(),
+      variantSku: item.product.sku,
+      variantName: item.product.name,
+      variantPrice: item.product.price,
+      variantStock: item.product.stock,
       productWeight: item.product.weight ?? 0,
       transportHeight: item.product.transport.height,
       transportWidth: item.product.transport.width,
@@ -117,13 +120,16 @@ export class PrismaCartRepository implements CartRepository {
     );
 
     for (const it of dbCart.items) {
-      const productDomain = new Product(
+      const variantDomain = new ProductVariant(
+        IdType.create(it.variantId ?? it.productId),
         IdType.create(it.productId),
         it.productName,
-        it.productPrice,
         it.productDescription,
         it.productCategory,
-        it.productStock,
+        it.variantSku ?? it.productId,
+        it.variantName,
+        it.variantPrice,
+        it.variantStock,
         new Transport(
           it.transportHeight,
           it.transportWidth,
@@ -132,22 +138,12 @@ export class PrismaCartRepository implements CartRepository {
         it.productWeight,
       );
       cart.addItem(
-        new CartItem(IdType.create(it.id), productDomain, it.quantity),
+        new CartItem(IdType.create(it.id), variantDomain, it.quantity),
       );
     }
 
     for (const cp of dbCart.coupons) {
-      const c = cp.coupon;
-      cart.addCoupon(
-        new CouponPercentByTime(
-          IdType.create(c.id),
-          c.name,
-          new Date(),
-          c.start,
-          c.end,
-          c.percent,
-        ),
-      );
+      cart.addCoupon(couponFromRow(cp.coupon));
     }
 
     return cart;

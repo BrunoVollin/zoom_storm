@@ -13,4 +13,6 @@ export enum DomainEventName {
   CART_UPDATED = 'cart.updated',
   CART_CHECKED_OUT = 'cart.checked_out',
   CART_ABANDONED = 'cart.abandoned',
+  ORDER_CREATED = 'order.created',
+  ORDER_STATUS_CHANGED = 'order.status_changed',
 }

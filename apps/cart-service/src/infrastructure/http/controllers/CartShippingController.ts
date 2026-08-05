@@ -8,11 +8,11 @@ export class CartShippingController {
   ) {}
 
   async calculate(c: Context) {
-    const distance = Number(c.req.query('distance'));
+    const cep = c.req.query('cep') ?? '';
 
-    if (isNaN(distance) || distance <= 0) {
+    if (!/^\d{5}-?\d{3}$/.test(cep)) {
       return c.json(
-        { status: Status.ERROR, message: 'Invalid distance query param' },
+        { status: Status.ERROR, message: 'Invalid cep query param' },
         400,
       );
     }
@@ -20,7 +20,7 @@ export class CartShippingController {
     const result = await this.calculateShippingUseCase.execute({
       cartId: c.req.param('cartId')!,
       userId: c.get('userId') as string,
-      distance,
+      cep,
     });
     const status = result.status === Status.SUCCESS ? 200 : 422;
 
