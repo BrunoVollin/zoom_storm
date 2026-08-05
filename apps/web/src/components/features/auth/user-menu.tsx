@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { UserRound } from "lucide-react";
 
 import { LoginButton } from "@/components/features/auth/login-button";
 import { LogoutButton } from "@/components/features/auth/logout-button";
+import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/providers/auth-provider";
 
 /**
@@ -24,10 +26,13 @@ export function UserMenu() {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="hidden items-center gap-1.5 text-sm text-muted-foreground sm:flex">
+      <Link
+        href={ROUTES.accountSettings}
+        className="hidden items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground sm:flex"
+      >
         <UserRound className="size-4" />
         {user.name ?? user.email ?? user.subject}
-      </span>
+      </Link>
       <LogoutButton />
     </div>
   );

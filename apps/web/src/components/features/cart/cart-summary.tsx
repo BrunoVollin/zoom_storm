@@ -14,6 +14,7 @@ import { PriceTag } from "@/components/shared/price-tag";
 import { cartService } from "@/services/cart-service";
 import { useCart } from "@/hooks/use-cart";
 import { useLoyaltyBalance, useRedeemLoyaltyPoints } from "@/hooks/use-loyalty";
+import { useProfile } from "@/hooks/use-profile";
 import { ROUTES } from "@/constants/routes";
 import {
   applyCouponSchema,
@@ -40,9 +41,11 @@ export function CartSummary({ cart }: CartSummaryProps) {
   const { checkout, applyCoupon, removeCoupon } = useCart();
   const { data: loyaltyBalance } = useLoyaltyBalance();
   const redeemLoyaltyPoints = useRedeemLoyaltyPoints(cart.id);
+  const { data: profile } = useProfile();
 
   const shippingForm = useForm<ShippingEstimateInput>({
     resolver: zodResolver(shippingEstimateSchema),
+    values: profile?.address.zip ? { cep: profile.address.zip } : undefined,
   });
 
   const couponForm = useForm<ApplyCouponInput>({

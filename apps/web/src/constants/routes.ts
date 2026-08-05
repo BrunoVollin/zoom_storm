@@ -4,6 +4,7 @@ export const ROUTES = {
   cart: "/cart",
   login: "/login",
   wishlist: "/account/wishlist",
+  accountSettings: "/account/settings",
   checkoutPayment: (orderId: string) => `/checkout/payment?orderId=${orderId}`,
   orders: "/orders",
   order: (id: string) => `/orders/${id}`,

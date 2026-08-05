@@ -23,4 +23,10 @@ export const queryKeys = {
   loyalty: {
     balance: ["loyalty", "balance"] as const,
   },
+  profile: {
+    detail: ["profile"] as const,
+  },
+  paymentCards: {
+    all: ["payment-cards"] as const,
+  },
 } as const;
