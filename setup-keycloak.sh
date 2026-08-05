@@ -85,6 +85,28 @@ curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM/users" \
     "credentials": [{ "type": "password", "value": "123", "temporary": false }]
   }' -w "\nUser HTTP %{http_code}\n"
 
+echo "Creating realm role 'admin'..."
+curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM/roles" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "admin",
+    "description": "Grants access to admin-only endpoints (e.g. product management)"
+  }' -w "\nRole HTTP %{http_code}\n"
+
+echo "Assigning 'admin' role to user bruno..."
+BRUNO_ID=$(curl -s -X GET "$KEYCLOAK_URL/admin/realms/$REALM/users?username=bruno&exact=true" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['id'])")
+
+ADMIN_ROLE=$(curl -s -X GET "$KEYCLOAK_URL/admin/realms/$REALM/roles/admin" \
+  -H "Authorization: Bearer $ADMIN_TOKEN")
+
+curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM/users/$BRUNO_ID/role-mappings/realm" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "[$ADMIN_ROLE]" -w "\nRole assignment HTTP %{http_code}\n"
+
 echo "Done."
 echo "  test / test123"
-echo "  bruno / 123"
+echo "  bruno / 123 (admin role)"

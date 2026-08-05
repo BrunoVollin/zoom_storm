@@ -7,14 +7,16 @@ export NVM_DIR="$HOME/.nvm"
 SKIP_INSTALL=false
 SKIP_MIGRATE=false
 SKIP_KEYCLOAK=false
+SKIP_SEED=false
 
 for arg in "$@"; do
   case "$arg" in
     --no-install) SKIP_INSTALL=true ;;
     --no-migrate) SKIP_MIGRATE=true ;;
     --no-keycloak) SKIP_KEYCLOAK=true ;;
+    --no-seed) SKIP_SEED=true ;;
     -h|--help)
-      echo "Usage: ./up.sh [--no-install] [--no-migrate] [--no-keycloak]"
+      echo "Usage: ./up.sh [--no-install] [--no-migrate] [--no-keycloak] [--no-seed]"
       exit 0
       ;;
   esac
@@ -40,10 +42,12 @@ if [ "$SKIP_INSTALL" = false ]; then
   yarn install --ignore-scripts
 fi
 
-if [ "$SKIP_MIGRATE" = false ]; then
+if [ "$SKIP_MIGRATE" = false ] || [ "$SKIP_SEED" = false ]; then
   export DATABASE_URL=$(grep -m1 '^DATABASE_URL=' apps/cart-service/.env | cut -d= -f2- | tr -d '"')
   export PRODUCTS_SERVICE_DATABASE_URL=$(grep -m1 '^PRODUCTS_SERVICE_DATABASE_URL=' apps/products-service/.env | cut -d= -f2- | tr -d '"')
+fi
 
+if [ "$SKIP_MIGRATE" = false ]; then
   echo "==> Generating Prisma clients..."
   npx prisma generate --config apps/cart-service/prisma.config.ts --schema apps/cart-service/prisma/schema.prisma
   npx prisma generate --config apps/products-service/prisma.config.ts --schema apps/products-service/prisma/schema.prisma
@@ -51,7 +55,9 @@ if [ "$SKIP_MIGRATE" = false ]; then
   echo "==> Running database migrations..."
   npx prisma migrate deploy --config apps/cart-service/prisma.config.ts --schema apps/cart-service/prisma/schema.prisma
   npx prisma migrate deploy --config apps/products-service/prisma.config.ts --schema apps/products-service/prisma/schema.prisma
+fi
 
+if [ "$SKIP_SEED" = false ]; then
   echo "==> Seeding products database..."
   npx tsx --tsconfig tsconfig.json apps/products-service/scripts/seed-products.ts
 fi
