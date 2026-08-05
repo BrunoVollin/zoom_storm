@@ -3,19 +3,41 @@ import { cors } from 'hono/cors';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { ProductController } from './controllers/ProductController';
+import { FlashOfferController } from './controllers/FlashOfferController';
 import { ListProductsQuery } from '../../application/queries/ListProductsQuery';
 import { GetProductByIdQuery } from '../../application/queries/GetProductByIdQuery';
+import { ListCategoriesQuery } from '../../application/queries/ListCategoriesQuery';
+import { ListActiveFlashOffersQuery } from '../../application/queries/ListActiveFlashOffersQuery';
+import { ListFlashOffersQuery } from '../../application/queries/ListFlashOffersQuery';
 import { CreateProductUseCase } from '../../application/usecases/CreateProductUseCase';
 import { UpdateProductUseCase } from '../../application/usecases/UpdateProductUseCase';
 import { DeleteProductUseCase } from '../../application/usecases/DeleteProductUseCase';
+import { CreateProductVariantUseCase } from '../../application/usecases/CreateProductVariantUseCase';
+import { UpdateProductVariantUseCase } from '../../application/usecases/UpdateProductVariantUseCase';
+import { DeleteProductVariantUseCase } from '../../application/usecases/DeleteProductVariantUseCase';
+import { CreateReviewUseCase } from '../../application/usecases/CreateReviewUseCase';
+import { CreateFlashOfferUseCase } from '../../application/usecases/CreateFlashOfferUseCase';
+import { UpdateFlashOfferUseCase } from '../../application/usecases/UpdateFlashOfferUseCase';
+import { DeleteFlashOfferUseCase } from '../../application/usecases/DeleteFlashOfferUseCase';
 import { requireAdmin } from './middlewares/requireAdminMiddleware';
+import { requireAuth } from './middlewares/requireAuthMiddleware';
 
 interface Dependencies {
   listProducts: ListProductsQuery;
   getProductById: GetProductByIdQuery;
+  listCategories: ListCategoriesQuery;
   createProduct: CreateProductUseCase;
   updateProduct: UpdateProductUseCase;
   deleteProduct: DeleteProductUseCase;
+  createProductVariant: CreateProductVariantUseCase;
+  updateProductVariant: UpdateProductVariantUseCase;
+  deleteProductVariant: DeleteProductVariantUseCase;
+  createReview: CreateReviewUseCase;
+  listActiveFlashOffers: ListActiveFlashOffersQuery;
+  listFlashOffers: ListFlashOffersQuery;
+  createFlashOffer: CreateFlashOfferUseCase;
+  updateFlashOffer: UpdateFlashOfferUseCase;
+  deleteFlashOffer: DeleteFlashOfferUseCase;
 }
 
 const openapiSpec = readFileSync(
@@ -31,9 +53,22 @@ export function buildRouter(deps: Dependencies): Hono {
   const product = new ProductController(
     deps.listProducts,
     deps.getProductById,
+    deps.listCategories,
     deps.createProduct,
     deps.updateProduct,
     deps.deleteProduct,
+    deps.createProductVariant,
+    deps.updateProductVariant,
+    deps.deleteProductVariant,
+    deps.createReview,
+  );
+
+  const flashOffer = new FlashOfferController(
+    deps.listActiveFlashOffers,
+    deps.listFlashOffers,
+    deps.createFlashOffer,
+    deps.updateFlashOffer,
+    deps.deleteFlashOffer,
   );
 
   app.get('/openapi.yml', (c) =>
@@ -60,11 +95,22 @@ export function buildRouter(deps: Dependencies): Hono {
   );
 
   app.get('/hello', (c) => product.hello(c));
+  app.get('/products/categories', (c) => product.listCategories(c));
   app.get('/products', (c) => product.list(c));
   app.get('/products/:id', (c) => product.getById(c));
   app.post('/products', requireAdmin, (c) => product.create(c));
   app.put('/products/:id', requireAdmin, (c) => product.update(c));
   app.delete('/products/:id', requireAdmin, (c) => product.delete(c));
+  app.post('/products/:id/variants', requireAdmin, (c) => product.createVariant(c));
+  app.put('/products/:id/variants/:variantId', requireAdmin, (c) => product.updateVariant(c));
+  app.delete('/products/:id/variants/:variantId', requireAdmin, (c) => product.deleteVariant(c));
+  app.post('/products/:id/reviews', requireAuth, (c) => product.createReview(c));
+
+  app.get('/flash-offers/active', (c) => flashOffer.listActive(c));
+  app.get('/flash-offers', requireAdmin, (c) => flashOffer.list(c));
+  app.post('/flash-offers', requireAdmin, (c) => flashOffer.create(c));
+  app.put('/flash-offers/:id', requireAdmin, (c) => flashOffer.update(c));
+  app.delete('/flash-offers/:id', requireAdmin, (c) => flashOffer.delete(c));
 
   return app;
 }

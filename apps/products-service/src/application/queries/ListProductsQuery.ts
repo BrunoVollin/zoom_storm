@@ -1,7 +1,10 @@
-import { ProductQueryRepository } from '../../domain/repositories/ProductQueryRepository';
+import {
+  ProductListFilters,
+  ProductQueryRepository,
+} from '../../domain/repositories/ProductQueryRepository';
 import { Query, Status } from '../contracts/Query';
 
-type Input = Record<string, never>;
+type Input = ProductListFilters;
 
 interface SuccessOutput {
   status: Status.SUCCESS;
@@ -20,8 +23,8 @@ export class ListProductsQuery implements Query<Input, Output> {
     private readonly productQueryRepository: ProductQueryRepository,
   ) {}
 
-  async execute(_input: Input): Promise<Output> {
-    const products = await this.productQueryRepository.findAll();
+  async execute(input: Input): Promise<Output> {
+    const products = await this.productQueryRepository.findAll(input);
 
     return { status: Status.SUCCESS, products };
   }

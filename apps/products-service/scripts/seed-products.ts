@@ -1,67 +1,56 @@
 import '../src/config/env';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { prisma } from '../src/infrastructure/database/prisma/prisma-connection';
 import { closeDatabaseConnections } from '../src/infrastructure/database/prisma/prisma-connection';
 import { PrismaProductRepository } from '../src/infrastructure/database/prisma/repositories/PrismaProductRepository';
 import { CreateProductUseCase } from '../src/application/usecases/CreateProductUseCase';
 import { Status } from '../src/application/contracts/UseCase';
+import { DomainEvent, DomainEventName } from '../src/domain/events/DomainEvent';
+import { ProductMapper } from '../src/application/mappers/ProductMapper';
+import { IdType } from '../src/domain/shared/IdType';
 
-const SAMPLE_PRODUCTS = [
-  {
-    name: 'The Legend of Zelda: Tears of the Kingdom',
-    price: 349.9,
-    description: 'Jogo de aventura para Nintendo Switch.',
-    category: 'Nintendo Switch',
-    stock: 25,
-    transportHeight: 2,
-    transportWidth: 14,
-    transportLength: 17,
-    weight: 0.1,
-  },
-  {
-    name: 'Super Nintendo Classic Edition',
-    price: 899.9,
-    description: 'Console retro com 21 jogos clássicos pré-instalados.',
-    category: 'Retro',
-    stock: 10,
-    transportHeight: 6,
-    transportWidth: 20,
-    transportLength: 24,
-    weight: 0.6,
-  },
-  {
-    name: 'PlayStation 5',
-    price: 3999.9,
-    description: 'Console de última geração com suporte a jogos em 4K.',
-    category: 'Console',
-    stock: 8,
-    transportHeight: 15,
-    transportWidth: 30,
-    transportLength: 39,
-    weight: 4.5,
-  },
-  {
-    name: 'Sonic the Hedgehog (Mega Drive)',
-    price: 149.9,
-    description: 'Cartucho retro clássico para Mega Drive.',
-    category: 'Retro',
-    stock: 40,
-    transportHeight: 1,
-    transportWidth: 11,
-    transportLength: 15,
-    weight: 0.05,
-  },
-  {
-    name: 'Xbox Wireless Controller',
-    price: 399.9,
-    description: 'Controle sem fio compatível com Xbox e PC.',
-    category: 'Acessório',
-    stock: 60,
-    transportHeight: 7,
-    transportWidth: 11,
-    transportLength: 16,
-    weight: 0.3,
-  },
-];
+interface DummyJsonReview {
+  rating: number;
+  comment: string;
+  date: string;
+  reviewerName: string;
+  reviewerEmail: string;
+}
+
+interface DummyJsonProduct {
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  discountPercentage: number;
+  rating: number;
+  stock: number;
+  tags: string[];
+  brand?: string;
+  sku: string;
+  weight: number;
+  dimensions: { width: number; height: number; depth: number };
+  warrantyInformation: string;
+  shippingInformation: string;
+  availabilityStatus: string;
+  reviews: DummyJsonReview[];
+  returnPolicy: string;
+  minimumOrderQuantity: number;
+  meta: { barcode: string; qrCode: string };
+  images: string[];
+  thumbnail: string;
+}
+
+// The file has a stray trailing character after the closing brace — trim
+// back to the last "}" before parsing instead of failing outright.
+function readDummyJsonProducts(): DummyJsonProduct[] {
+  const raw = readFileSync(join(__dirname, '../../../products.json'), 'utf-8');
+  const lastBrace = raw.lastIndexOf('}');
+  const parsed = JSON.parse(raw.slice(0, lastBrace + 1));
+
+  return parsed.products;
+}
 
 async function main() {
   const existing = await prisma.product.count();
@@ -74,17 +63,88 @@ async function main() {
     return;
   }
 
-  const createProduct = new CreateProductUseCase(new PrismaProductRepository());
+  const productRepository = new PrismaProductRepository();
+  const createProduct = new CreateProductUseCase(productRepository);
+  const items = readDummyJsonProducts();
 
-  for (const input of SAMPLE_PRODUCTS) {
-    const result = await createProduct.execute(input);
+  for (const item of items) {
+    const result = await createProduct.execute({
+      name: item.title,
+      description: item.description,
+      category: item.category,
+      // DummyJSON has no shipping-package dimensions — approximate with the
+      // product's own display dimensions, rounded up to whole centimeters.
+      transportHeight: Math.ceil(item.dimensions.height),
+      transportWidth: Math.ceil(item.dimensions.width),
+      transportLength: Math.ceil(item.dimensions.depth),
+      weight: item.weight,
+      brand: item.brand,
+      tags: item.tags,
+      images: item.images,
+      thumbnail: item.thumbnail,
+      discountPercentage: item.discountPercentage,
+      width: item.dimensions.width,
+      height: item.dimensions.height,
+      depth: item.dimensions.depth,
+      warrantyInformation: item.warrantyInformation,
+      shippingInformation: item.shippingInformation,
+      availabilityStatus: item.availabilityStatus,
+      returnPolicy: item.returnPolicy,
+      minimumOrderQuantity: item.minimumOrderQuantity,
+      barcode: item.meta?.barcode,
+      qrCode: item.meta?.qrCode,
+      // Prices flow through the rest of the system as integer cents (see
+      // apps/web's ProductForm, which multiplies reais by 100 before
+      // sending) — DummyJSON gives decimal dollars, so convert here.
+      variants: [
+        {
+          sku: item.sku,
+          price: Math.round(item.price * 100),
+          stock: item.stock,
+          isDefault: true,
+        },
+      ],
+    });
 
     if (result.status === Status.ERROR) {
-      console.error(`[seed] falha ao criar "${input.name}": ${result.message}`);
-    } else {
-      console.log(`[seed] produto criado: ${input.name}`);
+      console.error(`[seed] falha ao criar "${item.title}": ${result.message}`);
+      continue;
     }
+
+    if (item.reviews?.length) {
+      await prisma.productReview.createMany({
+        data: item.reviews.map((review) => ({
+          id: IdType.create().toString(),
+          productId: result.product.id,
+          rating: review.rating,
+          comment: review.comment,
+          reviewerName: review.reviewerName,
+          reviewerEmail: review.reviewerEmail,
+          createdAt: new Date(review.date),
+        })),
+      });
+
+      // Re-emit product.updated with the reviews attached so the read-model
+      // projections (products-projection, cart-products-projection) pick
+      // them up — CreateProductUseCase's own event predates the reviews
+      // insert above.
+      const withReviews = await productRepository.findById(
+        IdType.create(result.product.id),
+      );
+      if (withReviews) {
+        const event = new DomainEvent(
+          DomainEventName.PRODUCT_UPDATED,
+          ProductMapper.toPrimitives(withReviews),
+          new Date(),
+        );
+        await productRepository.save(withReviews, event);
+      }
+    }
+
+    console.log(`[seed] produto criado: ${item.title}`);
   }
+
+  console.log(`[seed] ${items.length} produto(s) importado(s) de products.json.`);
 }
 
 main()

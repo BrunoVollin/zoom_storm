@@ -8,14 +8,27 @@ import { ProductMapper, ProductPrimitives } from '../mappers/ProductMapper';
 interface Input {
   id: string;
   name: string;
-  price: number;
   description: string;
   category: string;
-  stock: number;
   transportHeight: number;
   transportWidth: number;
   transportLength: number;
   weight: number;
+  brand?: string;
+  tags?: string[];
+  images?: string[];
+  thumbnail?: string;
+  discountPercentage?: number;
+  width?: number;
+  height?: number;
+  depth?: number;
+  warrantyInformation?: string;
+  shippingInformation?: string;
+  availabilityStatus?: string;
+  returnPolicy?: string;
+  minimumOrderQuantity?: number;
+  barcode?: string;
+  qrCode?: string;
 }
 
 interface SuccessOutput {
@@ -41,18 +54,35 @@ export class UpdateProductUseCase implements UseCase<Input, Output> {
       return { status: Status.ERROR, message: 'Product not found' };
     }
 
-    const updated = new Product(
-      existing.getId(),
-      input.name,
-      input.price,
-      input.description,
-      input.category,
-      input.stock,
-      input.transportHeight,
-      input.transportWidth,
-      input.transportLength,
-      input.weight,
-    );
+    const updated = new Product({
+      id: existing.getId(),
+      name: input.name,
+      description: input.description,
+      category: input.category,
+      transportHeight: input.transportHeight,
+      transportWidth: input.transportWidth,
+      transportLength: input.transportLength,
+      weight: input.weight,
+      brand: input.brand,
+      tags: input.tags,
+      images: input.images,
+      thumbnail: input.thumbnail,
+      discountPercentage: input.discountPercentage,
+      rating: existing.rating,
+      width: input.width,
+      height: input.height,
+      depth: input.depth,
+      warrantyInformation: input.warrantyInformation,
+      shippingInformation: input.shippingInformation,
+      availabilityStatus: input.availabilityStatus,
+      returnPolicy: input.returnPolicy,
+      minimumOrderQuantity: input.minimumOrderQuantity,
+      barcode: input.barcode,
+      qrCode: input.qrCode,
+      createdAt: existing.createdAt,
+      variants: existing.variants,
+      reviews: existing.reviews,
+    });
 
     const event = new DomainEvent(
       DomainEventName.PRODUCT_UPDATED,

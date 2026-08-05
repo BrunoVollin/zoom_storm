@@ -13,14 +13,72 @@ datasource db {
 model Product {
   id              String @id
   name            String
-  price           Float
   description     String
   category        String
-  stock           Int
   transportHeight Int
   transportWidth  Int
   transportLength Int
-  weight          Float  @default(0)
+  weight          Float    @default(0)
+
+  brand                String?
+  tags                 String[]
+  images               String[]
+  thumbnail            String?
+  discountPercentage   Float?
+  rating               Float?
+  width                Float?
+  height               Float?
+  depth                Float?
+  warrantyInformation  String?
+  shippingInformation  String?
+  availabilityStatus   String?
+  returnPolicy         String?
+  minimumOrderQuantity Int      @default(1)
+  barcode              String?
+  qrCode               String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  variants ProductVariant[]
+  reviews  ProductReview[]
+}
+
+model ProductVariant {
+  id        String  @id
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  sku       String  @unique
+  name      String?
+  price     Float
+  stock     Int
+  isDefault Boolean @default(false)
+
+  @@index([productId])
+}
+
+model ProductReview {
+  id            String   @id
+  product       Product  @relation(fields: [productId], references: [id])
+  productId     String
+  rating        Int
+  comment       String
+  reviewerName  String
+  reviewerEmail String
+  createdAt     DateTime @default(now())
+
+  @@index([productId])
+}
+
+model FlashOffer {
+  id          String   @id
+  productId   String
+  title       String
+  discountPct Float
+  startsAt    DateTime
+  endsAt      DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([startsAt, endsAt])
 }
 
 model OutboxEvent {
