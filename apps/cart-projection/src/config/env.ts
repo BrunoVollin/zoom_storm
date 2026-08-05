@@ -9,7 +9,8 @@ export const env = {
     groupId:
       process.env.CART_PROJECTION_KAFKA_GROUP_ID || 'cart-projection-worker',
     topics: (
-      process.env.CART_PROJECTION_KAFKA_TOPICS || 'cart-events,checkout-events'
+      process.env.CART_PROJECTION_KAFKA_TOPICS ||
+      'cart-events,checkout-events,order-events'
     ).split(','),
   },
   mongo: {

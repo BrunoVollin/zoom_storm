@@ -20,4 +20,14 @@ export class OrderRepository {
       { upsert: true },
     );
   }
+
+  async saveById(
+    orderData: { id: string } & Record<string, unknown>,
+  ): Promise<void> {
+    await this.collection.replaceOne(
+      { id: orderData.id },
+      orderData,
+      { upsert: true },
+    );
+  }
 }

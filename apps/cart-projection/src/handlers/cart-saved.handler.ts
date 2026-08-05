@@ -48,6 +48,16 @@ export class CartSavedHandler {
         return;
       }
 
+      if (name === 'order.created' || name === 'order.status_changed') {
+        await this.orderRepository.saveById(payload);
+
+        console.log(
+          `[CartSavedHandler] Order ${payload.id} projection updated (${name}).`,
+        );
+
+        return;
+      }
+
       await this.cartRepository.save(payload);
 
       console.log(`[CartSavedHandler] Cart processed successfully.`);
