@@ -24,6 +24,7 @@ Event-Driven** pattern with asynchronous projections via Kafka.
 | Authentication | Keycloak (OIDC / JWT) |
 | Cache / Session | Redis (ioredis) |
 | Kafka observability | AKHQ |
+| Tracing / metrics / logs | OpenTelemetry → Tempo / Prometheus / Loki, visualized in Grafana — see [observability.md](docs/observability.md) |
 
 Local infra declared in [`docker-compose.yml`](docker-compose.yml). Environment
 variables consolidated in [`.env.example`](.env.example).
