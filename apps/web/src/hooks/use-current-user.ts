@@ -10,3 +10,9 @@ export function useCurrentUser() {
     retry: false,
   });
 }
+
+export function useIsAdmin() {
+  const { data: user } = useCurrentUser();
+
+  return user?.roles.includes("admin") ?? false;
+}

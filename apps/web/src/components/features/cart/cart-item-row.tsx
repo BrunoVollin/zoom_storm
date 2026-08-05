@@ -17,7 +17,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
     <div className="flex items-center gap-4 border-b border-border py-4 last:border-none">
       <div className="flex-1">
         <p className="font-medium">{item.product.name}</p>
-        <PriceTag cents={item.product.price} className="text-sm text-muted-foreground" />
+        <PriceTag cents={item.variant.price} className="text-sm text-muted-foreground" />
       </div>
 
       <div className="flex items-center gap-1">
@@ -46,7 +46,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
         </Button>
       </div>
 
-      <PriceTag cents={item.product.price * item.quantity} className="w-24 text-right" />
+      <PriceTag cents={item.variant.price * item.quantity} className="w-24 text-right" />
 
       <Button
         variant="ghost"

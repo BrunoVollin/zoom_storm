@@ -14,7 +14,16 @@ export const updateCartItemQuantitySchema = z.object({
 export type UpdateCartItemQuantityInput = z.infer<typeof updateCartItemQuantitySchema>;
 
 export const shippingEstimateSchema = z.object({
-  distance: z.coerce.number().int().min(1, "Informe uma distância válida em km"),
+  cep: z
+    .string()
+    .min(1, "Informe o CEP")
+    .regex(/^\d{5}-?\d{3}$/, "CEP inválido — use o formato 00000-000"),
 });
 
 export type ShippingEstimateInput = z.infer<typeof shippingEstimateSchema>;
+
+export const applyCouponSchema = z.object({
+  couponId: z.string().min(1, "Informe o código do cupom"),
+});
+
+export type ApplyCouponInput = z.infer<typeof applyCouponSchema>;

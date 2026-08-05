@@ -123,17 +123,43 @@ export function useCart() {
     onSuccess: setCart,
   });
 
-  const checkout = useMutation({
-    mutationFn: async (shipping: number) => {
+  const applyCoupon = useMutation({
+    mutationFn: async (couponId: string) => {
       if (!cartId) throw new Error("Carrinho inexistente");
       try {
-        return await cartService.checkout(cartId, shipping);
+        return await cartService.applyCoupon(cartId, couponId);
       } catch (error) {
         if (isStaleCartError(error)) clearCartId();
         throw error;
       }
     },
     onSuccess: setCart,
+  });
+
+  const removeCoupon = useMutation({
+    mutationFn: async (couponId: string) => {
+      if (!cartId) throw new Error("Carrinho inexistente");
+      try {
+        return await cartService.removeCoupon(cartId, couponId);
+      } catch (error) {
+        if (isStaleCartError(error)) clearCartId();
+        throw error;
+      }
+    },
+    onSuccess: setCart,
+  });
+
+  const checkout = useMutation({
+    mutationFn: async ({ shipping, cep }: { shipping: number; cep?: string }) => {
+      if (!cartId) throw new Error("Carrinho inexistente");
+      try {
+        return await cartService.checkout(cartId, shipping, cep);
+      } catch (error) {
+        if (isStaleCartError(error)) clearCartId();
+        throw error;
+      }
+    },
+    onSuccess: ({ cart }) => setCart(cart),
   });
 
   return {
@@ -143,6 +169,8 @@ export function useCart() {
     addItem,
     updateItemQuantity,
     removeItem,
+    applyCoupon,
+    removeCoupon,
     checkout,
   };
 }
