@@ -33,14 +33,14 @@ function buildMessage(input: Input): { message: string; type: NotificationType }
   const { payload } = input;
   const destination = payload.destinationCity ?? 'sua região';
 
-  if (input.eventName === 'order.created' && payload.status === 'CREATED') {
-    return {
-      message: `Compra realizada com sucesso! Pedido #${payload.id} confirmado.`,
-      type: NotificationType.ORDER_CREATED,
-    };
-  }
-
   if (input.eventName === 'order.status_changed') {
+    if (payload.status === 'PAID') {
+      return {
+        message: `Compra realizada com sucesso! Pedido #${payload.id} confirmado.`,
+        type: NotificationType.ORDER_CREATED,
+      };
+    }
+
     if (payload.status === 'IN_TRANSIT') {
       const origin = payload.originCity ?? 'nosso centro de distribuição';
 
@@ -65,7 +65,7 @@ function buildMessage(input: Input): { message: string; type: NotificationType }
     }
   }
 
-  // PAID, or any other transition, has no user-facing notification copy yet.
+  // Creating an unpaid order, or any other transition, must not notify the user.
   return null;
 }
 
@@ -89,8 +89,14 @@ export class CreateNotificationFromOrderEventUseCase implements UseCase<Input, O
       input.payload.id,
     );
 
-    await this.notificationRepository.save(notification);
-    await this.notificationPublisher.publish(notification);
+    try {
+      await this.notificationRepository.save(notification);
+      await this.notificationPublisher.publish(notification);
+    } catch (error) {
+      console.error(error);
+
+      return { status: Status.ERROR, message: 'An unexpected error occurred. Please try again later.' };
+    }
 
     return { status: Status.SUCCESS, notification };
   }

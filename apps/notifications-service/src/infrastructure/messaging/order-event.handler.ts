@@ -40,6 +40,12 @@ export class OrderEventHandler {
         payload,
       });
 
+      if (result.status === 'ERROR') {
+        throw new Error(
+          `[OrderEventHandler] Notification processing failed: ${result.message}`,
+        );
+      }
+
       if (result.status === 'SUCCESS' && result.notification) {
         console.log(
           `[OrderEventHandler] Notification created for user ${payload.userId} (order ${payload.id}).`,
