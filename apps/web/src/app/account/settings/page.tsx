@@ -8,6 +8,7 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { ErrorState } from "@/components/shared/error-state";
 import { PriceTag } from "@/components/shared/price-tag";
 import { ProfileForm } from "@/components/features/account/profile-form";
+import { SavedCardsSection } from "@/components/features/account/saved-cards-section";
 import { useProfile, useUpdateProfile } from "@/hooks/use-profile";
 import { useLoyaltyBalance } from "@/hooks/use-loyalty";
 import { useAuth } from "@/providers/auth-provider";
@@ -28,8 +29,8 @@ export default function AccountSettingsPage() {
   if (!user) {
     return (
       <ErrorState
-        title="Faça login para acessar"
-        message="Você precisa estar autenticado para ver suas configurações de conta."
+        title="Sign in to access"
+        message="You need to be signed in to view your account settings."
       />
     );
   }
@@ -37,25 +38,25 @@ export default function AccountSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Configurações da conta</h1>
+        <h1 className="text-2xl font-semibold">Account settings</h1>
         <p className="text-sm text-muted-foreground">
-          Seus dados pessoais, endereço de entrega e crédito disponível.
+          Your personal data, shipping address and available credit.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Dados pessoais e endereço</CardTitle>
+          <CardTitle>Personal data and address</CardTitle>
           <CardDescription>
-            Usados para identificar seus pedidos e calcular o frete de entrega.
+            Used to identify your orders and calculate shipping costs.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? <LoadingSpinner /> : null}
           {error ? (
             <ErrorState
-              title="Não foi possível carregar seus dados"
-              message="Tente novamente em instantes."
+              title="We couldn't load your data"
+              message="Please try again in a moment."
             />
           ) : null}
           {!isLoading && !error ? (
@@ -67,14 +68,16 @@ export default function AccountSettingsPage() {
         </CardContent>
       </Card>
 
+      <SavedCardsSection />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Gift className="size-4" />
-            Crédito de fidelidade
+            Loyalty credit
           </CardTitle>
           <CardDescription>
-            Pontos acumulados nas suas compras — 1 ponto equivale a R$1,00 de desconto.
+            Points earned on your purchases — 1 point equals $1.00 in discount.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
@@ -87,13 +90,13 @@ export default function AccountSettingsPage() {
                   {loyaltyBalance ?? 0} pts
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  (<PriceTag cents={(loyaltyBalance ?? 0) * CENTS_PER_POINT} /> em uso disponível)
+                  (<PriceTag cents={(loyaltyBalance ?? 0) * CENTS_PER_POINT} /> available to use)
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Resgate seus pontos como desconto direto no{" "}
+                Redeem your points as a discount directly in the{" "}
                 <Link href={ROUTES.cart} className="underline hover:text-foreground">
-                  carrinho
+                  cart
                 </Link>
                 .
               </p>

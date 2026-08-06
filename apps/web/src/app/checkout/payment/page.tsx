@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { CreditCard, Loader2, Trash2 } from "lucide-react";
+import { CreditCard, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import { Select } from "@/components/ui/select";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { PriceTag } from "@/components/shared/price-tag";
+import { SavedCardsList } from "@/components/features/account/saved-cards-list";
+import { FillTestCardButton } from "@/components/features/account/fill-test-card-button";
 import { ROUTES } from "@/constants/routes";
 import { useOrder, usePayOrder } from "@/hooks/use-orders";
 import { useSavedCards, useAddSavedCard, useDeleteSavedCard } from "@/hooks/use-payment-cards";
@@ -43,6 +45,7 @@ export default function PaymentPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<PaymentFormInput>({
     resolver: zodResolver(paymentFormSchema),
@@ -59,7 +62,7 @@ export default function PaymentPage() {
   });
 
   if (!orderId) {
-    return <ErrorState title="Pedido não informado" />;
+    return <ErrorState title="No order specified" />;
   }
 
   if (isLoading) {
@@ -67,15 +70,15 @@ export default function PaymentPage() {
   }
 
   if (error || !order) {
-    return <ErrorState title="Pedido não encontrado" />;
+    return <ErrorState title="Order not found" />;
   }
 
   if (order.status !== "CREATED") {
     return (
       <div className="mx-auto max-w-md text-center">
-        <p className="text-lg font-medium">Este pedido já foi pago.</p>
+        <p className="text-lg font-medium">This order has already been paid.</p>
         <Button className="mt-4" onClick={() => router.push(ROUTES.order(order.id))}>
-          Ver pedido
+          View order
         </Button>
       </div>
     );
@@ -88,7 +91,7 @@ export default function PaymentPage() {
       onSuccess: () => {
         if (saveCard) {
           addSavedCard.mutate({
-            brand: detectCardBrand(values.cardNumber) ?? "Cartão",
+            brand: detectCardBrand(values.cardNumber) ?? "Card",
             lastFour: lastFourDigits(values.cardNumber),
             holderName: values.cardName,
             expiry: values.expiry,
@@ -108,44 +111,25 @@ export default function PaymentPage() {
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Pagamento</h1>
+        <h1 className="text-2xl font-semibold">Payment</h1>
         <p className="text-sm text-muted-foreground">
-          Pedido no valor de <PriceTag cents={order.total} />
+          Order total of <PriceTag cents={order.total} />
         </p>
       </div>
 
       {savedCards && savedCards.length > 0 ? (
         <div className="flex flex-col gap-2 rounded-lg border border-border p-4">
-          <p className="text-sm font-medium">Cartões salvos</p>
-          {savedCards.map((card) => (
-            <div key={card.id} className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedCardId(card.id)}
-                className={`flex flex-1 items-center justify-between rounded-md border px-3 py-2 text-left text-sm ${
-                  selectedCardId === card.id ? "border-primary" : "border-border"
-                }`}
-              >
-                <span>
-                  {card.brand} •••• {card.lastFour}
-                </span>
-                <span className="text-muted-foreground">{card.expiry}</span>
-              </button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={`Remover cartão terminado em ${card.lastFour}`}
-                disabled={deleteSavedCard.isPending}
-                onClick={() => {
-                  deleteSavedCard.mutate(card.id);
-                  if (selectedCardId === card.id) setSelectedCardId(null);
-                }}
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            </div>
-          ))}
+          <p className="text-sm font-medium">Saved cards</p>
+          <SavedCardsList
+            cards={savedCards}
+            selectedCardId={selectedCardId}
+            onSelect={setSelectedCardId}
+            isDeleting={deleteSavedCard.isPending}
+            onDelete={(cardId) => {
+              deleteSavedCard.mutate(cardId);
+              if (selectedCardId === cardId) setSelectedCardId(null);
+            }}
+          />
           <button
             type="button"
             onClick={() => setSelectedCardId(null)}
@@ -153,7 +137,7 @@ export default function PaymentPage() {
               selectedCardId === null ? "border-primary" : "border-border"
             }`}
           >
-            Novo cartão
+            New card
           </button>
         </div>
       ) : null}
@@ -165,7 +149,7 @@ export default function PaymentPage() {
         >
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <CreditCard className="size-4" />
-            Cartão de crédito (simulado — nenhuma cobrança real é feita)
+            Credit card (simulated — no real charge is made)
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -182,11 +166,11 @@ export default function PaymentPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="installments">Parcelas</Label>
+            <Label htmlFor="installments">Installments</Label>
             <Select id="installments" {...registerSavedCard("installments")}>
               {installmentOptions.map((option) => (
                 <option key={option.count} value={option.count}>
-                  {option.count}x de {formatPrice(option.valueCents)} sem juros
+                  {option.count}x of {formatPrice(option.valueCents)} interest-free
                 </option>
               ))}
             </Select>
@@ -194,12 +178,17 @@ export default function PaymentPage() {
 
           {payOrder.isError ? (
             <p className="text-sm text-destructive">
-              {payOrder.error instanceof Error ? payOrder.error.message : "Não foi possível pagar"}
+              {payOrder.error instanceof Error ? payOrder.error.message : "Could not process payment"}
             </p>
           ) : null}
 
-          <Button type="submit" size="lg" disabled={payOrder.isPending}>
-            {payOrder.isPending ? <Loader2 className="animate-spin" /> : "Confirmar pagamento"}
+          <Button
+            data-testid="payment-submit-btn"
+            type="submit"
+            size="lg"
+            disabled={payOrder.isPending}
+          >
+            {payOrder.isPending ? <Loader2 className="animate-spin" /> : "Confirm payment"}
           </Button>
         </form>
       ) : (
@@ -209,11 +198,20 @@ export default function PaymentPage() {
         >
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <CreditCard className="size-4" />
-            Cartão de crédito (simulado — nenhuma cobrança real é feita)
+            Credit card (simulated — no real charge is made)
           </div>
 
+          <FillTestCardButton
+            onFill={(data) => {
+              setValue("cardNumber", data.cardNumber, { shouldValidate: true });
+              setValue("cardName", data.cardName, { shouldValidate: true });
+              setValue("expiry", data.expiry, { shouldValidate: true });
+              setValue("cvv", data.cvv, { shouldValidate: true });
+            }}
+          />
+
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cardNumber">Número do cartão</Label>
+            <Label htmlFor="cardNumber">Card number</Label>
             <Input
               id="cardNumber"
               inputMode="numeric"
@@ -226,8 +224,8 @@ export default function PaymentPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cardName">Nome no cartão</Label>
-            <Input id="cardName" placeholder="Como impresso no cartão" {...register("cardName")} />
+            <Label htmlFor="cardName">Name on card</Label>
+            <Input id="cardName" placeholder="As printed on the card" {...register("cardName")} />
             {errors.cardName ? (
               <p className="text-sm text-destructive">{errors.cardName.message}</p>
             ) : null}
@@ -235,7 +233,7 @@ export default function PaymentPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="expiry">Validade (MM/AA)</Label>
+              <Label htmlFor="expiry">Expiry (MM/YY)</Label>
               <Input id="expiry" placeholder="12/28" {...register("expiry")} />
               {errors.expiry ? (
                 <p className="text-sm text-destructive">{errors.expiry.message}</p>
@@ -250,11 +248,11 @@ export default function PaymentPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="installments">Parcelas</Label>
+            <Label htmlFor="installments">Installments</Label>
             <Select id="installments" {...register("installments")}>
               {installmentOptions.map((option) => (
                 <option key={option.count} value={option.count}>
-                  {option.count}x de {formatPrice(option.valueCents)} sem juros
+                  {option.count}x of {formatPrice(option.valueCents)} interest-free
                 </option>
               ))}
             </Select>
@@ -267,17 +265,22 @@ export default function PaymentPage() {
               onChange={(event) => setSaveCard(event.target.checked)}
               className="size-4 rounded border-border"
             />
-            Salvar cartão para próximas compras
+            Save card for future purchases
           </label>
 
           {payOrder.isError ? (
             <p className="text-sm text-destructive">
-              {payOrder.error instanceof Error ? payOrder.error.message : "Não foi possível pagar"}
+              {payOrder.error instanceof Error ? payOrder.error.message : "Could not process payment"}
             </p>
           ) : null}
 
-          <Button type="submit" size="lg" disabled={payOrder.isPending}>
-            {payOrder.isPending ? <Loader2 className="animate-spin" /> : "Confirmar pagamento"}
+          <Button
+            data-testid="payment-submit-btn"
+            type="submit"
+            size="lg"
+            disabled={payOrder.isPending}
+          >
+            {payOrder.isPending ? <Loader2 className="animate-spin" /> : "Confirm payment"}
           </Button>
         </form>
       )}
