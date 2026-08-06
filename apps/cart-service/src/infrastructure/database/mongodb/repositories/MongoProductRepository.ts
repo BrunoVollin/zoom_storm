@@ -59,4 +59,13 @@ export class MongoProductRepository implements ProductRepository {
 
     return docs.map((doc) => toDomain(doc as unknown as VariantDocument));
   }
+
+  async findByProductId(productId: IdType): Promise<ProductVariant | null> {
+    const doc = await this.collection.findOne({
+      productId: productId.toString(),
+    });
+    if (!doc) return null;
+
+    return toDomain(doc as unknown as VariantDocument);
+  }
 }

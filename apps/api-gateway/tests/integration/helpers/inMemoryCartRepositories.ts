@@ -72,6 +72,16 @@ export class InMemoryCartProductRepository implements CartProductRepository {
 
     return variants;
   }
+
+  async findByProductId(productId: IdType): Promise<CartProductVariant | null> {
+    const product = this.store.get(productId.toString());
+    if (!product) return null;
+
+    const [firstVariant] = product.variants;
+    if (!firstVariant) return null;
+
+    return toCartVariant(product, firstVariant.id.toString());
+  }
 }
 
 function toCartVariant(

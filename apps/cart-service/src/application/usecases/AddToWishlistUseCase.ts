@@ -14,7 +14,7 @@ export class AddToWishlistUseCase implements UseCase<Input, Output> {
 
   async execute(input: Input): Promise<Output> {
     try {
-      const product = await this.productRepository.findById(
+      const product = await this.productRepository.findByProductId(
         IdType.create(input.productId),
       );
 

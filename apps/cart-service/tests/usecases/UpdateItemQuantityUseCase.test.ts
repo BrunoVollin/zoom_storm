@@ -24,6 +24,7 @@ describe('UpdateItemQuantityUseCase', () => {
     productRepositoryMock = {
       findById: jest.fn(),
       findByIds: jest.fn(),
+      findByProductId: jest.fn(),
     };
 
     const mockItem = {

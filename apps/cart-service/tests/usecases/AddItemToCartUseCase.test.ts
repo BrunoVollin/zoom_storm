@@ -18,6 +18,7 @@ describe('AddItemToCartUseCase', () => {
     productRepositoryMock = {
       findById: jest.fn(),
       findByIds: jest.fn(),
+      findByProductId: jest.fn(),
     };
 
     cartRepository = new InMemoryCartRepository();
