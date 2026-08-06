@@ -54,7 +54,7 @@ describe('CalculateShippingUseCase', () => {
       });
 
       const mockItem = {
-        getVolume: jest.fn(() => 1000),
+        getVolume: jest.fn(() => 0.004),
         getWeight: jest.fn(() => 2),
         quantity: 2,
         product,
@@ -71,7 +71,7 @@ describe('CalculateShippingUseCase', () => {
 
       expect(result.status).toBe(Status.SUCCESS);
       if (result.status === Status.SUCCESS) {
-        expect(result.shipping).toBeGreaterThan(0);
+        expect(result.shipping).toBe(1910);
         expect(result.estimatedDays).toBeGreaterThan(0);
         expect(result.city).toBe('São Paulo');
         expect(result.state).toBe('SP');
@@ -90,14 +90,14 @@ describe('CalculateShippingUseCase', () => {
       });
 
       const mockItem1 = {
-        getVolume: jest.fn(() => 1000),
+        getVolume: jest.fn(() => 0.004),
         getWeight: jest.fn(() => 2),
         quantity: 2,
         product: product1,
       };
 
       const mockItem2 = {
-        getVolume: jest.fn(() => 1000),
+        getVolume: jest.fn(() => 0.006),
         getWeight: jest.fn(() => 3),
         quantity: 3,
         product: product2,
@@ -114,14 +114,14 @@ describe('CalculateShippingUseCase', () => {
 
       expect(result.status).toBe(Status.SUCCESS);
       if (result.status === Status.SUCCESS) {
-        expect(result.shipping).toBeGreaterThan(0);
+        expect(result.shipping).toBe(2600);
       }
     });
 
     it('should use a larger distance estimate for a farther state', async () => {
       const product = createProduct({ id: createIdFromString('product-1') });
       const mockItem = {
-        getVolume: jest.fn(() => 1000),
+        getVolume: jest.fn(() => 0.004),
         getWeight: jest.fn(() => 2),
         quantity: 1,
         product,
@@ -140,6 +140,7 @@ describe('CalculateShippingUseCase', () => {
       if (result.status === Status.SUCCESS) {
         expect(result.state).toBe('AM');
         expect(result.estimatedDays).toBeGreaterThan(1);
+        expect(result.shipping).toBe(19160);
       }
     });
   });
@@ -171,7 +172,7 @@ describe('CalculateShippingUseCase', () => {
     it('should return error when cep is not found', async () => {
       const product = createProduct({ id: createIdFromString('product-1') });
       const mockItem = {
-        getVolume: jest.fn(() => 1000),
+        getVolume: jest.fn(() => 0.004),
         getWeight: jest.fn(() => 2),
         quantity: 1,
         product,

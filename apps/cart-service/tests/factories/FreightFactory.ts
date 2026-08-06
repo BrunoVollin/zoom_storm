@@ -9,7 +9,7 @@ export function createShipment(
 ): Shipment {
   const defaults = {
     distance: 10,
-    volume: 10,
+    volume: 0.01,
     weight: 10,
   };
 

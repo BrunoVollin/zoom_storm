@@ -16,31 +16,31 @@ describe('FreightCalculator', () => {
 
       const freight = freightCalculator.calculate(shipment);
 
-      expect(freight).toBe(153250);
+      expect(freight).toBe(3400);
     });
 
     it('should calculate freight cost for larger shipment', () => {
       const shipment = createShipment({
         distance: 20,
-        volume: 20,
+        volume: 0.1,
         weight: 20,
       });
 
       const freight = freightCalculator.calculate(shipment);
 
-      expect(freight).toBeGreaterThan(153250);
+      expect(freight).toBe(6800);
     });
 
     it('should calculate freight cost for smaller shipment', () => {
       const shipment = createShipment({
         distance: 5,
-        volume: 5,
+        volume: 0.001,
         weight: 5,
       });
 
       const freight = freightCalculator.calculate(shipment);
 
-      expect(freight).toBeLessThan(153250);
+      expect(freight).toBe(2240);
     });
   });
 });
