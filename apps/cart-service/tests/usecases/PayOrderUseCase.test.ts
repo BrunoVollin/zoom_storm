@@ -2,7 +2,6 @@ import { PayOrderUseCase } from '../../src/application/usecases/PayOrderUseCase'
 import { Status } from '../../src/application/contracts/UseCase';
 import { Order } from '../../src/domain/entities/order/Order';
 import { OrderItem } from '../../src/domain/entities/order/OrderItem';
-import { OrderStatus } from '../../src/domain/entities/order/OrderStatus';
 import { LoyaltyAccount } from '../../src/domain/entities/loyalty/LoyaltyAccount';
 import { createIdFromString } from '../factories/IdFactory';
 import {
@@ -141,7 +140,7 @@ describe('PayOrderUseCase', () => {
 
     it('returns an error when the order cannot advance to PAID again', async () => {
       const order = createOrder(1000);
-      order.advanceTo(OrderStatus.PAID);
+      order.markAsPaid();
       orderRepository.orders.set(orderId, order);
 
       const result = await useCase.execute({
@@ -152,7 +151,7 @@ describe('PayOrderUseCase', () => {
 
       expect(result.status).toBe(Status.ERROR);
       if (result.status === Status.ERROR) {
-        expect(result.message).toContain('Cannot move order status');
+        expect(result.message).toBe('Cannot mark order as paid from status PAID');
       }
     });
   });

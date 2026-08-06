@@ -2,7 +2,6 @@ import { DomainEvent, DomainEventName } from '@src/domain/events/DomainEvent';
 import { OrderRepository } from '../../domain/repositories/OrderRepository';
 import { LoyaltyRepository } from '../../domain/repositories/LoyaltyRepository';
 import { LoyaltyAccount } from '../../domain/entities/loyalty/LoyaltyAccount';
-import { OrderStatus } from '../../domain/entities/order/OrderStatus';
 import { IdType } from '../../domain/shared/IdType';
 import { ErrorOutput, Status, UseCase } from '../contracts/UseCase';
 import { OrderMapper, OrderPrimitives } from '../mappers/OrderMapper';
@@ -26,7 +25,7 @@ export class PayOrderUseCase implements UseCase<Input, Output> {
         return { status: Status.ERROR, message: 'Order not found' };
       }
 
-      order.advanceTo(OrderStatus.PAID);
+      order.markAsPaid();
 
       const statusChangedEvent = new DomainEvent(
         DomainEventName.ORDER_STATUS_CHANGED,

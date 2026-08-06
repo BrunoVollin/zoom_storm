@@ -4,7 +4,6 @@ import { OrderStatus } from '../../src/domain/entities/order/OrderStatus';
 import { OrderRepository } from '../../src/domain/repositories/OrderRepository';
 import { UpdateOrderStatusUseCase } from '../../src/application/usecases/UpdateOrderStatusUseCase';
 import { OrderDeliverySimulatorWorker } from '../../src/infrastructure/messaging/OrderDeliverySimulatorWorker';
-import { Status } from '../../src/application/contracts/UseCase';
 import { createIdFromString } from '../factories/IdFactory';
 
 const STEP_MS = 60_000;
@@ -90,6 +89,25 @@ describe('OrderDeliverySimulatorWorker', () => {
     await worker.pollOnce();
 
     expect(repository.saved).toHaveLength(0);
+  });
+
+  it('never advances a CREATED order even if a repository returns it', async () => {
+    const unpaidOrder = buildOrder(
+      OrderStatus.CREATED,
+      new Date(Date.now() - STEP_MS - 1_000),
+    );
+    const repository = new FakeOrderRepository([unpaidOrder]);
+    const updateOrderStatus = new UpdateOrderStatusUseCase(repository, 'São Paulo');
+    const worker = new OrderDeliverySimulatorWorker(
+      repository,
+      updateOrderStatus,
+      STEP_MS,
+    );
+
+    await worker.pollOnce();
+
+    expect(repository.saved).toHaveLength(0);
+    expect(unpaidOrder.getStatus()).toBe(OrderStatus.CREATED);
   });
 
   it('never advances an order past DELIVERED', () => {

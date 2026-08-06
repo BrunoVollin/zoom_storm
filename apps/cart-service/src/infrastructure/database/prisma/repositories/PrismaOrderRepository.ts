@@ -1,4 +1,4 @@
-import { Order, STATUS_PROGRESSION } from '../../../../domain/entities/order/Order';
+import { Order } from '../../../../domain/entities/order/Order';
 import { OrderItem } from '../../../../domain/entities/order/OrderItem';
 import { OrderStatus } from '../../../../domain/entities/order/OrderStatus';
 import { IdType } from '../../../../domain/shared/IdType';
@@ -81,13 +81,14 @@ export class PrismaOrderRepository implements OrderRepository {
   }
 
   async findInProgress(): Promise<Array<Order>> {
-    const lastStatus = STATUS_PROGRESSION[STATUS_PROGRESSION.length - 1];
-    const firstStatus = STATUS_PROGRESSION[0];
-
     const dbOrders = await prisma.order.findMany({
       where: {
         status: {
-          notIn: [firstStatus, lastStatus],
+          in: [
+            OrderStatus.PAID,
+            OrderStatus.IN_TRANSIT,
+            OrderStatus.OUT_FOR_DELIVERY,
+          ],
         },
       },
       include: { items: true },

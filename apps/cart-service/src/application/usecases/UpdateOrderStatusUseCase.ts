@@ -17,6 +17,13 @@ export class UpdateOrderStatusUseCase implements UseCase<Input, Output> {
 
   async execute(input: Input): Promise<Output> {
     try {
+      if (input.status === OrderStatus.PAID) {
+        return {
+          status: Status.ERROR,
+          message: 'Paid status can only be set by payment confirmation',
+        };
+      }
+
       const order = await this.orderRepository.findById(
         IdType.create(input.orderId),
       );
@@ -25,7 +32,7 @@ export class UpdateOrderStatusUseCase implements UseCase<Input, Output> {
         return { status: Status.ERROR, message: 'Order not found' };
       }
 
-      order.advanceTo(input.status, this.originCity);
+      order.advanceLogisticsTo(input.status, this.originCity);
 
       const statusChangedEvent = new DomainEvent(
         DomainEventName.ORDER_STATUS_CHANGED,

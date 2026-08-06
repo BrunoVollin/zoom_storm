@@ -48,13 +48,26 @@ export class Order {
       : null;
   }
 
-  advanceTo(status: OrderStatus, originCity?: string) {
-    const currentIndex = STATUS_PROGRESSION.indexOf(this.status);
-    const targetIndex = STATUS_PROGRESSION.indexOf(status);
-
-    if (targetIndex <= currentIndex) {
+  markAsPaid(): void {
+    if (this.status !== OrderStatus.CREATED) {
       throw new Error(
-        `Cannot move order status from ${this.status} back to ${status}`,
+        `Cannot mark order as paid from status ${this.status}`,
+      );
+    }
+
+    this.status = OrderStatus.PAID;
+  }
+
+  advanceLogisticsTo(status: OrderStatus, originCity?: string): void {
+    if (status === OrderStatus.PAID) {
+      throw new Error('Paid status can only be set by payment confirmation');
+    }
+
+    const nextStatus = this.getNextStatus();
+
+    if (status !== nextStatus) {
+      throw new Error(
+        `Cannot move order status from ${this.status} to ${status}`,
       );
     }
 

@@ -1,9 +1,15 @@
 import { OrderRepository } from '../../domain/repositories/OrderRepository';
+import { OrderStatus } from '../../domain/entities/order/OrderStatus';
 import { UpdateOrderStatusUseCase } from '../../application/usecases/UpdateOrderStatusUseCase';
 import { Status } from '../../application/contracts/UseCase';
 
 const DEFAULT_POLL_INTERVAL_MS = 30_000;
 const DEFAULT_STEP_DURATION_MS = 2 * 60_000;
+const SIMULATABLE_STATUSES = new Set([
+  OrderStatus.PAID,
+  OrderStatus.IN_TRANSIT,
+  OrderStatus.OUT_FOR_DELIVERY,
+]);
 
 /**
  * Simulates transit time for paid orders: there's no real carrier
@@ -43,6 +49,10 @@ export class OrderDeliverySimulatorWorker {
       const now = Date.now();
 
       for (const order of orders) {
+        // Defense in depth: a repository regression must never let the
+        // delivery simulator turn an unpaid CREATED order into PAID.
+        if (!SIMULATABLE_STATUSES.has(order.getStatus())) continue;
+
         const nextStatus = order.getNextStatus();
         if (!nextStatus) continue;
 
