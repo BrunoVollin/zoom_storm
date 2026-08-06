@@ -1,15 +1,19 @@
 import { FlashOfferBanner } from "@/components/features/home/flash-offer-banner";
-import { ProductCatalog } from "@/components/features/products/product-catalog";
+import { PromoCarousel } from "@/components/features/home/promo-carousel";
+import { RecentlyViewedLayer } from "@/components/features/home/recently-viewed-layer";
+import { CategoryGrid } from "@/components/features/home/category-grid";
+
+export const dynamic = "force-dynamic";
 
 export default function HomePage() {
+  const homeSeed = crypto.randomUUID();
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <FlashOfferBanner />
-      <div>
-        <h1 className="text-2xl font-semibold">Catálogo</h1>
-        <p className="text-muted-foreground">Jogos atuais e retro selecionados para você.</p>
-      </div>
-      <ProductCatalog />
+      <PromoCarousel />
+      <RecentlyViewedLayer seed={homeSeed} />
+      <CategoryGrid seed={homeSeed} />
     </div>
   );
 }

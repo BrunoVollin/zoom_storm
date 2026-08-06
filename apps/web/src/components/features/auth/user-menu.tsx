@@ -27,8 +27,9 @@ export function UserMenu() {
   return (
     <div className="flex items-center gap-2">
       <Link
+        data-testid="user-menu-authenticated"
         href={ROUTES.accountSettings}
-        className="hidden items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground sm:flex"
+        className="hidden items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-white/90 hover:bg-white/10 hover:text-white sm:flex"
       >
         <UserRound className="size-4" />
         {user.name ?? user.email ?? user.subject}

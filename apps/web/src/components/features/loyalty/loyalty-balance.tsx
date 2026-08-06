@@ -9,8 +9,8 @@ export function LoyaltyBalance() {
 
   return (
     <span
-      className="flex items-center gap-1 text-sm text-muted-foreground"
-      title="Pontos de fidelidade"
+      className="hidden items-center gap-1 rounded-md px-2 py-1.5 text-sm text-white/90 sm:flex"
+      title="Loyalty points"
     >
       <Gift className="size-4" />
       {balance}

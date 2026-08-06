@@ -1,5 +1,6 @@
 export const ROUTES = {
   home: "/",
+  search: "/search",
   product: (id: string) => `/products/${id}`,
   cart: "/cart",
   login: "/login",

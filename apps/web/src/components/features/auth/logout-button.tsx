@@ -9,9 +9,15 @@ export function LogoutButton() {
   const { logout } = useAuth();
 
   return (
-    <Button variant="ghost" size="sm" onClick={() => logout(false)}>
+    <Button
+      data-testid="logout-btn"
+      variant="ghost"
+      size="sm"
+      className="text-white/90 hover:bg-white/10 hover:text-white"
+      onClick={() => logout(false)}
+    >
       <LogOut />
-      Sair
+      Sign out
     </Button>
   );
 }
