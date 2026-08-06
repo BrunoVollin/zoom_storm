@@ -36,6 +36,15 @@ export class PrismaFlashOfferRepository implements FlashOfferRepository {
     return rows.map(PrismaFlashOfferRepository.toDomain);
   }
 
+  async findExpired(now: Date = new Date()): Promise<FlashOffer[]> {
+    const rows = await prisma.flashOffer.findMany({
+      where: { endsAt: { lt: now } },
+      orderBy: { endsAt: 'asc' },
+    });
+
+    return rows.map(PrismaFlashOfferRepository.toDomain);
+  }
+
   async findAll(): Promise<FlashOffer[]> {
     const rows = await prisma.flashOffer.findMany({ orderBy: { startsAt: 'desc' } });
 

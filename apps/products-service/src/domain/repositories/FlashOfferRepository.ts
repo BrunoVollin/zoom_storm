@@ -5,6 +5,7 @@ export interface FlashOfferRepository {
   save(offer: FlashOffer): Promise<void>;
   findById(id: IdType): Promise<FlashOffer | null>;
   findActive(now?: Date): Promise<FlashOffer[]>;
+  findExpired(now?: Date): Promise<FlashOffer[]>;
   findAll(): Promise<FlashOffer[]>;
   delete(id: IdType): Promise<void>;
 }

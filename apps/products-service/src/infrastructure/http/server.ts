@@ -12,6 +12,8 @@ import { MongoProductQueryRepository } from '../database/mongodb/repositories/Mo
 import { KafkaProducerClient } from '../messaging/KafkaProducerClient';
 import { KafkaEventPublisher } from '../messaging/KafkaEventPublisher';
 import { OutboxRelay } from '../messaging/OutboxRelay';
+import { FlashOfferReplenisherWorker } from '../workers/FlashOfferReplenisherWorker';
+import { ReplenishExpiredFlashOffersUseCase } from '../../application/usecases/ReplenishExpiredFlashOffersUseCase';
 import { CreateProductUseCase } from '../../application/usecases/CreateProductUseCase';
 import { UpdateProductUseCase } from '../../application/usecases/UpdateProductUseCase';
 import { DeleteProductUseCase } from '../../application/usecases/DeleteProductUseCase';
@@ -37,6 +39,14 @@ const flashOfferRepository = new PrismaFlashOfferRepository();
 const kafkaProducer = new KafkaProducerClient();
 const eventPublisher = new KafkaEventPublisher(kafkaProducer);
 const outboxRelay = new OutboxRelay(eventPublisher);
+
+const replenishExpiredFlashOffersUseCase = new ReplenishExpiredFlashOffersUseCase(
+  flashOfferRepository,
+);
+const flashOfferReplenisherWorker = new FlashOfferReplenisherWorker(
+  replenishExpiredFlashOffersUseCase,
+);
+flashOfferReplenisherWorker.start();
 
 const app = buildRouter({
   listProducts: new ListProductsQuery(productQueryRepository),
@@ -68,6 +78,7 @@ mongoClient.connect().then(() => {
   async function shutdown() {
     server.close();
     outboxRelay.stop();
+    flashOfferReplenisherWorker.stop();
     await kafkaProducer.disconnect();
     await closeDatabaseConnections();
     await closeMongoConnection();
