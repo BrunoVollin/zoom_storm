@@ -2,27 +2,14 @@ import * as client from 'openid-client';
 import { decodeJwt } from 'jose';
 import { env } from '../../config/env';
 import { SessionTokens, SessionUser } from '@bff-domain/entities/Session';
+import {
+  AuthService,
+  AuthorizationRequest,
+  ExchangeCodeInput,
+  ExchangeResult,
+} from '@bff-domain/repositories/AuthService';
 
-export interface AuthorizationRequest {
-  authorizationUrl: string;
-  state: string;
-  nonce: string;
-  codeVerifier: string;
-}
-
-export interface ExchangeCodeInput {
-  currentUrl: URL;
-  state: string;
-  nonce: string;
-  codeVerifier: string;
-}
-
-export interface ExchangeResult {
-  tokens: SessionTokens;
-  user: SessionUser;
-}
-
-export class KeycloakAuthService {
+export class KeycloakAuthService implements AuthService {
   private configuration: client.Configuration | undefined;
 
   private async getConfiguration(): Promise<client.Configuration> {

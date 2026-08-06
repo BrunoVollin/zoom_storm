@@ -1,7 +1,7 @@
 import { UseCase } from '@bff-application/contracts/UseCase';
 import { SessionRepository } from '@bff-domain/repositories/SessionRepository';
 import { Session } from '@bff-domain/entities/Session';
-import { KeycloakAuthService } from '@bff-infrastructure/keycloak/KeycloakAuthService';
+import { AuthService } from '@bff-domain/repositories/AuthService';
 
 export interface LogoutInput {
   session: Session;
@@ -15,7 +15,7 @@ export type LogoutOutput =
 
 export class LogoutUseCase implements UseCase<LogoutInput, LogoutOutput> {
   constructor(
-    private readonly keycloakAuthService: KeycloakAuthService,
+    private readonly authService: AuthService,
     private readonly sessionRepository: SessionRepository,
   ) {}
 
@@ -24,7 +24,7 @@ export class LogoutUseCase implements UseCase<LogoutInput, LogoutOutput> {
 
     if (!input.global) return { outcome: 'local' };
 
-    const redirectUrl = await this.keycloakAuthService.buildEndSessionUrl(
+    const redirectUrl = await this.authService.buildEndSessionUrl(
       input.session.tokens.idToken,
       input.postLogoutRedirectUri,
     );

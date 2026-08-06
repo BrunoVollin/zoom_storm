@@ -3,7 +3,7 @@ import { UseCase } from '@bff-application/contracts/UseCase';
 import { PendingAuthorizationStore } from '@bff-application/contracts/PendingAuthorizationStore';
 import { SessionRepository } from '@bff-domain/repositories/SessionRepository';
 import { Session } from '@bff-domain/entities/Session';
-import { KeycloakAuthService } from '@bff-infrastructure/keycloak/KeycloakAuthService';
+import { AuthService } from '@bff-domain/repositories/AuthService';
 import { env } from '../../config/env';
 
 export interface CallbackInput {
@@ -17,7 +17,7 @@ export type CallbackOutput =
 
 export class CallbackUseCase implements UseCase<CallbackInput, CallbackOutput> {
   constructor(
-    private readonly keycloakAuthService: KeycloakAuthService,
+    private readonly authService: AuthService,
     private readonly pendingAuthorizationStore: PendingAuthorizationStore,
     private readonly sessionRepository: SessionRepository,
   ) {}
@@ -26,7 +26,7 @@ export class CallbackUseCase implements UseCase<CallbackInput, CallbackOutput> {
     const pending = await this.pendingAuthorizationStore.consume(input.state);
     if (!pending) return { outcome: 'invalid_state' };
 
-    const { tokens, user } = await this.keycloakAuthService.exchangeCode({
+    const { tokens, user } = await this.authService.exchangeCode({
       currentUrl: input.currentUrl,
       state: pending.state,
       nonce: pending.nonce,

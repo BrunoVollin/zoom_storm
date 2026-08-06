@@ -1,6 +1,6 @@
 import { UseCase } from '@bff-application/contracts/UseCase';
 import { PendingAuthorizationStore } from '@bff-application/contracts/PendingAuthorizationStore';
-import { KeycloakAuthService } from '@bff-infrastructure/keycloak/KeycloakAuthService';
+import { AuthService } from '@bff-domain/repositories/AuthService';
 
 const PENDING_AUTHORIZATION_TTL_SECONDS = 5 * 60;
 
@@ -14,12 +14,12 @@ export interface LoginOutput {
 
 export class LoginUseCase implements UseCase<LoginInput, LoginOutput> {
   constructor(
-    private readonly keycloakAuthService: KeycloakAuthService,
+    private readonly authService: AuthService,
     private readonly pendingAuthorizationStore: PendingAuthorizationStore,
   ) {}
 
   async execute(input: LoginInput): Promise<LoginOutput> {
-    const request = await this.keycloakAuthService.buildAuthorizationRequest(
+    const request = await this.authService.buildAuthorizationRequest(
       input.redirectUri,
     );
 

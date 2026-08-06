@@ -5,7 +5,7 @@ import {
   isAccessTokenExpiring,
   isRefreshTokenExpired,
 } from '@bff-domain/entities/Session';
-import { KeycloakAuthService } from '@bff-infrastructure/keycloak/KeycloakAuthService';
+import { AuthService } from '@bff-domain/repositories/AuthService';
 import { env } from '../../config/env';
 
 const ACCESS_TOKEN_EXPIRY_THRESHOLD_SECONDS = 30;
@@ -27,7 +27,7 @@ export class RefreshTokenUseCase implements UseCase<
   RefreshTokenOutput
 > {
   constructor(
-    private readonly keycloakAuthService: KeycloakAuthService,
+    private readonly authService: AuthService,
     private readonly sessionRepository: SessionRepository,
   ) {}
 
@@ -60,7 +60,7 @@ export class RefreshTokenUseCase implements UseCase<
     if (!acquired) return this.waitForConcurrentRefresh(session);
 
     try {
-      const { tokens } = await this.keycloakAuthService.refresh(
+      const { tokens } = await this.authService.refresh(
         session.tokens.refreshToken,
       );
 
