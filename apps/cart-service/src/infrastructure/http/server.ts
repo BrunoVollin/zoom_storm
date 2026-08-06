@@ -119,24 +119,37 @@ const app = buildRouter({
   lookupCep: new LookupCepQuery(cepLookupService),
 });
 
-mongoClient.connect().then(() => {
-  outboxRelay.start();
+outboxRelay.start();
+
+// orderDeliverySimulatorWorker only reads/writes Order via PrismaOrderRepository
+// (Postgres), so it must not be gated by the Mongo connection promise below.
+try {
   orderDeliverySimulatorWorker.start();
+} catch (error) {
+  console.error('Failed to start orderDeliverySimulatorWorker:', error);
+}
 
-  const server = serve({ fetch: app.fetch, port: PORT }, () => {
-    console.log(`cart-service HTTP API running on http://localhost:${PORT}`);
+mongoClient
+  .connect()
+  .then(() => {
+    const server = serve({ fetch: app.fetch, port: PORT }, () => {
+      console.log(`cart-service HTTP API running on http://localhost:${PORT}`);
+    });
+
+    async function shutdown() {
+      server.close();
+      outboxRelay.stop();
+      orderDeliverySimulatorWorker.stop();
+      await kafkaProducer.disconnect();
+      await closeDatabaseConnections();
+      await closeMongoConnection();
+      process.exit(0);
+    }
+
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+  })
+  .catch((error) => {
+    console.error('Failed to connect to MongoDB:', error);
+    process.exit(1);
   });
-
-  async function shutdown() {
-    server.close();
-    outboxRelay.stop();
-    orderDeliverySimulatorWorker.stop();
-    await kafkaProducer.disconnect();
-    await closeDatabaseConnections();
-    await closeMongoConnection();
-    process.exit(0);
-  }
-
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
-});
