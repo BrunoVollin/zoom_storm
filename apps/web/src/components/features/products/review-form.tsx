@@ -35,21 +35,21 @@ export function ReviewForm({ productId }: { productId: string }) {
   });
 
   if (submitted) {
-    return <p className="text-sm text-muted-foreground">Obrigado pela sua avaliação!</p>;
+    return <p className="text-sm text-muted-foreground">Thanks for your review!</p>;
   }
 
   return (
     <form onSubmit={submit} className="flex max-w-md flex-col gap-4 rounded-lg border border-border p-4">
-      <h3 className="font-medium">Deixe sua avaliação</h3>
+      <h3 className="font-medium">Leave your review</h3>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Nota</Label>
+        <Label>Rating</Label>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
               key={star}
               type="button"
-              aria-label={`${star} estrela${star > 1 ? "s" : ""}`}
+              aria-label={`${star} star${star > 1 ? "s" : ""}`}
               onClick={() => setValue("rating", star, { shouldValidate: true })}
             >
               <Star
@@ -65,21 +65,21 @@ export function ReviewForm({ productId }: { productId: string }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="comment">Comentário</Label>
+        <Label htmlFor="comment">Comment</Label>
         <Textarea id="comment" rows={3} {...register("comment")} />
         {errors.comment ? <p className="text-sm text-destructive">{errors.comment.message}</p> : null}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="reviewerName">Nome</Label>
+          <Label htmlFor="reviewerName">Name</Label>
           <Input id="reviewerName" {...register("reviewerName")} />
           {errors.reviewerName ? (
             <p className="text-sm text-destructive">{errors.reviewerName.message}</p>
           ) : null}
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="reviewerEmail">E-mail</Label>
+          <Label htmlFor="reviewerEmail">Email</Label>
           <Input id="reviewerEmail" type="email" {...register("reviewerEmail")} />
           {errors.reviewerEmail ? (
             <p className="text-sm text-destructive">{errors.reviewerEmail.message}</p>
@@ -89,12 +89,12 @@ export function ReviewForm({ productId }: { productId: string }) {
 
       {createReview.isError ? (
         <p className="text-sm text-destructive">
-          {createReview.error instanceof Error ? createReview.error.message : "Erro ao enviar"}
+          {createReview.error instanceof Error ? createReview.error.message : "Error submitting review"}
         </p>
       ) : null}
 
       <Button type="submit" disabled={createReview.isPending} className="w-fit">
-        {createReview.isPending ? <Loader2 className="animate-spin" /> : "Enviar avaliação"}
+        {createReview.isPending ? <Loader2 className="animate-spin" /> : "Submit review"}
       </Button>
     </form>
   );

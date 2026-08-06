@@ -6,8 +6,8 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({
-  title = "Algo deu errado",
-  message = "Não foi possível carregar essas informações agora. Tente novamente em instantes.",
+  title = "Something went wrong",
+  message = "We couldn't load this information right now. Please try again in a moment.",
 }: ErrorStateProps) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-6 py-16 text-center">

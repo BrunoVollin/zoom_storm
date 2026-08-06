@@ -19,13 +19,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Zoom Storm — Loja de jogos",
-  description: "Jogos atuais e retro em um só lugar.",
+  title: "Zoom Storm",
+  description: "Zoom Storm — everything you need, all in one place.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} flex min-h-screen flex-col antialiased`}>
         <QueryProvider>
           <AuthProvider>

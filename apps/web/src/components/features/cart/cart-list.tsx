@@ -19,21 +19,21 @@ export function CartList() {
   if (!user) {
     return (
       <EmptyState
-        title="Entre para ver seu carrinho"
-        description="Você precisa estar autenticado para montar e acompanhar seu carrinho de compras."
+        title="Sign in to view your cart"
+        description="You need to be signed in to build and track your shopping cart."
       />
     );
   }
 
   if (error) {
-    return <ErrorState message="Não foi possível carregar o seu carrinho agora." />;
+    return <ErrorState message="We couldn't load your cart right now." />;
   }
 
   if (!cart || cart.items.length === 0) {
     return (
       <EmptyState
-        title="Seu carrinho está vazio"
-        description="Adicione jogos ao carrinho para vê-los listados aqui."
+        title="Your cart is empty"
+        description="Add products to your cart to see them listed here."
       />
     );
   }

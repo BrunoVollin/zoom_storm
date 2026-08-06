@@ -1,24 +1,24 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useProductCategories } from "@/hooks/use-products";
-import { ROUTES } from "@/constants/routes";
 
 const SORT_OPTIONS = [
-  { value: "", label: "Relevância" },
-  { value: "price_asc", label: "Menor preço" },
-  { value: "price_desc", label: "Maior preço" },
-  { value: "name_asc", label: "Nome (A-Z)" },
-  { value: "name_desc", label: "Nome (Z-A)" },
+  { value: "", label: "Relevance" },
+  { value: "price_asc", label: "Lowest price" },
+  { value: "price_desc", label: "Highest price" },
+  { value: "name_asc", label: "Name (A-Z)" },
+  { value: "name_desc", label: "Name (Z-A)" },
 ] as const;
 
 export function ProductFilters() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { data: categories = [] } = useProductCategories();
 
@@ -42,7 +42,7 @@ export function ProductFilters() {
     }
 
     pendingParams.current = params;
-    router.replace(`${ROUTES.home}?${params.toString()}`, { scroll: false });
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     queueMicrotask(() => {
       if (pendingParams.current === params) pendingParams.current = null;
     });
@@ -61,18 +61,18 @@ export function ProductFilters() {
       >
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="search" className="text-sm text-muted-foreground">
-            Buscar
+            Search
           </label>
           <div className="flex gap-2">
             <Input
               id="search"
-              placeholder="Nome ou descrição do jogo"
+              placeholder="Product name or description"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
             <button
               type="submit"
-              aria-label="Buscar"
+              aria-label="Search"
               className="flex h-10 w-10 items-center justify-center rounded-md border border-border hover:bg-muted"
             >
               <Search className="size-4" />
@@ -83,7 +83,7 @@ export function ProductFilters() {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="category" className="text-sm text-muted-foreground">
-          Categoria
+          Category
         </label>
         <Select
           id="category"
@@ -91,7 +91,7 @@ export function ProductFilters() {
           value={searchParams.get("category") ?? ""}
           onChange={(event) => updateParams({ category: event.target.value || undefined })}
         >
-          <option value="">Todas</option>
+          <option value="">All</option>
           {categories.map((category) => (
             <option key={category} value={category}>
               {category}
@@ -102,7 +102,7 @@ export function ProductFilters() {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="minPrice" className="text-sm text-muted-foreground">
-          Preço min. (R$)
+          Min. price ($)
         </label>
         <Input
           id="minPrice"
@@ -118,7 +118,7 @@ export function ProductFilters() {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="maxPrice" className="text-sm text-muted-foreground">
-          Preço máx. (R$)
+          Max. price ($)
         </label>
         <Input
           id="maxPrice"
@@ -134,7 +134,7 @@ export function ProductFilters() {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="sort" className="text-sm text-muted-foreground">
-          Ordenar por
+          Sort by
         </label>
         <Select
           id="sort"

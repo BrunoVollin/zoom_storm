@@ -1,11 +1,11 @@
 import type { OrderStatus } from "@/types/order";
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
-  CREATED: "Pedido confirmado",
-  PAID: "Pagamento aprovado",
-  IN_TRANSIT: "Em trânsito",
-  OUT_FOR_DELIVERY: "Saiu para entrega",
-  DELIVERED: "Entregue",
+  CREATED: "Order confirmed",
+  PAID: "Payment approved",
+  IN_TRANSIT: "In transit",
+  OUT_FOR_DELIVERY: "Out for delivery",
+  DELIVERED: "Delivered",
 };
 
 const STATUS_ORDER: OrderStatus[] = [

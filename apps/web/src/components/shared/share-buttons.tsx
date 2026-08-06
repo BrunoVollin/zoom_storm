@@ -24,7 +24,7 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <Button asChild variant="outline" size="icon" aria-label="Compartilhar no WhatsApp">
+      <Button asChild variant="outline" size="icon" aria-label="Share on WhatsApp">
         <a
           href={`https://wa.me/?text=${encodedTitle}%20${encodedUrl}`}
           target="_blank"
@@ -33,7 +33,7 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
           <MessageCircle className="size-4" />
         </a>
       </Button>
-      <Button asChild variant="outline" size="icon" aria-label="Compartilhar no X/Twitter">
+      <Button asChild variant="outline" size="icon" aria-label="Share on X/Twitter">
         <a
           href={`https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`}
           target="_blank"
@@ -42,7 +42,7 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
           <Twitter className="size-4" />
         </a>
       </Button>
-      <Button asChild variant="outline" size="icon" aria-label="Compartilhar no Facebook">
+      <Button asChild variant="outline" size="icon" aria-label="Share on Facebook">
         <a
           href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
           target="_blank"
@@ -55,12 +55,12 @@ export function ShareButtons({ url, title }: ShareButtonsProps) {
         type="button"
         variant="outline"
         size="icon"
-        aria-label="Copiar link"
+        aria-label="Copy link"
         onClick={handleCopy}
       >
         <Link2 className="size-4" />
       </Button>
-      {copied ? <span className="text-xs text-muted-foreground">Link copiado!</span> : null}
+      {copied ? <span className="text-xs text-muted-foreground">Link copied!</span> : null}
     </div>
   );
 }

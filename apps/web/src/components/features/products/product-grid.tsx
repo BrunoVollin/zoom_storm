@@ -6,8 +6,8 @@ export function ProductGrid({ products }: { products: Product[] }) {
   if (products.length === 0) {
     return (
       <EmptyState
-        title="Nenhum produto disponível"
-        description="Ainda não há jogos cadastrados no catálogo. Volte em breve."
+        title="No products available"
+        description="There are no products in the catalog yet. Check back soon."
       />
     );
   }

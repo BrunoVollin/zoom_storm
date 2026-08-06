@@ -9,11 +9,11 @@ export default function NotFound() {
   return (
     <EmptyState
       icon={<CompassIcon className="size-10" />}
-      title="Página não encontrada"
-      description="O conteúdo que você procura não existe ou foi removido."
+      title="Page not found"
+      description="The content you're looking for doesn't exist or was removed."
       action={
         <Button asChild size="sm">
-          <Link href={ROUTES.home}>Voltar ao catálogo</Link>
+          <Link href={ROUTES.home}>Back to catalog</Link>
         </Button>
       }
     />

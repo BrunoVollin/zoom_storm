@@ -55,7 +55,7 @@ export function ProfileForm({ initialProfile, onSubmit }: ProfileFormProps) {
     mutationFn: () => cepService.lookup(getValues("zip")),
     onSuccess: (address) => {
       if (!address) {
-        setCepError("CEP não encontrado");
+        setCepError("Zip code not found");
         return;
       }
 
@@ -65,7 +65,7 @@ export function ProfileForm({ initialProfile, onSubmit }: ProfileFormProps) {
       setValue("city", address.city);
       setValue("state", address.state);
     },
-    onError: () => setCepError("Não foi possível consultar o CEP"),
+    onError: () => setCepError("Could not look up the zip code"),
   });
 
   const submit = handleSubmit(async (values) => {
@@ -88,7 +88,7 @@ export function ProfileForm({ initialProfile, onSubmit }: ProfileFormProps) {
       });
       setSaved(true);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Não foi possível salvar seus dados.";
+      const message = error instanceof Error ? error.message : "We couldn't save your data.";
       setSubmitError(message);
     }
   });
@@ -97,7 +97,7 @@ export function ProfileForm({ initialProfile, onSubmit }: ProfileFormProps) {
     <form onSubmit={submit} className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="fullName">Nome completo</Label>
+          <Label htmlFor="fullName">Full name</Label>
           <Input id="fullName" {...register("fullName")} />
           {errors.fullName ? (
             <p className="text-sm text-destructive">{errors.fullName.message}</p>
@@ -105,7 +105,7 @@ export function ProfileForm({ initialProfile, onSubmit }: ProfileFormProps) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="document">CPF / CNPJ</Label>
+          <Label htmlFor="document">Tax ID</Label>
           <Input id="document" {...register("document")} />
           {errors.document ? (
             <p className="text-sm text-destructive">{errors.document.message}</p>
@@ -115,13 +115,13 @@ export function ProfileForm({ initialProfile, onSubmit }: ProfileFormProps) {
 
       <div className="grid grid-cols-3 gap-4">
         <div className="col-span-2 flex flex-col gap-1.5">
-          <Label htmlFor="street">Rua</Label>
+          <Label htmlFor="street">Street</Label>
           <Input id="street" {...register("street")} />
           {errors.street ? <p className="text-sm text-destructive">{errors.street.message}</p> : null}
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="number">Número</Label>
+          <Label htmlFor="number">Number</Label>
           <Input id="number" {...register("number")} />
           {errors.number ? <p className="text-sm text-destructive">{errors.number.message}</p> : null}
         </div>
@@ -129,12 +129,12 @@ export function ProfileForm({ initialProfile, onSubmit }: ProfileFormProps) {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="complement">Complemento</Label>
+          <Label htmlFor="complement">Complement</Label>
           <Input id="complement" {...register("complement")} />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="neighborhood">Bairro</Label>
+          <Label htmlFor="neighborhood">Neighborhood</Label>
           <Input id="neighborhood" {...register("neighborhood")} />
           {errors.neighborhood ? (
             <p className="text-sm text-destructive">{errors.neighborhood.message}</p>
@@ -144,26 +144,26 @@ export function ProfileForm({ initialProfile, onSubmit }: ProfileFormProps) {
 
       <div className="grid grid-cols-3 gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="city">Cidade</Label>
+          <Label htmlFor="city">City</Label>
           <Input id="city" {...register("city")} />
           {errors.city ? <p className="text-sm text-destructive">{errors.city.message}</p> : null}
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="state">Estado</Label>
+          <Label htmlFor="state">State</Label>
           <Input id="state" maxLength={2} {...register("state")} />
           {errors.state ? <p className="text-sm text-destructive">{errors.state.message}</p> : null}
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="zip">CEP</Label>
+          <Label htmlFor="zip">Zip code</Label>
           <div className="flex gap-2">
             <Input id="zip" placeholder="00000-000" {...register("zip")} />
             <Button
               type="button"
               variant="outline"
               size="icon"
-              aria-label="Buscar CEP"
+              aria-label="Look up zip code"
               disabled={lookupCep.isPending}
               onClick={() => lookupCep.mutate()}
             >
@@ -180,10 +180,10 @@ export function ProfileForm({ initialProfile, onSubmit }: ProfileFormProps) {
       </div>
 
       {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
-      {saved ? <p className="text-sm text-emerald-600">Dados salvos com sucesso.</p> : null}
+      {saved ? <p className="text-sm text-emerald-600">Data saved successfully.</p> : null}
 
       <Button type="submit" disabled={isSubmitting} className="w-fit">
-        {isSubmitting ? "Salvando..." : "Salvar alterações"}
+        {isSubmitting ? "Saving..." : "Save changes"}
       </Button>
     </form>
   );

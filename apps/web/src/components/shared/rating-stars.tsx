@@ -11,7 +11,7 @@ export function RatingStars({ value, className }: RatingStarsProps) {
   const rounded = Math.round(value);
 
   return (
-    <div className={cn("flex items-center gap-1", className)} aria-label={`Avaliação ${value.toFixed(1)} de 5`}>
+    <div className={cn("flex items-center gap-1", className)} aria-label={`Rating ${value.toFixed(1)} out of 5`}>
       <div className="flex">
         {Array.from({ length: 5 }, (_, index) => (
           <Star

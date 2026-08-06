@@ -25,7 +25,7 @@ export function AddToCartButton({ productId, className, disabled }: AddToCartBut
       <Button asChild variant="outline" className={cn(className)}>
         <Link href="/api/auth/login">
           <ShoppingCart />
-          Entre para comprar
+          Sign in to buy
         </Link>
       </Button>
     );
@@ -33,10 +33,10 @@ export function AddToCartButton({ productId, className, disabled }: AddToCartBut
 
   const label =
     feedback === "added"
-      ? "Adicionado!"
+      ? "Added!"
       : feedback === "error"
-        ? (addItem.error?.message ?? "Erro ao adicionar")
-        : "Adicionar ao carrinho";
+        ? (addItem.error?.message ?? "Error adding item")
+        : "Add to cart";
 
   return (
     <Button

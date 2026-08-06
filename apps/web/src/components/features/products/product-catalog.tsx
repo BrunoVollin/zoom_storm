@@ -43,8 +43,8 @@ export function ProductCatalog() {
       {isLoading ? <LoadingSpinner /> : null}
       {error ? (
         <ErrorState
-          title="Catálogo indisponível"
-          message="Não foi possível carregar os jogos agora. Tente novamente em instantes."
+          title="Catalog unavailable"
+          message="We couldn't load the products right now. Please try again in a moment."
         />
       ) : null}
       {!isLoading && !error ? <ProductGrid products={products ?? []} /> : null}

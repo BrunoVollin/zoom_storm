@@ -14,22 +14,22 @@ export default function WishlistPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Favoritos</h1>
-        <p className="text-sm text-muted-foreground">Produtos que você salvou para depois.</p>
+        <h1 className="text-2xl font-semibold">Wishlist</h1>
+        <p className="text-sm text-muted-foreground">Products you saved for later.</p>
       </div>
 
       {isLoading ? <LoadingSpinner /> : null}
       {error ? (
         <ErrorState
-          title="Não foi possível carregar seus favoritos"
-          message="Tente novamente em instantes."
+          title="We couldn't load your wishlist"
+          message="Please try again in a moment."
         />
       ) : null}
       {!isLoading && !error && items.length === 0 ? (
         <EmptyState
           icon={<Heart className="size-10" />}
-          title="Sua lista de favoritos está vazia"
-          description="Toque no coração de um produto para salvá-lo aqui."
+          title="Your wishlist is empty"
+          description="Tap the heart on a product to save it here."
         />
       ) : null}
       {items.length > 0 ? (

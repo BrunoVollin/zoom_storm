@@ -19,16 +19,16 @@ export default function OrderDetailPage() {
   }
 
   if (error || !order) {
-    return <ErrorState title="Pedido não encontrado" />;
+    return <ErrorState title="Order not found" />;
   }
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Pedido #{order.id.slice(0, 8)}</h1>
+          <h1 className="text-2xl font-semibold">Order #{order.id.slice(0, 8)}</h1>
           <p className="text-sm text-muted-foreground">
-            {new Date(order.createdAt).toLocaleString("pt-BR")}
+            {new Date(order.createdAt).toLocaleString("en-US")}
           </p>
         </div>
         <Badge variant="muted">{ORDER_STATUS_LABEL[order.status]}</Badge>
@@ -36,13 +36,13 @@ export default function OrderDetailPage() {
 
       <div className="grid gap-8 md:grid-cols-2">
         <div>
-          <h2 className="mb-4 text-lg font-semibold">Rastreamento</h2>
+          <h2 className="mb-4 text-lg font-semibold">Tracking</h2>
           <OrderTrackingTimeline order={order} />
         </div>
 
         <div className="flex flex-col gap-4">
           <div>
-            <h2 className="mb-2 text-lg font-semibold">Itens</h2>
+            <h2 className="mb-2 text-lg font-semibold">Items</h2>
             <div className="flex flex-col gap-2">
               {order.items.map((item) => (
                 <div key={item.id} className="flex justify-between text-sm">
@@ -62,12 +62,12 @@ export default function OrderDetailPage() {
             </div>
             {order.discount > 0 ? (
               <div className="flex justify-between text-muted-foreground">
-                <span>Desconto</span>
+                <span>Discount</span>
                 <span>-<PriceTag cents={order.discount} /></span>
               </div>
             ) : null}
             <div className="flex justify-between text-muted-foreground">
-              <span>Frete</span>
+              <span>Shipping</span>
               <PriceTag cents={order.shipping} />
             </div>
             <div className="flex justify-between text-base font-semibold">

@@ -19,22 +19,22 @@ export default function OrdersPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Meus pedidos</h1>
-        <p className="text-sm text-muted-foreground">Acompanhe o status das suas compras.</p>
+        <h1 className="text-2xl font-semibold">My orders</h1>
+        <p className="text-sm text-muted-foreground">Track the status of your purchases.</p>
       </div>
 
       {isLoading ? <LoadingSpinner /> : null}
       {error ? (
         <ErrorState
-          title="Não foi possível carregar seus pedidos"
-          message="Tente novamente em instantes."
+          title="We couldn't load your orders"
+          message="Please try again in a moment."
         />
       ) : null}
       {!isLoading && !error && orders?.length === 0 ? (
         <EmptyState
           icon={<Package className="size-10" />}
-          title="Você ainda não tem pedidos"
-          description="Quando finalizar uma compra, ela aparecerá aqui."
+          title="You don't have any orders yet"
+          description="When you complete a purchase, it will show up here."
         />
       ) : null}
 
@@ -46,17 +46,17 @@ export default function OrdersPage() {
                 <CardHeader className="flex-row items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">
-                      Pedido #{order.id.slice(0, 8)}
+                      Order #{order.id.slice(0, 8)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(order.createdAt).toLocaleDateString("pt-BR")}
+                      {new Date(order.createdAt).toLocaleDateString("en-US")}
                     </p>
                   </div>
                   <Badge variant="muted">{ORDER_STATUS_LABEL[order.status]}</Badge>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    {order.items.length} {order.items.length === 1 ? "item" : "itens"}
+                    {order.items.length} {order.items.length === 1 ? "item" : "items"}
                   </p>
                 </CardContent>
                 <CardFooter>

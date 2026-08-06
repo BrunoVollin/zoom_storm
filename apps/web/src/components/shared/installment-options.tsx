@@ -7,7 +7,7 @@ interface InstallmentOptionsProps {
   className?: string;
 }
 
-/** "Em até 12x de R$X sem juros" teaser — pure display, no real payment
+/** "Up to 12x of $X interest-free" teaser — pure display, no real payment
  * gateway or financing involved. */
 export function InstallmentOptions({ totalCents, className }: InstallmentOptionsProps) {
   const option = bestInstallmentOption(totalCents);
@@ -16,7 +16,7 @@ export function InstallmentOptions({ totalCents, className }: InstallmentOptions
 
   return (
     <p className={cn("text-sm text-muted-foreground", className)}>
-      em até {option.count}x de {formatPrice(option.valueCents)} sem juros
+      up to {option.count}x of {formatPrice(option.valueCents)} interest-free
     </p>
   );
 }
