@@ -23,12 +23,14 @@ export function WishlistButton({ productId, className }: WishlistButtonProps) {
 
   return (
     <Button
+      data-testid="wishlist-toggle-btn"
       type="button"
       variant="outline"
       size="icon"
       className={cn(className)}
       disabled={isPending}
-      aria-label={isWishlisted ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      data-wishlisted={isWishlisted}
+      aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();

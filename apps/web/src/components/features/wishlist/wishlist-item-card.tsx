@@ -48,10 +48,11 @@ export function WishlistItemCard({ item }: { item: WishlistItem }) {
           className="flex-1"
         />
         <Button
+          data-testid="wishlist-remove-btn"
           type="button"
           variant="outline"
           size="icon"
-          aria-label="Remover dos favoritos"
+          aria-label="Remove from wishlist"
           disabled={removeFromWishlist.isPending}
           onClick={() => removeFromWishlist.mutate(item.productId)}
         >

@@ -1,4 +1,7 @@
 {
   "status": "SUCCESS",
-  "shipping": 1990
+  "shipping": 1990,
+  "estimatedDays": 5,
+  "city": "São Paulo",
+  "state": "SP"
 }

@@ -27,9 +27,15 @@
         "subtotal": 29990
       }
     ],
-    "coupons": [],
+    "coupons": [
+      {
+        "id": "coupon-1",
+        "name": "10%",
+        "discount": 2999
+      }
+    ],
     "subtotal": 29990,
-    "totalDiscount": 0,
-    "total": 29990
+    "totalDiscount": 2999,
+    "total": 26991
   }
 }

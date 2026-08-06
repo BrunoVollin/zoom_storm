@@ -1,0 +1,26 @@
+{
+  "status": "SUCCESS",
+  "order": {
+    "id": "order-1",
+    "userId": "test-user-id",
+    "cartId": "cart-1",
+    "status": "PAID",
+    "items": [
+      {
+        "id": "order-item-1",
+        "productId": "product-1",
+        "productName": "The Legend of Zelda: Breath of the Wild",
+        "productPrice": 29990,
+        "quantity": 1,
+        "subtotal": 29990
+      }
+    ],
+    "subtotal": 29990,
+    "discount": 0,
+    "shipping": 1990,
+    "total": 31980,
+    "createdAt": "2026-08-06T12:00:00.000Z",
+    "originCity": "São Paulo",
+    "destinationCity": "São Paulo"
+  }
+}

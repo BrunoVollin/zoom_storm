@@ -4,6 +4,9 @@
     "id": "cart-1",
     "userId": "test-user-id",
     "items": [],
-    "coupons": []
+    "coupons": [],
+    "subtotal": 0,
+    "totalDiscount": 0,
+    "total": 0
   }
 }

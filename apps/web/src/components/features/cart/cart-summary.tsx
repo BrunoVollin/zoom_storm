@@ -62,7 +62,7 @@ export function CartSummary({ cart }: CartSummaryProps) {
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-border p-4">
-      <h2 className="font-semibold">Resumo</h2>
+      <h2 className="font-semibold">Summary</h2>
 
       <div className="flex justify-between text-sm">
         <span className="text-muted-foreground">Subtotal</span>
@@ -72,7 +72,11 @@ export function CartSummary({ cart }: CartSummaryProps) {
       {cart.coupons.length > 0 ? (
         <div className="flex flex-col gap-1.5">
           {cart.coupons.map((coupon) => (
-            <div key={coupon.id} className="flex items-center justify-between text-sm">
+            <div
+              key={coupon.id}
+              data-testid="applied-coupon"
+              className="flex items-center justify-between text-sm"
+            >
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 <Tag className="size-3.5" />
                 {coupon.name}
@@ -80,11 +84,12 @@ export function CartSummary({ cart }: CartSummaryProps) {
               <div className="flex items-center gap-2">
                 <span className="text-emerald-600">-<PriceTag cents={coupon.discount} /></span>
                 <Button
+                  data-testid="remove-coupon-btn"
                   type="button"
                   variant="ghost"
                   size="icon"
                   className="size-6"
-                  aria-label={`Remover cupom ${coupon.name}`}
+                  aria-label={`Remove coupon ${coupon.name}`}
                   disabled={removeCoupon.isPending}
                   onClick={() => removeCoupon.mutate(coupon.id)}
                 >
@@ -105,11 +110,21 @@ export function CartSummary({ cart }: CartSummaryProps) {
         })}
       >
         <label className="text-sm text-muted-foreground" htmlFor="couponId">
-          Cupom de desconto
+          Discount coupon
         </label>
         <div className="flex gap-2">
-          <Input id="couponId" placeholder="Código do cupom" {...couponForm.register("couponId")} />
-          <Button type="submit" variant="outline" disabled={applyCoupon.isPending}>
+          <Input
+            data-testid="coupon-input"
+            id="couponId"
+            placeholder="Coupon code"
+            {...couponForm.register("couponId")}
+          />
+          <Button
+            data-testid="apply-coupon-btn"
+            type="submit"
+            variant="outline"
+            disabled={applyCoupon.isPending}
+          >
             {applyCoupon.isPending ? <Loader2 className="animate-spin" /> : <Tag className="size-4" />}
           </Button>
         </div>
@@ -117,8 +132,8 @@ export function CartSummary({ cart }: CartSummaryProps) {
           <p className="text-xs text-destructive">{couponForm.formState.errors.couponId.message}</p>
         ) : null}
         {applyCoupon.isError ? (
-          <p className="text-xs text-destructive">
-            {applyCoupon.error instanceof Error ? applyCoupon.error.message : "Cupom inválido"}
+          <p data-testid="coupon-error" className="text-xs text-destructive">
+            {applyCoupon.error instanceof Error ? applyCoupon.error.message : "Invalid coupon"}
           </p>
         ) : null}
       </form>
@@ -127,7 +142,7 @@ export function CartSummary({ cart }: CartSummaryProps) {
         <div className="flex flex-col gap-2">
           <label className="text-sm text-muted-foreground" htmlFor="redeemPoints">
             <Gift className="mr-1 inline size-3.5" />
-            Usar pontos como desconto (você tem {loyaltyBalance} pts — 1 pt = R$1,00)
+            Use points as discount (you have {loyaltyBalance} pts — 1 pt = $1.00)
           </label>
           <div className="flex gap-2">
             <Input
@@ -154,7 +169,7 @@ export function CartSummary({ cart }: CartSummaryProps) {
               {redeemLoyaltyPoints.isPending ? (
                 <Loader2 className="animate-spin" />
               ) : (
-                "Resgatar"
+                "Redeem"
               )}
             </Button>
           </div>
@@ -162,7 +177,7 @@ export function CartSummary({ cart }: CartSummaryProps) {
             <p className="text-xs text-destructive">
               {redeemLoyaltyPoints.error instanceof Error
                 ? redeemLoyaltyPoints.error.message
-                : "Não foi possível resgatar os pontos"}
+                : "Could not redeem points"}
             </p>
           ) : null}
         </div>
@@ -170,7 +185,7 @@ export function CartSummary({ cart }: CartSummaryProps) {
 
       {cart.coupons.length > 0 && loyaltyBalance && loyaltyBalance > 0 ? (
         <p className="text-xs text-muted-foreground">
-          Remova o cupom aplicado para usar seus pontos de fidelidade.
+          Remove the applied coupon to use your loyalty points.
         </p>
       ) : null}
 
@@ -179,11 +194,16 @@ export function CartSummary({ cart }: CartSummaryProps) {
         onSubmit={shippingForm.handleSubmit((values) => estimateShipping.mutate(values))}
       >
         <label className="text-sm text-muted-foreground" htmlFor="cep">
-          Calcular frete (CEP)
+          Calculate shipping (zip code)
         </label>
         <div className="flex gap-2">
           <Input id="cep" placeholder="00000-000" {...shippingForm.register("cep")} />
-          <Button type="submit" variant="outline" disabled={estimateShipping.isPending}>
+          <Button
+            data-testid="estimate-shipping-btn"
+            type="submit"
+            variant="outline"
+            disabled={estimateShipping.isPending}
+          >
             {estimateShipping.isPending ? (
               <Loader2 className="animate-spin" />
             ) : (
@@ -198,7 +218,7 @@ export function CartSummary({ cart }: CartSummaryProps) {
           <p className="text-xs text-destructive">
             {estimateShipping.error instanceof Error
               ? estimateShipping.error.message
-              : "Não foi possível calcular o frete"}
+              : "Could not calculate shipping"}
           </p>
         ) : null}
       </form>
@@ -207,13 +227,13 @@ export function CartSummary({ cart }: CartSummaryProps) {
         <div className="flex flex-col gap-1">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">
-              Frete para {shippingEstimate.city}/{shippingEstimate.state}
+              Shipping to {shippingEstimate.city}/{shippingEstimate.state}
             </span>
             <PriceTag cents={shippingEstimate.shipping} />
           </div>
           <p className="text-xs text-muted-foreground">
-            Entrega estimada em até {shippingEstimate.estimatedDays}{" "}
-            {shippingEstimate.estimatedDays === 1 ? "dia útil" : "dias úteis"}
+            Estimated delivery within {shippingEstimate.estimatedDays}{" "}
+            {shippingEstimate.estimatedDays === 1 ? "business day" : "business days"}
           </p>
         </div>
       ) : null}
@@ -228,7 +248,7 @@ export function CartSummary({ cart }: CartSummaryProps) {
         data-testid="checkout-btn"
         size="lg"
         disabled={shipping === null || cart.items.length === 0 || checkout.isPending}
-        title={shipping === null ? "Calcule o frete antes de finalizar" : undefined}
+        title={shipping === null ? "Calculate shipping before checking out" : undefined}
         onClick={() => {
           if (shipping === null) return;
           checkout.mutate(
@@ -239,7 +259,7 @@ export function CartSummary({ cart }: CartSummaryProps) {
           );
         }}
       >
-        {checkout.isPending ? <Loader2 className="animate-spin" /> : "Finalizar compra"}
+        {checkout.isPending ? <Loader2 className="animate-spin" /> : "Checkout"}
       </Button>
     </div>
   );

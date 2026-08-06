@@ -15,7 +15,7 @@ describe("Authentication", () => {
 
     cy.visit("/");
 
-    cy.contains("Entre para comprar").should("be.visible");
+    cy.contains("Sign in to buy").should("be.visible");
     cy.get("[data-testid=add-to-cart-btn]").should("not.exist");
   });
 
@@ -25,7 +25,7 @@ describe("Authentication", () => {
 
     cy.visit("/");
 
-    cy.contains("Entre para comprar").should("not.exist");
+    cy.contains("Sign in to buy").should("not.exist");
     cy.get("[data-testid=add-to-cart-btn]").first().should("be.visible");
   });
 });
@@ -41,18 +41,18 @@ describe("Add product to cart", () => {
   it("shows instant feedback after adding a product", () => {
     cy.get("[data-testid=add-to-cart-btn]").first().click();
 
-    cy.get("[data-testid=add-to-cart-btn]").first().should("contain.text", "Adicionado!");
+    cy.get("[data-testid=add-to-cart-btn]").first().should("contain.text", "Added!");
   });
 
   it("navigating to the cart shows the added product", () => {
     cy.get("[data-testid=add-to-cart-btn]").first().click();
-    cy.contains("Adicionado!").should("be.visible");
+    cy.contains("Added!").should("be.visible");
 
     // Pre-seed the cart ID so the cart page loads the stubbed cart
     cy.window().then((win) => win.localStorage.setItem("zoom-storm:cart-id", "cart-1"));
     cy.visit("/cart");
 
-    cy.get("h1").should("contain.text", "Seu carrinho");
+    cy.get("h1").should("contain.text", "Your cart");
     cy.contains("The Legend of Zelda").should("be.visible");
     cy.get("[data-testid=checkout-btn]").should("exist");
   });
@@ -74,27 +74,29 @@ describe("Checkout", () => {
   it("checkout button is disabled until shipping is estimated", () => {
     cy.get("[data-testid=checkout-btn]").should("be.disabled");
 
-    cy.get("#distance").clear().type("50");
-    cy.get("form").find('[type="submit"]').click();
+    cy.get("#cep").clear().type("01310-100");
+    cy.get("[data-testid=estimate-shipping-btn]").click();
 
     cy.wait("@getShipping");
-    cy.contains("Frete estimado").should("be.visible");
+    cy.contains("Shipping to").should("be.visible");
 
     cy.get("[data-testid=checkout-btn]").should("not.be.disabled");
 
     cy.screenshot("checkout-frete-estimado", { capture: "fullPage" });
   });
 
-  it("finalizes the purchase and empties the cart", () => {
-    cy.get("#distance").clear().type("50");
-    cy.get("form").find('[type="submit"]').click();
+  it("finalizes the purchase and moves on to payment", () => {
+    cy.get("#cep").clear().type("01310-100");
+    cy.get("[data-testid=estimate-shipping-btn]").click();
     cy.wait("@getShipping");
-    cy.contains("Frete estimado").should("be.visible");
+    cy.contains("Shipping to").should("be.visible");
 
     cy.get("[data-testid=checkout-btn]").click();
 
     cy.wait("@checkout");
-    cy.contains("Seu carrinho está vazio").should("be.visible");
+    // Checkout creates an order and hands the user off to the payment page
+    // instead of leaving them on the (now empty) cart.
+    cy.location("pathname").should("eq", "/checkout/payment");
 
     cy.screenshot("checkout-finalizado", { capture: "fullPage" });
   });

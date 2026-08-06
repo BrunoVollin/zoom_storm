@@ -16,9 +16,9 @@ export function LoginButton() {
 
   return (
     <Button asChild size="sm">
-      <Link href={loginUrl}>
+      <Link data-testid="login-btn" href={loginUrl}>
         <LogIn />
-        Entrar
+        Sign in
       </Link>
     </Button>
   );

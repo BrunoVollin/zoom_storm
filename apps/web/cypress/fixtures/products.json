@@ -1,23 +1,82 @@
 {
-  "status": "SUCCESS",
   "products": [
     {
       "id": "product-1",
       "name": "The Legend of Zelda: Breath of the Wild",
       "description": "Open-world adventure game",
       "category": "Action-Adventure",
-      "price": 29990,
-      "stock": 10,
-      "transport": { "weight": 0.1, "volume": 0.5 }
+      "transportHeight": 1,
+      "transportWidth": 13,
+      "transportLength": 17,
+      "weight": 0.1,
+      "brand": "Nintendo",
+      "tags": ["action", "adventure"],
+      "images": [],
+      "thumbnail": null,
+      "discountPercentage": null,
+      "rating": 4.8,
+      "dimensions": { "width": null, "height": null, "depth": null },
+      "warrantyInformation": "90 dias",
+      "shippingInformation": "Envio em até 3 dias úteis",
+      "availabilityStatus": "In Stock",
+      "returnPolicy": "30 dias para devolução",
+      "minimumOrderQuantity": 1,
+      "meta": {
+        "barcode": null,
+        "qrCode": null,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "updatedAt": "2026-01-01T00:00:00.000Z"
+      },
+      "variants": [
+        {
+          "id": "variant-1",
+          "sku": "ZELDA-BOTW-STD",
+          "name": "Padrão",
+          "price": 29990,
+          "stock": 10,
+          "isDefault": true
+        }
+      ],
+      "reviews": []
     },
     {
       "id": "product-2",
       "name": "Super Mario Odyssey",
       "description": "3D platformer",
       "category": "Platformer",
-      "price": 24990,
-      "stock": 5,
-      "transport": { "weight": 0.1, "volume": 0.5 }
+      "transportHeight": 1,
+      "transportWidth": 13,
+      "transportLength": 17,
+      "weight": 0.1,
+      "brand": "Nintendo",
+      "tags": ["platformer"],
+      "images": [],
+      "thumbnail": null,
+      "discountPercentage": null,
+      "rating": 4.7,
+      "dimensions": { "width": null, "height": null, "depth": null },
+      "warrantyInformation": "90 dias",
+      "shippingInformation": "Envio em até 3 dias úteis",
+      "availabilityStatus": "In Stock",
+      "returnPolicy": "30 dias para devolução",
+      "minimumOrderQuantity": 1,
+      "meta": {
+        "barcode": null,
+        "qrCode": null,
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "updatedAt": "2026-01-01T00:00:00.000Z"
+      },
+      "variants": [
+        {
+          "id": "variant-2",
+          "sku": "MARIO-ODYSSEY-STD",
+          "name": "Padrão",
+          "price": 24990,
+          "stock": 5,
+          "isDefault": true
+        }
+      ],
+      "reviews": []
     }
   ]
 }
