@@ -11,6 +11,7 @@ import { RatingStars } from "@/components/shared/rating-stars";
 import { ShareButtons } from "@/components/shared/share-buttons";
 import { ProductGrid } from "@/components/features/products/product-grid";
 import { useProducts } from "@/hooks/use-products";
+import { useActiveFlashOffers } from "@/hooks/use-flash-offers";
 import { useHasDeliveredOrder } from "@/hooks/use-orders";
 import { cn } from "@/lib/utils";
 import { getDefaultVariant, type Product } from "@/types/product";
@@ -31,6 +32,11 @@ export function ProductDetail({ product }: { product: Product }) {
 
   const variant =
     product.variants.find((v) => v.id === selectedVariantId) ?? getDefaultVariant(product);
+
+  const { data: activeFlashOffers } = useActiveFlashOffers();
+  // Same rule as ProductCard: only an active, item-specific Flash Offer
+  // justifies showing a discount — not the raw dummyjson seed field.
+  const flashOffer = activeFlashOffers?.find((offer) => offer.productId === product.id) ?? null;
 
   const { data: relatedAll } = useProducts({ category: product.category });
   const relatedProducts = useMemo(
@@ -85,15 +91,18 @@ export function ProductDetail({ product }: { product: Product }) {
 
           <div className="flex items-center gap-2">
             <PriceTag cents={variant.price} className="text-3xl" />
-            {product.discountPercentage ? (
-              <Badge>-{Math.round(product.discountPercentage)}%</Badge>
+            {flashOffer ? (
+              <Badge>
+                -{Math.round(flashOffer.discountPct)}% until{" "}
+                {new Date(flashOffer.endsAt).toLocaleDateString("en-US")}
+              </Badge>
             ) : null}
           </div>
           <InstallmentOptions totalCents={variant.price} />
 
           {product.variants.length > 1 ? (
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm text-muted-foreground">Opções</span>
+              <span className="text-sm text-muted-foreground">Options</span>
               <div className="flex flex-wrap gap-2">
                 {product.variants.map((v) => (
                   <button
@@ -115,7 +124,7 @@ export function ProductDetail({ product }: { product: Product }) {
           ) : null}
 
           <p className="text-sm text-muted-foreground">
-            {variant.stock > 0 ? `${variant.stock} unidades em estoque` : "Sem estoque no momento"}
+            {variant.stock > 0 ? `${variant.stock} units in stock` : "Out of stock"}
           </p>
 
           {product.tags.length > 0 ? (
@@ -138,9 +147,9 @@ export function ProductDetail({ product }: { product: Product }) {
           </div>
 
           <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-            {product.warrantyInformation ? <p>Garantia: {product.warrantyInformation}</p> : null}
-            {product.shippingInformation ? <p>Envio: {product.shippingInformation}</p> : null}
-            {product.returnPolicy ? <p>Política de devolução: {product.returnPolicy}</p> : null}
+            {product.warrantyInformation ? <p>Warranty: {product.warrantyInformation}</p> : null}
+            {product.shippingInformation ? <p>Shipping: {product.shippingInformation}</p> : null}
+            {product.returnPolicy ? <p>Return policy: {product.returnPolicy}</p> : null}
           </div>
 
           <ShareButtons url={shareUrl} title={product.name} />
@@ -148,7 +157,7 @@ export function ProductDetail({ product }: { product: Product }) {
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold">Avaliações</h2>
+        <h2 className="text-xl font-semibold">Reviews</h2>
         {product.reviews.length > 0 ? (
           <div className="flex flex-col gap-4">
             {product.reviews.map((review) => (
@@ -163,20 +172,20 @@ export function ProductDetail({ product }: { product: Product }) {
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Ainda não há avaliações para este produto.
+            There are no reviews for this product yet.
           </p>
         )}
         {user && canReview ? <ReviewForm productId={product.id} /> : null}
         {user && !canReview ? (
           <p className="text-sm text-muted-foreground">
-            Avaliações ficam disponíveis depois que um pedido com este produto é entregue.
+            Reviews become available after an order with this product is delivered.
           </p>
         ) : null}
       </div>
 
       {relatedProducts.length > 0 ? (
         <div className="flex flex-col gap-4">
-          <h2 className="text-xl font-semibold">Produtos relacionados</h2>
+          <h2 className="text-xl font-semibold">Related products</h2>
           <ProductGrid products={relatedProducts} />
         </div>
       ) : null}
