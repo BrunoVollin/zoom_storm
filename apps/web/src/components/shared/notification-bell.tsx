@@ -46,13 +46,7 @@ export function NotificationBell() {
   }
 
   return (
-    <DropdownMenu
-      onOpenChange={(open) => {
-        if (open && unreadCount > 0 && !markAllAsRead.isPending) {
-          markAllAsRead.mutate();
-        }
-      }}
-    >
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -77,6 +71,19 @@ export function NotificationBell() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent data-testid="notifications-menu" align="end">
+        {unreadCount > 0 ? (
+          <div className="flex items-center justify-end px-2 pb-1">
+            <button
+              type="button"
+              data-testid="notifications-mark-all-read"
+              disabled={markAllAsRead.isPending}
+              onClick={() => markAllAsRead.mutate()}
+              className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
+            >
+              Mark all as read
+            </button>
+          </div>
+        ) : null}
         {notifications.length === 0 ? (
           <p className="px-2 py-4 text-center text-sm text-muted-foreground">
             No notifications yet.

@@ -18,7 +18,7 @@ function CategoryProductLayer({ category }: { category: string }) {
 
   return (
     <ProductLayer
-      title="Based on what you've viewed"
+      title="Picked for you"
       subtitle={`Fresh picks from ${formatCategoryLabel(category)}`}
       products={products?.slice(0, 12)}
     />
@@ -39,7 +39,7 @@ export function RecentlyViewedLayer({ seed }: { seed: string }) {
     <CategoryProductLayer category={category} />
   ) : (
     <ProductLayer
-      title="Based on what you've viewed"
+      title="Picked for you"
       subtitle="We picked out a few products you might like"
       products={undefined}
     />
