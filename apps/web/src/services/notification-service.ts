@@ -10,4 +10,11 @@ export const notificationService = {
   async markRead(id: string): Promise<void> {
     await http.patch(`/notifications/${id}/read`);
   },
+
+  async markAllRead(): Promise<{ updatedCount: number }> {
+    const { data } = await http.patch<{ status: "SUCCESS"; updatedCount: number }>(
+      "/notifications/read-all",
+    );
+    return { updatedCount: data.updatedCount };
+  },
 };

@@ -1,7 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Bell, CheckCircle2, type LucideIcon, PackageCheck, ShoppingBag, Truck } from "lucide-react";
+import {
+  Bell,
+  CheckCircle2,
+  type LucideIcon,
+  PackageCheck,
+  ShoppingBag,
+  Truck,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,7 +38,7 @@ function getNotificationIcon(type: string): LucideIcon {
 
 export function NotificationBell() {
   const router = useRouter();
-  const { notifications, unreadCount, markAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
   function handleSelect(notification: Notification) {
     if (!notification.read) markAsRead.mutate(notification.id);
@@ -39,10 +46,17 @@ export function NotificationBell() {
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open && unreadCount > 0 && !markAllAsRead.isPending) {
+          markAllAsRead.mutate();
+        }
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          data-testid="notifications-trigger"
           aria-label={
             unreadCount > 0
               ? `Notifications, ${unreadCount} unread ${unreadCount === 1 ? "notification" : "notifications"}`
@@ -54,6 +68,7 @@ export function NotificationBell() {
           {unreadCount > 0 ? (
             <Badge
               aria-hidden="true"
+              data-testid="notifications-count-badge"
               className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full border-2 border-brand-purple bg-destructive p-0 text-[10px] font-semibold text-destructive-foreground"
             >
               {unreadCount > 9 ? "9+" : unreadCount}
@@ -61,7 +76,7 @@ export function NotificationBell() {
           ) : null}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent data-testid="notifications-menu" align="end">
         {notifications.length === 0 ? (
           <p className="px-2 py-4 text-center text-sm text-muted-foreground">
             No notifications yet.

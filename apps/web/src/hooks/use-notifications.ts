@@ -58,10 +58,41 @@ export function useNotifications() {
     },
   });
 
+  const markAllAsRead = useMutation({
+    mutationFn: () => notificationService.markAllRead(),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: notificationsKey });
+      const previous = queryClient.getQueryData<NotificationsListResponse>(notificationsKey);
+
+      queryClient.setQueryData<NotificationsListResponse>(notificationsKey, (current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          notifications: current.notifications?.map((notification) => ({
+            ...notification,
+            read: true,
+          })),
+          unreadCount: 0,
+        };
+      });
+
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(notificationsKey, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: notificationsKey });
+    },
+  });
+
   return {
     notifications: query.data?.notifications ?? [],
     unreadCount: query.data?.unreadCount ?? 0,
     isLoading: query.isLoading,
     markAsRead,
+    markAllAsRead,
   };
 }
