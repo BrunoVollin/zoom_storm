@@ -9,6 +9,8 @@ import type { SessionUser } from "@/types/user";
  */
 export const authService = {
   loginUrl: `/api${BFF_ROUTES.login}`,
+  registerUrl: `/api${BFF_ROUTES.register}`,
+  googleUrl: `/api${BFF_ROUTES.google}`,
 
   logoutUrl(global = false): string {
     return `/api${BFF_ROUTES.logout}${global ? "?global=true" : ""}`;

@@ -4,19 +4,14 @@ import Link from "next/link";
 import { LogIn } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/providers/auth-provider";
+import { ROUTES } from "@/constants/routes";
 
-/**
- * Sends the browser to `/api/auth/login`, which the BFF turns into a
- * Keycloak OAuth2/PKCE redirect. The frontend never builds the auth URL
- * itself — that logic stays server-side in the BFF.
- */
+/** Opens the storefront sign-in screen; provider buttons on that screen
+ * hand off to the BFF-owned OAuth2/PKCE routes. */
 export function LoginButton() {
-  const { loginUrl } = useAuth();
-
   return (
     <Button asChild size="sm">
-      <Link data-testid="login-btn" href={loginUrl}>
+      <Link data-testid="login-btn" href={ROUTES.login}>
         <LogIn />
         Sign in
       </Link>

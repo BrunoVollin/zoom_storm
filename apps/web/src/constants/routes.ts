@@ -4,6 +4,7 @@ export const ROUTES = {
   product: (id: string) => `/products/${id}`,
   cart: "/cart",
   login: "/login",
+  register: "/register",
   wishlist: "/account/wishlist",
   accountSettings: "/account/settings",
   checkoutPayment: (orderId: string) => `/checkout/payment?orderId=${orderId}`,
@@ -16,10 +17,15 @@ export const ROUTES = {
   adminFlashOffers: "/admin/flash-offers",
   adminFlashOfferNew: "/admin/flash-offers/new",
   adminFlashOfferEdit: (id: string) => `/admin/flash-offers/${id}/edit`,
+  adminCoupons: "/admin/coupons",
+  adminCouponNew: "/admin/coupons/new",
+  adminCouponEdit: (id: string) => `/admin/coupons/${id}/edit`,
 } as const;
 
 export const BFF_ROUTES = {
   login: "/auth/login",
+  register: "/auth/register",
+  google: "/auth/google",
   callback: "/auth/callback",
   logout: "/auth/logout",
   me: "/auth/me",
