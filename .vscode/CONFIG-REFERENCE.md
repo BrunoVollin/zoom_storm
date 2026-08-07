@@ -7,8 +7,9 @@ checkout-service/
 ├── .vscode/
 │   ├── launch.json          ← Configuração do debugger (ATUALIZADO)
 │   ├── settings.json        ← Definições do workspace (NOVO)
-│   ├── DEBUG-GUIDE.md       ← Este guia de troubleshooting (NOVO)
-│   └── cleanup-port.sh      ← Script para limpar portas (NOVO)
+│   └── DEBUG-GUIDE.md       ← Este guia de troubleshooting (NOVO)
+├── scripts/
+│   └── cleanup-port.sh      ← Script para limpar portas
 ├── tsconfig.json            ← TypeScript config (sourceMap ✓)
 ├── tsconfig.build.json      ← TypeScript build config
 ├── package.json             ← NPM scripts
@@ -87,7 +88,7 @@ checkout-service/
 
 1. **Limpar processos zumbis:**
    ```bash
-   bash .vscode/cleanup-port.sh
+   bash scripts/cleanup-port.sh
    ```
 
 2. **Pressionar F5** para iniciar o debugger

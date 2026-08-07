@@ -103,7 +103,7 @@ Declared in [`docker-compose.yml`](../docker-compose.yml), configs under
 
 ## Using it
 
-1. `./up.sh` (or `docker compose up -d`) brings up the collector + Tempo +
+1. `./scripts/up.sh` (or `docker compose up -d`) brings up the collector + Tempo +
    Loki + Prometheus + Grafana alongside the rest of the infra.
 2. `yarn dev` starts every service with tracing preloaded.
 3. Open Grafana at `http://localhost:3080` — Tempo/Loki/Prometheus

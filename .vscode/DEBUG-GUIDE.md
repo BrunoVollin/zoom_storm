@@ -36,10 +36,10 @@
 
 ```bash
 # Eliminar processo na porta 3000
-bash .vscode/cleanup-port.sh
+bash scripts/cleanup-port.sh
 
 # Eliminar processo em porta específica
-bash .vscode/cleanup-port.sh 8080
+bash scripts/cleanup-port.sh 8080
 ```
 
 ### Verificar Porta
