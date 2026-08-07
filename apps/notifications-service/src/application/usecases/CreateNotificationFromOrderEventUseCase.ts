@@ -2,6 +2,7 @@ import { Notification, NotificationType } from '../../domain/entities/Notificati
 import { NotificationRepository } from '../../domain/repositories/NotificationRepository';
 import { NotificationPublisher } from '../../domain/repositories/NotificationPublisher';
 import { IdType } from '../../domain/shared/IdType';
+import { DuplicateNotificationEventError } from '../../domain/errors/DuplicateNotificationEventError';
 import { UseCase, Status } from '../contracts/UseCase';
 
 interface OrderEventPayload {
@@ -81,16 +82,40 @@ export class CreateNotificationFromOrderEventUseCase implements UseCase<Input, O
       return { status: Status.SUCCESS, notification: null };
     }
 
+    // Natural, stable key for this order event transition: the same order
+    // never fires the same status twice, so `${orderId}:${type}` uniquely
+    // identifies the notification that transition should produce. Storing
+    // it under a unique constraint makes reprocessing the same Kafka
+    // message (e.g. after a consumer group rebalance, or a retry following
+    // a failed Redis publish) idempotent, instead of creating a duplicate
+    // notification with a fresh random id on every attempt.
+    const sourceEventKey = `${input.payload.id}:${content.type}`;
+
     const notification = new Notification(
       IdType.create(),
       IdType.create(input.payload.userId),
       content.message,
       content.type,
       input.payload.id,
+      sourceEventKey,
     );
 
     try {
       await this.notificationRepository.save(notification);
+    } catch (error) {
+      if (error instanceof DuplicateNotificationEventError) {
+        // This order event was already persisted by a previous attempt.
+        // Treat it as an idempotent success: fall through to (re)publish
+        // in case the earlier attempt failed after saving but before
+        // publishing, without creating a duplicate row.
+      } else {
+        console.error(error);
+
+        return { status: Status.ERROR, message: 'An unexpected error occurred. Please try again later.' };
+      }
+    }
+
+    try {
       await this.notificationPublisher.publish(notification);
     } catch (error) {
       console.error(error);

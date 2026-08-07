@@ -1,24 +1,51 @@
 import { Notification, NotificationType } from '../../../../domain/entities/Notification';
 import { NotificationRepository } from '../../../../domain/repositories/NotificationRepository';
 import { IdType } from '../../../../domain/shared/IdType';
+import { DuplicateNotificationEventError } from '../../../../domain/errors/DuplicateNotificationEventError';
 import { prisma } from '../prisma-connection';
+
+const UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
+
+// Duck-typed check instead of `instanceof Prisma.PrismaClientKnownRequestError`
+// on purpose: importing the generated `client.ts` module here (rather than
+// only through `prisma-connection.ts`) pulls in ESM-only `import.meta` code
+// that Jest/ts-jest cannot parse under CommonJS, breaking unit tests that
+// mock `prisma-connection`.
+function isUniqueConstraintViolationOn(error: unknown, field: string): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+
+  const { code, meta } = error as { code?: unknown; meta?: { target?: unknown } };
+  if (code !== UNIQUE_CONSTRAINT_VIOLATION) return false;
+
+  const target = meta?.target;
+  return Array.isArray(target) && target.includes(field);
+}
 
 export class PrismaNotificationRepository implements NotificationRepository {
   async save(notification: Notification): Promise<void> {
-    await prisma.notification.upsert({
-      where: { id: notification.getId().toString() },
-      create: {
-        id: notification.getId().toString(),
-        userId: notification.userId.toString(),
-        message: notification.message,
-        type: notification.type,
-        orderId: notification.orderId,
-        read: notification.isRead(),
-      },
-      update: {
-        read: notification.isRead(),
-      },
-    });
+    try {
+      await prisma.notification.upsert({
+        where: { id: notification.getId().toString() },
+        create: {
+          id: notification.getId().toString(),
+          userId: notification.userId.toString(),
+          message: notification.message,
+          type: notification.type,
+          orderId: notification.orderId,
+          sourceEventKey: notification.sourceEventKey,
+          read: notification.isRead(),
+        },
+        update: {
+          read: notification.isRead(),
+        },
+      });
+    } catch (error) {
+      if (isUniqueConstraintViolationOn(error, 'sourceEventKey')) {
+        throw new DuplicateNotificationEventError(notification.sourceEventKey ?? '');
+      }
+
+      throw error;
+    }
   }
 
   async findById(id: IdType): Promise<Notification | null> {
@@ -44,12 +71,22 @@ export class PrismaNotificationRepository implements NotificationRepository {
     });
   }
 
+  async markAllAsRead(userId: IdType): Promise<number> {
+    const result = await prisma.notification.updateMany({
+      where: { userId: userId.toString(), read: false },
+      data: { read: true },
+    });
+
+    return result.count;
+  }
+
   private static toDomain(row: {
     id: string;
     userId: string;
     message: string;
     type: string;
     orderId: string | null;
+    sourceEventKey: string | null;
     read: boolean;
     createdAt: Date;
   }): Notification {
@@ -59,6 +96,7 @@ export class PrismaNotificationRepository implements NotificationRepository {
       row.message,
       row.type as NotificationType,
       row.orderId,
+      row.sourceEventKey,
       row.read,
       row.createdAt,
     );

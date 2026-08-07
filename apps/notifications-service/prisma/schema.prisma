@@ -8,13 +8,17 @@ datasource db {
 }
 
 model Notification {
-  id        String   @id
-  userId    String
-  message   String
-  type      String
-  orderId   String?
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id             String   @id
+  userId         String
+  message        String
+  type           String
+  orderId        String?
+  // Stable natural key of the source order event (`${orderId}:${type}`).
+  // Unique so reprocessing the same Kafka order event never creates a
+  // duplicate notification row.
+  sourceEventKey String?  @unique
+  read           Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
   @@index([userId, read])
   @@index([userId, createdAt])

@@ -5,6 +5,7 @@ import { PrismaNotificationRepository } from '../database/prisma/repositories/Pr
 import { closeDatabaseConnections } from '../database/prisma/prisma-connection';
 import { ListNotificationsQuery } from '../../application/queries/ListNotificationsQuery';
 import { MarkNotificationReadUseCase } from '../../application/usecases/MarkNotificationReadUseCase';
+import { MarkAllNotificationsReadUseCase } from '../../application/usecases/MarkAllNotificationsReadUseCase';
 
 const PORT = env.http.port;
 
@@ -13,6 +14,9 @@ const notificationRepository = new PrismaNotificationRepository();
 const app = buildRouter({
   listNotifications: new ListNotificationsQuery(notificationRepository),
   markNotificationRead: new MarkNotificationReadUseCase(notificationRepository),
+  markAllNotificationsRead: new MarkAllNotificationsReadUseCase(
+    notificationRepository,
+  ),
 });
 
 const server = serve({ fetch: app.fetch, port: PORT }, () => {

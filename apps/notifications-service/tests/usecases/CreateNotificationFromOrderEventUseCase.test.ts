@@ -3,6 +3,7 @@ import { Status } from '../../src/application/contracts/UseCase';
 import { NotificationRepository } from '../../src/domain/repositories/NotificationRepository';
 import { NotificationPublisher } from '../../src/domain/repositories/NotificationPublisher';
 import { NotificationType } from '../../src/domain/entities/Notification';
+import { DuplicateNotificationEventError } from '../../src/domain/errors/DuplicateNotificationEventError';
 
 describe('CreateNotificationFromOrderEventUseCase', () => {
   let notificationRepositoryMock: NotificationRepository;
@@ -23,6 +24,7 @@ describe('CreateNotificationFromOrderEventUseCase', () => {
       findById: jest.fn(),
       findByUserId: jest.fn(),
       countUnread: jest.fn(),
+      markAllAsRead: jest.fn(),
     };
 
     notificationPublisherMock = {
@@ -96,6 +98,48 @@ describe('CreateNotificationFromOrderEventUseCase', () => {
       }
       expect(notificationRepositoryMock.save).not.toHaveBeenCalled();
       expect(notificationPublisherMock.publish).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Idempotent reprocessing', () => {
+    it('does not fail and republishes when the same order event is reprocessed after save already persisted it', async () => {
+      (notificationRepositoryMock.save as jest.Mock).mockRejectedValue(
+        new DuplicateNotificationEventError('order-1:ORDER_DELIVERED'),
+      );
+      (notificationPublisherMock.publish as jest.Mock).mockResolvedValue(undefined);
+
+      const result = await useCase.execute({
+        eventName: 'order.status_changed',
+        payload: { ...basePayload, status: 'DELIVERED' },
+      });
+
+      expect(result.status).toBe(Status.SUCCESS);
+      if (result.status === Status.SUCCESS) {
+        expect(result.notification?.type).toBe(NotificationType.ORDER_DELIVERED);
+      }
+      expect(notificationRepositoryMock.save).toHaveBeenCalledTimes(1);
+      expect(notificationPublisherMock.publish).toHaveBeenCalledTimes(1);
+    });
+
+    it('builds the same sourceEventKey for the same order + status on every attempt', async () => {
+      (notificationRepositoryMock.save as jest.Mock).mockResolvedValue(undefined);
+      (notificationPublisherMock.publish as jest.Mock).mockResolvedValue(undefined);
+
+      await useCase.execute({
+        eventName: 'order.status_changed',
+        payload: { ...basePayload, status: 'DELIVERED' },
+      });
+
+      const firstSaveCall = (notificationRepositoryMock.save as jest.Mock).mock.calls[0][0];
+      expect(firstSaveCall.sourceEventKey).toBe('order-1:ORDER_DELIVERED');
+
+      await useCase.execute({
+        eventName: 'order.status_changed',
+        payload: { ...basePayload, status: 'DELIVERED' },
+      });
+
+      const secondSaveCall = (notificationRepositoryMock.save as jest.Mock).mock.calls[1][0];
+      expect(secondSaveCall.sourceEventKey).toBe(firstSaveCall.sourceEventKey);
     });
   });
 

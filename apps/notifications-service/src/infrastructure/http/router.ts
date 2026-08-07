@@ -3,11 +3,13 @@ import { cors } from 'hono/cors';
 import { NotificationController } from './controllers/NotificationController';
 import { ListNotificationsQuery } from '../../application/queries/ListNotificationsQuery';
 import { MarkNotificationReadUseCase } from '../../application/usecases/MarkNotificationReadUseCase';
+import { MarkAllNotificationsReadUseCase } from '../../application/usecases/MarkAllNotificationsReadUseCase';
 import { requireAuth } from './middlewares/requireAuthMiddleware';
 
 interface Dependencies {
   listNotifications: ListNotificationsQuery;
   markNotificationRead: MarkNotificationReadUseCase;
+  markAllNotificationsRead: MarkAllNotificationsReadUseCase;
 }
 
 export function buildRouter(deps: Dependencies): Hono {
@@ -18,11 +20,15 @@ export function buildRouter(deps: Dependencies): Hono {
   const notification = new NotificationController(
     deps.listNotifications,
     deps.markNotificationRead,
+    deps.markAllNotificationsRead,
   );
 
   app.get('/health', (c) => c.json({ status: 'ok' }, 200));
 
   app.get('/notifications', requireAuth, (c) => notification.list(c));
+  app.patch('/notifications/read-all', requireAuth, (c) =>
+    notification.markAllRead(c),
+  );
   app.patch('/notifications/:id/read', requireAuth, (c) => notification.markRead(c));
 
   return app;
