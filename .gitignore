@@ -12,3 +12,5 @@ concern.hide.md
 RELATORIO-CORRECOES.md
 *.log
 *.hide
+.e2e/
+/hide

@@ -1,7 +1,5 @@
 import { defineConfig } from "cypress";
 
-// Backwards-compatible interactive/default config. The authoritative commands
-// use cypress.real.config.ts and cypress.mock.config.ts explicitly.
 export default defineConfig({
   e2e: {
     baseUrl: "http://localhost:3100",
@@ -13,10 +11,6 @@ export default defineConfig({
     screenshotOnRunFailure: true,
     defaultCommandTimeout: 10000,
     env: {
-      keycloakUrl: "http://localhost:3040",
-      keycloakRealm: "zoom-storm",
-      testUser: "test",
-      testPassword: "test123",
       mockApi: true,
     },
   },

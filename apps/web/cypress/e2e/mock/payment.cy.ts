@@ -1,4 +1,4 @@
-/// <reference path="../support/commands.ts" />
+/// <reference path="../../support/commands.ts" />
 
 describe("Cart creation and payment", () => {
   const visitCartWithExistingCart = () => {

@@ -1,0 +1,77 @@
+{
+  "realm": "zoom-storm-e2e",
+  "enabled": true,
+  "displayName": "Zoom Storm E2E",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": false,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Grants access to administrative E2E flows"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "bff-e2e",
+      "name": "Zoom Storm BFF E2E",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "zoom-storm-e2e-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:13088/auth/callback",
+        "http://localhost:13100/api/auth/callback"
+      ],
+      "webOrigins": ["http://localhost:13100"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "use.refresh.tokens": "true"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "test_e2e",
+      "email": "test-e2e@example.test",
+      "firstName": "Test",
+      "lastName": "E2E",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test-e2e-123",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "admin_e2e",
+      "email": "admin-e2e@example.test",
+      "firstName": "Admin",
+      "lastName": "E2E",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": ["admin"],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin-e2e-123",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

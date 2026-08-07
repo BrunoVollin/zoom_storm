@@ -1,4 +1,4 @@
-/// <reference path="../support/commands.ts" />
+/// <reference path="../../support/commands.ts" />
 
 /**
  * E2E: Applying a coupon on the cart page — valid coupon discounts the

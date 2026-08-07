@@ -23,6 +23,13 @@
     "dev:web": "cd apps/web && NODE_OPTIONS=\"--inspect=0.0.0.0:9236\" yarn dev",
     "dev:notifications": "OTEL_SERVICE_NAME=notifications-service tsx watch --inspect=0.0.0.0:9237 --tsconfig tsconfig.json -r ./otel/tracing.ts apps/notifications-service/src/infrastructure/http/server.ts",
     "dev:notifications-consumer": "cd apps/notifications-service && OTEL_SERVICE_NAME=notifications-service-consumer tsx watch --inspect=0.0.0.0:9238 -r ../../otel/tracing.ts index.ts",
+    "e2e:infra:up": "bash scripts/e2e/up-infra.sh",
+    "e2e:data:prepare": "ZOOM_STORM_E2E_MARKER=zoom-storm-e2e bash scripts/e2e/prepare-data.sh",
+    "e2e:host:start": "ZOOM_STORM_E2E_MARKER=zoom-storm-e2e bash scripts/e2e/start-host.sh",
+    "e2e:ready": "bash scripts/e2e/wait-ready.sh",
+    "e2e:logs": "bash scripts/e2e/collect-logs.sh",
+    "e2e:down": "ZOOM_STORM_E2E_MARKER=zoom-storm-e2e bash scripts/e2e/down.sh",
+    "e2e:real": "bash scripts/e2e/run-real.sh",
     "sand": "tsx sandbox.ts"
   },
   "dependencies": {

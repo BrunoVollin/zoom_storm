@@ -1,4 +1,4 @@
-/// <reference path="../support/commands.ts" />
+/// <reference path="../../support/commands.ts" />
 
 /**
  * E2E: Login state, authenticated state, and logout.

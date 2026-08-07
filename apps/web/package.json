@@ -9,8 +9,12 @@
     "start": "next start -p 3100",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
-    "cy:open": "cypress open",
-    "cy:run": "cypress run"
+    "cy:open": "cypress open --config-file cypress.mock.config.ts",
+    "cy:open:real": "cypress open --config-file cypress.real.config.ts",
+    "cy:run": "node scripts/run-cypress-suites.mjs",
+    "cy:run:real": "cypress run --config-file cypress.real.config.ts",
+    "cy:run:mock": "cypress run --config-file cypress.mock.config.ts",
+    "cy:run:all": "node scripts/run-cypress-suites.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -45,7 +49,7 @@
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
-    "cypress": "^13.0.0",
+    "cypress": "15.20.0",
     "eslint": "^9.18.0",
     "eslint-config-next": "15.5.19",
     "prettier": "^3.4.2",
