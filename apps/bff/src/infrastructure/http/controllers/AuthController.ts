@@ -24,6 +24,24 @@ export class AuthController {
     return c.redirect(authorizationUrl, 302);
   }
 
+  async register(c: Context) {
+    const { authorizationUrl } = await this.loginUseCase.execute({
+      redirectUri: `${env.http.baseUrl}/auth/callback`,
+      flow: 'register',
+    });
+
+    return c.redirect(authorizationUrl, 302);
+  }
+
+  async google(c: Context) {
+    const { authorizationUrl } = await this.loginUseCase.execute({
+      redirectUri: `${env.http.baseUrl}/auth/callback`,
+      identityProvider: 'google',
+    });
+
+    return c.redirect(authorizationUrl, 302);
+  }
+
   async callback(c: Context) {
     const state = c.req.query('state');
     if (!state)

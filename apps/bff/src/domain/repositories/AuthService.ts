@@ -7,6 +7,16 @@ export interface AuthorizationRequest {
   codeVerifier: string;
 }
 
+export type AuthorizationFlow = 'login' | 'register';
+
+export type IdentityProvider = 'google';
+
+export interface BuildAuthorizationRequestInput {
+  redirectUri: string;
+  flow?: AuthorizationFlow;
+  identityProvider?: IdentityProvider;
+}
+
 export interface ExchangeCodeInput {
   currentUrl: URL;
   state: string;
@@ -20,7 +30,9 @@ export interface ExchangeResult {
 }
 
 export interface AuthService {
-  buildAuthorizationRequest(redirectUri: string): Promise<AuthorizationRequest>;
+  buildAuthorizationRequest(
+    input: BuildAuthorizationRequestInput,
+  ): Promise<AuthorizationRequest>;
   exchangeCode(input: ExchangeCodeInput): Promise<ExchangeResult>;
   refresh(refreshToken: string): Promise<ExchangeResult>;
   buildEndSessionUrl(

@@ -69,6 +69,8 @@ export function buildRouter(redis: Redis, notificationsRedis: Redis) {
   app.get('/health', (c) => c.json({ status: 'ok' }, 200));
 
   app.get('/auth/login', (c) => authController.login(c));
+  app.get('/auth/register', (c) => authController.register(c));
+  app.get('/auth/google', (c) => authController.google(c));
   app.get('/auth/callback', (c) => authController.callback(c));
   app.post('/auth/logout', requireSession, (c) => authController.logout(c));
   app.get('/auth/me', requireSession, (c) => authController.me(c));

@@ -1,11 +1,17 @@
 import { UseCase } from '@bff-application/contracts/UseCase';
 import { PendingAuthorizationStore } from '@bff-application/contracts/PendingAuthorizationStore';
-import { AuthService } from '@bff-domain/repositories/AuthService';
+import {
+  AuthService,
+  AuthorizationFlow,
+  IdentityProvider,
+} from '@bff-domain/repositories/AuthService';
 
 const PENDING_AUTHORIZATION_TTL_SECONDS = 5 * 60;
 
 export interface LoginInput {
   redirectUri: string;
+  flow?: AuthorizationFlow;
+  identityProvider?: IdentityProvider;
 }
 
 export interface LoginOutput {
@@ -19,9 +25,7 @@ export class LoginUseCase implements UseCase<LoginInput, LoginOutput> {
   ) {}
 
   async execute(input: LoginInput): Promise<LoginOutput> {
-    const request = await this.authService.buildAuthorizationRequest(
-      input.redirectUri,
-    );
+    const request = await this.authService.buildAuthorizationRequest(input);
 
     await this.pendingAuthorizationStore.save(
       {

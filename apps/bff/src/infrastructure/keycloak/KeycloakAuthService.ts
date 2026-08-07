@@ -5,6 +5,7 @@ import { SessionTokens, SessionUser } from '@bff-domain/entities/Session';
 import {
   AuthService,
   AuthorizationRequest,
+  BuildAuthorizationRequestInput,
   ExchangeCodeInput,
   ExchangeResult,
 } from '@bff-domain/repositories/AuthService';
@@ -29,7 +30,7 @@ export class KeycloakAuthService implements AuthService {
   }
 
   async buildAuthorizationRequest(
-    redirectUri: string,
+    input: BuildAuthorizationRequestInput,
   ): Promise<AuthorizationRequest> {
     const configuration = await this.getConfiguration();
 
@@ -39,12 +40,16 @@ export class KeycloakAuthService implements AuthService {
     const nonce = client.randomNonce();
 
     const authorizationUrl = client.buildAuthorizationUrl(configuration, {
-      redirect_uri: redirectUri,
+      redirect_uri: input.redirectUri,
       scope: 'openid profile email offline_access',
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
       state,
       nonce,
+      ...(input.flow === 'register' ? { prompt: 'create' } : {}),
+      ...(input.identityProvider === 'google'
+        ? { kc_idp_hint: 'google' }
+        : {}),
     });
 
     return {

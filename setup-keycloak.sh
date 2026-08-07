@@ -7,6 +7,8 @@ ADMIN_PASSWORD="admin"
 REALM="zoom-storm"
 CLIENT_ID="bff"
 CLIENT_SECRET="hjOm3lu18570zFI86ZyJ5uDP6dieUaL5"
+ZOOM_GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
+ZOOM_GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-}"
 
 echo "Obtaining admin token..."
 ADMIN_TOKEN=$(curl -s -X POST "$KEYCLOAK_URL/realms/master/protocol/openid-connect/token" \
@@ -58,6 +60,37 @@ curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM/clients" \
       "use.refresh.tokens": "true"
     }
   }' -w "\nClient HTTP %{http_code}\n"
+
+if [ -n "$ZOOM_GOOGLE_CLIENT_ID" ] && [ -n "$ZOOM_GOOGLE_CLIENT_SECRET" ]; then
+  echo "Configuring optional Google identity provider..."
+  GOOGLE_IDP_JSON=$(ZOOM_GOOGLE_CLIENT_ID="$ZOOM_GOOGLE_CLIENT_ID" \
+    ZOOM_GOOGLE_CLIENT_SECRET="$ZOOM_GOOGLE_CLIENT_SECRET" \
+    python3 -c 'import json, os; print(json.dumps({
+      "alias": "google",
+      "displayName": "Google",
+      "providerId": "google",
+      "enabled": True,
+      "trustEmail": True,
+      "storeToken": False,
+      "linkOnly": False,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": os.environ["ZOOM_GOOGLE_CLIENT_ID"],
+        "clientSecret": os.environ["ZOOM_GOOGLE_CLIENT_SECRET"],
+        "syncMode": "IMPORT",
+        "useJwksUrl": "true"
+      }
+    }))')
+
+  curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM/identity-provider/instances" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    --data-binary "$GOOGLE_IDP_JSON" \
+    -w "\nGoogle identity provider HTTP %{http_code}\n"
+  unset GOOGLE_IDP_JSON
+else
+  echo "Google identity provider skipped (set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable)."
+fi
 
 echo "Creating test user..."
 curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM/users" \
