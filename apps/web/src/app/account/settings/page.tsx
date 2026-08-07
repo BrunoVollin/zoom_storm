@@ -7,10 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { ErrorState } from "@/components/shared/error-state";
 import { PriceTag } from "@/components/shared/price-tag";
-import { ProfileForm } from "@/components/features/account/profile-form";
+import { PersonalDataForm } from "@/components/features/account/personal-data-form";
+import { SavedAddressesSection } from "@/components/features/account/saved-addresses-section";
 import { SavedCardsSection } from "@/components/features/account/saved-cards-section";
 import { useProfile, useUpdateProfile } from "@/hooks/use-profile";
 import { useLoyaltyBalance } from "@/hooks/use-loyalty";
+import { useSavedAddresses } from "@/hooks/use-saved-addresses";
 import { useAuth } from "@/providers/auth-provider";
 import { ROUTES } from "@/constants/routes";
 
@@ -20,6 +22,7 @@ export default function AccountSettingsPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { data: profile, isLoading, error } = useProfile();
   const updateProfile = useUpdateProfile();
+  const { data: savedAddresses } = useSavedAddresses();
   const { data: loyaltyBalance, isLoading: isLoyaltyLoading } = useLoyaltyBalance();
 
   if (isAuthLoading) {
@@ -40,15 +43,15 @@ export default function AccountSettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold">Account settings</h1>
         <p className="text-sm text-muted-foreground">
-          Your personal data, shipping address and available credit.
+          Manage your personal data, shipping addresses, payment cards and available credit.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Personal data and address</CardTitle>
+          <CardTitle>Personal data</CardTitle>
           <CardDescription>
-            Used to identify your orders and calculate shipping costs.
+            Used to identify your orders. Shipping addresses are managed separately below.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -60,13 +63,36 @@ export default function AccountSettingsPage() {
             />
           ) : null}
           {!isLoading && !error ? (
-            <ProfileForm
-              initialProfile={profile ?? null}
-              onSubmit={(input) => updateProfile.mutateAsync(input)}
+            <PersonalDataForm
+              initialValues={
+                profile
+                  ? { fullName: profile.fullName, document: profile.document }
+                  : undefined
+              }
+              onSubmit={(input) => {
+                const address = profile?.address ?? savedAddresses?.find((item) => item.isDefault) ?? savedAddresses?.[0];
+                if (!address) {
+                  throw new Error("Add a shipping address before saving your personal data.");
+                }
+                return updateProfile.mutateAsync({
+                  ...input,
+                  address: {
+                    street: address.street,
+                    number: address.number,
+                    complement: address.complement,
+                    neighborhood: address.neighborhood,
+                    city: address.city,
+                    state: address.state,
+                    zip: address.zip,
+                  },
+                });
+              }}
             />
           ) : null}
         </CardContent>
       </Card>
+
+      <SavedAddressesSection />
 
       <SavedCardsSection />
 

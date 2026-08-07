@@ -1,27 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Gift, Loader2, Tag, Truck, X } from "lucide-react";
+import { Gift, Loader2, MapPin, Tag, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InstallmentOptions } from "@/components/shared/installment-options";
 import { PriceTag } from "@/components/shared/price-tag";
+import { SavedAddressesList } from "@/components/features/account/saved-addresses-list";
 import { cartService } from "@/services/cart-service";
 import { useCart } from "@/hooks/use-cart";
 import { useLoyaltyBalance, useRedeemLoyaltyPoints } from "@/hooks/use-loyalty";
-import { useProfile } from "@/hooks/use-profile";
+import { useSavedAddresses } from "@/hooks/use-saved-addresses";
 import { ROUTES } from "@/constants/routes";
-import {
-  applyCouponSchema,
-  shippingEstimateSchema,
-  type ApplyCouponInput,
-  type ShippingEstimateInput,
-} from "@/schemas/cart.schema";
+import { applyCouponSchema, type ApplyCouponInput } from "@/schemas/cart.schema";
+import type { ApiError } from "@/types/api";
 import type { Cart, ShippingEstimate } from "@/types/cart";
 
 interface CartSummaryProps {
@@ -36,26 +34,42 @@ function getSubtotal(cart: Cart): number {
 export function CartSummary({ cart }: CartSummaryProps) {
   const router = useRouter();
   const [shippingEstimate, setShippingEstimate] = useState<ShippingEstimate | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [checkoutNotice, setCheckoutNotice] = useState<string | null>(null);
   const [redeemPoints, setRedeemPoints] = useState("");
   const subtotal = getSubtotal(cart);
   const { checkout, applyCoupon, removeCoupon } = useCart();
   const { data: loyaltyBalance } = useLoyaltyBalance();
   const redeemLoyaltyPoints = useRedeemLoyaltyPoints(cart.id);
-  const { data: profile } = useProfile();
-
-  const shippingForm = useForm<ShippingEstimateInput>({
-    resolver: zodResolver(shippingEstimateSchema),
-    values: profile?.address.zip ? { cep: profile.address.zip } : undefined,
-  });
+  const { data: savedAddresses } = useSavedAddresses();
+  const initializedDefaultAddress = useRef(false);
 
   const couponForm = useForm<ApplyCouponInput>({
     resolver: zodResolver(applyCouponSchema),
   });
 
   const estimateShipping = useMutation({
-    mutationFn: ({ cep }: ShippingEstimateInput) => cartService.estimateShipping(cart.id, cep),
+    mutationFn: (addressId: string) => cartService.estimateShipping(cart.id, addressId),
     onSuccess: setShippingEstimate,
   });
+
+  useEffect(() => {
+    if (!savedAddresses || initializedDefaultAddress.current) return;
+    initializedDefaultAddress.current = true;
+    const defaultAddress = savedAddresses.find((address) => address.isDefault) ?? null;
+    if (defaultAddress) {
+      setSelectedAddressId(defaultAddress.id);
+      estimateShipping.mutate(defaultAddress.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedAddresses]);
+
+  function selectAddress(addressId: string) {
+    setSelectedAddressId(addressId);
+    setShippingEstimate(null);
+    setCheckoutNotice(null);
+    estimateShipping.mutate(addressId);
+  }
 
   const shipping = shippingEstimate?.shipping ?? null;
   const totalDiscount = cart.totalDiscount ?? 0;
@@ -189,31 +203,28 @@ export function CartSummary({ cart }: CartSummaryProps) {
         </p>
       ) : null}
 
-      <form
-        className="flex flex-col gap-2"
-        onSubmit={shippingForm.handleSubmit((values) => estimateShipping.mutate(values))}
-      >
-        <label className="text-sm text-muted-foreground" htmlFor="cep">
-          Calculate shipping (zip code)
-        </label>
-        <div className="flex gap-2">
-          <Input id="cep" placeholder="00000-000" {...shippingForm.register("cep")} />
-          <Button
-            data-testid="estimate-shipping-btn"
-            type="submit"
-            variant="outline"
-            disabled={estimateShipping.isPending}
-          >
-            {estimateShipping.isPending ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <Truck className="size-4" />
-            )}
-          </Button>
-        </div>
-        {shippingForm.formState.errors.cep ? (
-          <p className="text-xs text-destructive">{shippingForm.formState.errors.cep.message}</p>
+      <div className="flex flex-col gap-2">
+        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <MapPin className="size-3.5" />
+          Shipping address
+        </span>
+
+        {savedAddresses && savedAddresses.length > 0 ? (
+          <SavedAddressesList
+            addresses={savedAddresses}
+            selectedAddressId={selectedAddressId}
+            onSelect={selectAddress}
+          />
+        ) : savedAddresses ? (
+          <div className="rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">
+            You have no saved addresses yet.{" "}
+            <Link href={ROUTES.accountSettings} className="text-primary underline">
+              Add an address
+            </Link>{" "}
+            before checking out.
+          </div>
         ) : null}
+
         {estimateShipping.isError ? (
           <p className="text-xs text-destructive">
             {estimateShipping.error instanceof Error
@@ -221,7 +232,7 @@ export function CartSummary({ cart }: CartSummaryProps) {
               : "Could not calculate shipping"}
           </p>
         ) : null}
-      </form>
+      </div>
 
       {shippingEstimate ? (
         <div className="flex flex-col gap-1">
@@ -238,6 +249,18 @@ export function CartSummary({ cart }: CartSummaryProps) {
         </div>
       ) : null}
 
+      {checkoutNotice ? (
+        <p data-testid="checkout-notice" className="text-xs text-amber-600">
+          {checkoutNotice}
+        </p>
+      ) : null}
+
+      {checkout.isError && !checkoutNotice ? (
+        <p className="text-xs text-destructive">
+          {checkout.error instanceof Error ? checkout.error.message : "Could not complete checkout"}
+        </p>
+      ) : null}
+
       <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
         <span>Total</span>
         <PriceTag cents={Math.max(0, subtotal - totalDiscount + (shipping ?? 0))} />
@@ -247,14 +270,29 @@ export function CartSummary({ cart }: CartSummaryProps) {
       <Button
         data-testid="checkout-btn"
         size="lg"
-        disabled={shipping === null || cart.items.length === 0 || checkout.isPending}
-        title={shipping === null ? "Calculate shipping before checking out" : undefined}
+        disabled={
+          !selectedAddressId ||
+          !shippingEstimate ||
+          cart.items.length === 0 ||
+          checkout.isPending
+        }
+        title={!shippingEstimate ? "Select a shipping address before checking out" : undefined}
         onClick={() => {
-          if (shipping === null) return;
+          if (!selectedAddressId || !shippingEstimate) return;
+          setCheckoutNotice(null);
           checkout.mutate(
-            { shipping, cep: shippingForm.getValues("cep") },
+            { addressId: selectedAddressId, shippingQuoteId: shippingEstimate.shippingQuoteId },
             {
               onSuccess: ({ order }) => router.push(ROUTES.checkoutPayment(order.id)),
+              onError: (error) => {
+                const apiError = error as Partial<ApiError>;
+                if (apiError?.code === "SHIPPING_QUOTE_EXPIRED") {
+                  setCheckoutNotice(
+                    "Your shipping quote has expired. We recalculated it — please review and try checkout again.",
+                  );
+                  estimateShipping.mutate(selectedAddressId);
+                }
+              },
             },
           );
         }}

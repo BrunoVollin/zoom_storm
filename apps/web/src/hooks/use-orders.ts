@@ -1,8 +1,10 @@
 "use client";
 
+import { useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orderService } from "@/services/order-service";
 import { queryKeys } from "@/constants/query-keys";
+import type { PayOrderInput } from "@/types/order";
 
 export function useOrders() {
   return useQuery({
@@ -42,9 +44,19 @@ export function useHasDeliveredOrder(productId: string) {
 
 export function usePayOrder(orderId: string) {
   const queryClient = useQueryClient();
+  const attempt = useRef<{ fingerprint: string; key: string } | null>(null);
 
   return useMutation({
-    mutationFn: (installments: number) => orderService.pay(orderId, installments),
+    mutationFn: (input: PayOrderInput) => {
+      const fingerprint = JSON.stringify(input);
+      if (!attempt.current || attempt.current.fingerprint !== fingerprint) {
+        attempt.current = {
+          fingerprint,
+          key: `payment-${orderId}-${crypto.randomUUID()}`,
+        };
+      }
+      return orderService.pay(orderId, input, attempt.current.key);
+    },
     onSuccess: (order) => {
       queryClient.setQueryData(queryKeys.orders.detail(orderId), order);
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });

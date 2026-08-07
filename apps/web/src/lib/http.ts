@@ -36,10 +36,11 @@ http.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
 
 http.interceptors.response.use(
   (response) => response,
-  (error: AxiosError<{ message?: string }>) => {
+  (error: AxiosError<{ message?: string; code?: string }>) => {
     const apiError: ApiError = {
       status: error.response?.status ?? 0,
       message: error.response?.data?.message ?? error.message ?? "Erro inesperado de comunicação",
+      code: error.response?.data?.code,
     };
     return Promise.reject(apiError);
   },

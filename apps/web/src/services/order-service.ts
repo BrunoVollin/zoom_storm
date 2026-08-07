@@ -1,5 +1,5 @@
 import { http } from "@/lib/http";
-import type { Order, OrderListResponse, OrderResponse } from "@/types/order";
+import type { Order, OrderListResponse, OrderResponse, PayOrderInput } from "@/types/order";
 
 export const orderService = {
   async list(): Promise<Order[]> {
@@ -18,9 +18,9 @@ export const orderService = {
     return data.order;
   },
 
-  async pay(orderId: string, installments: number): Promise<Order> {
-    const { data } = await http.post<OrderResponse>(`/cart/orders/${orderId}/pay`, {
-      installments,
+  async pay(orderId: string, input: PayOrderInput, idempotencyKey: string): Promise<Order> {
+    const { data } = await http.post<OrderResponse>(`/cart/orders/${orderId}/pay`, input, {
+      headers: { "Idempotency-Key": idempotencyKey },
     });
     if (data.status === "ERROR" || !data.order) {
       throw new Error(data.message ?? "Não foi possível processar o pagamento");

@@ -4,6 +4,7 @@ import type {
   SavedCard,
   SavedCardListResponse,
   SavedCardResponse,
+  UpdateSavedCardInput,
 } from "@/types/payment-card";
 
 export const paymentCardService = {
@@ -28,5 +29,23 @@ export const paymentCardService = {
     if (data.status === "ERROR") {
       throw new Error(data.message ?? "Não foi possível remover o cartão");
     }
+  },
+
+  async update(cardId: string, input: UpdateSavedCardInput): Promise<SavedCard> {
+    const { data } = await http.put<SavedCardResponse>(`/cart/profile/cards/${cardId}`, input);
+    if (data.status === "ERROR" || !data.card) {
+      throw new Error(data.message ?? "Não foi possível atualizar o cartão");
+    }
+    return data.card;
+  },
+
+  async setDefault(cardId: string): Promise<SavedCard> {
+    const { data } = await http.put<SavedCardResponse>(
+      `/cart/profile/cards/${cardId}/default`,
+    );
+    if (data.status === "ERROR" || !data.card) {
+      throw new Error(data.message ?? "Não foi possível definir o cartão padrão");
+    }
+    return data.card;
   },
 };

@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { paymentCardService } from "@/services/payment-card-service";
 import { queryKeys } from "@/constants/query-keys";
-import type { AddSavedCardInput } from "@/types/payment-card";
+import type { AddSavedCardInput, UpdateSavedCardInput } from "@/types/payment-card";
 
 export function useSavedCards() {
   return useQuery({
@@ -28,6 +28,29 @@ export function useDeleteSavedCard() {
 
   return useMutation({
     mutationFn: (cardId: string) => paymentCardService.remove(cardId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.paymentCards.all });
+    },
+  });
+}
+
+export function useUpdateSavedCard() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ cardId, input }: { cardId: string; input: UpdateSavedCardInput }) =>
+      paymentCardService.update(cardId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.paymentCards.all });
+    },
+  });
+}
+
+export function useSetDefaultSavedCard() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (cardId: string) => paymentCardService.setDefault(cardId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.paymentCards.all });
     },

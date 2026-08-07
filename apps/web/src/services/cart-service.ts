@@ -53,12 +53,13 @@ export const cartService = {
     return unwrap(await http.delete<CartResponse>(`/cart/carts/${cartId}/coupons/${couponId}`));
   },
 
-  async estimateShipping(cartId: string, cep: string): Promise<ShippingEstimate> {
+  async estimateShipping(cartId: string, addressId: string): Promise<ShippingEstimate> {
     const { data } = await http.get<ShippingResponse>(`/cart/carts/${cartId}/shipping`, {
-      params: { cep },
+      params: { addressId },
     });
     if (
       data.status === "ERROR" ||
+      !data.shippingQuoteId ||
       data.shipping === undefined ||
       data.estimatedDays === undefined ||
       !data.city ||
@@ -67,6 +68,7 @@ export const cartService = {
       throw new Error(data.message ?? "Não foi possível calcular o frete");
     }
     return {
+      shippingQuoteId: data.shippingQuoteId,
       shipping: data.shipping,
       estimatedDays: data.estimatedDays,
       city: data.city,
@@ -74,11 +76,17 @@ export const cartService = {
     };
   },
 
-  async checkout(cartId: string, shipping: number, cep?: string): Promise<{ cart: Cart; order: Order }> {
-    const { data } = await http.post<CheckoutResponse>(`/cart/carts/${cartId}/checkout`, {
-      shipping,
-      cep,
-    });
+  async checkout(
+    cartId: string,
+    addressId: string,
+    shippingQuoteId: string,
+    idempotencyKey: string,
+  ): Promise<{ cart: Cart; order: Order }> {
+    const { data } = await http.post<CheckoutResponse>(
+      `/cart/carts/${cartId}/checkout`,
+      { addressId, shippingQuoteId },
+      { headers: { "Idempotency-Key": idempotencyKey } },
+    );
     if (data.status === "ERROR" || !data.cart || !data.order) {
       throw new Error(data.message ?? "Não foi possível finalizar a compra");
     }

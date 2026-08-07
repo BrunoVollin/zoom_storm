@@ -43,6 +43,18 @@ export const addCardFormSchema = z.object({
     .string()
     .min(1, "Enter the expiry date")
     .refine((value) => isFutureExpiryDate(value), "Card expired or invalid date (use MM/YY)"),
+  isDefault: z.boolean().default(false),
 });
 
 export type AddCardFormInput = z.infer<typeof addCardFormSchema>;
+
+export const editCardFormSchema = z.object({
+  brand: z.string().min(1, "Enter the card brand"),
+  cardName: z.string().min(1, "Enter the name printed on the card"),
+  expiry: z
+    .string()
+    .min(1, "Enter the expiry date")
+    .refine((value) => isFutureExpiryDate(value), "Card expired or invalid date (use MM/YY)"),
+});
+
+export type EditCardFormInput = z.infer<typeof editCardFormSchema>;

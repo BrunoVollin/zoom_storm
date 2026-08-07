@@ -13,15 +13,6 @@ export const updateCartItemQuantitySchema = z.object({
 
 export type UpdateCartItemQuantityInput = z.infer<typeof updateCartItemQuantitySchema>;
 
-export const shippingEstimateSchema = z.object({
-  cep: z
-    .string()
-    .min(1, "Enter the zip code")
-    .regex(/^\d{5}-?\d{3}$/, "Invalid zip code — use the format 00000-000"),
-});
-
-export type ShippingEstimateInput = z.infer<typeof shippingEstimateSchema>;
-
 export const applyCouponSchema = z.object({
   couponId: z.string().min(1, "Enter the coupon code"),
 });

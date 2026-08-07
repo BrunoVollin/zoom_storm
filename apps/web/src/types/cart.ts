@@ -55,6 +55,7 @@ export interface CheckoutResponse {
 }
 
 export interface ShippingEstimate {
+  shippingQuoteId: string;
   shipping: number;
   estimatedDays: number;
   city: string;
@@ -63,6 +64,7 @@ export interface ShippingEstimate {
 
 export interface ShippingResponse {
   status: "SUCCESS" | "ERROR";
+  shippingQuoteId?: string;
   shipping?: number;
   estimatedDays?: number;
   city?: string;

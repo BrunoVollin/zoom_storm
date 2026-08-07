@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -17,7 +17,7 @@ import { SavedCardsList } from "@/components/features/account/saved-cards-list";
 import { FillTestCardButton } from "@/components/features/account/fill-test-card-button";
 import { ROUTES } from "@/constants/routes";
 import { useOrder, usePayOrder } from "@/hooks/use-orders";
-import { useSavedCards, useAddSavedCard, useDeleteSavedCard } from "@/hooks/use-payment-cards";
+import { useSavedCards } from "@/hooks/use-payment-cards";
 import { calculateInstallments } from "@/utils/installments";
 import { detectCardBrand, lastFourDigits } from "@/utils/credit-card";
 import {
@@ -36,11 +36,16 @@ export default function PaymentPage() {
   const { data: order, isLoading, error } = useOrder(orderId);
   const payOrder = usePayOrder(orderId);
   const { data: savedCards } = useSavedCards();
-  const addSavedCard = useAddSavedCard();
-  const deleteSavedCard = useDeleteSavedCard();
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [saveCard, setSaveCard] = useState(false);
+  const initializedSavedCard = useRef(false);
+
+  useEffect(() => {
+    if (!savedCards || initializedSavedCard.current) return;
+    initializedSavedCard.current = true;
+    setSelectedCardId(savedCards.find((card) => card.isDefault)?.id ?? null);
+  }, [savedCards]);
 
   const {
     register,
@@ -84,23 +89,30 @@ export default function PaymentPage() {
   const installmentOptions = calculateInstallments(order.total);
 
   const submitNewCard = handleSubmit(async (values) => {
-    await payOrder.mutateAsync(values.installments, {
+    await payOrder.mutateAsync({
+      installments: values.installments,
+      paymentMethod: {
+        type: "NEW_CARD",
+        token: `sim_${crypto.randomUUID()}`,
+        brand: detectCardBrand(values.cardNumber) ?? "Card",
+        lastFour: lastFourDigits(values.cardNumber),
+        holderName: values.cardName,
+        expiry: values.expiry,
+        saveCard,
+      },
+    }, {
       onSuccess: () => {
-        if (saveCard) {
-          addSavedCard.mutate({
-            brand: detectCardBrand(values.cardNumber) ?? "Card",
-            lastFour: lastFourDigits(values.cardNumber),
-            holderName: values.cardName,
-            expiry: values.expiry,
-          });
-        }
         router.push(ROUTES.order(order.id));
       },
     });
   });
 
   const submitSavedCard = handleSavedCardSubmit(async (values) => {
-    await payOrder.mutateAsync(values.installments, {
+    if (!selectedCardId) return;
+    await payOrder.mutateAsync({
+      installments: values.installments,
+      paymentMethod: { type: "SAVED_CARD", savedCardId: selectedCardId },
+    }, {
       onSuccess: () => router.push(ROUTES.order(order.id)),
     });
   });
@@ -121,11 +133,6 @@ export default function PaymentPage() {
             cards={savedCards}
             selectedCardId={selectedCardId}
             onSelect={setSelectedCardId}
-            isDeleting={deleteSavedCard.isPending}
-            onDelete={(cardId) => {
-              deleteSavedCard.mutate(cardId);
-              if (selectedCardId === cardId) setSelectedCardId(null);
-            }}
           />
           <button
             data-testid="new-card-option"

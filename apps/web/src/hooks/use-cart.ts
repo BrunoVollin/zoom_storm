@@ -150,10 +150,17 @@ export function useCart() {
   });
 
   const checkout = useMutation({
-    mutationFn: async ({ shipping, cep }: { shipping: number; cep?: string }) => {
+    mutationFn: async ({
+      addressId,
+      shippingQuoteId,
+    }: {
+      addressId: string;
+      shippingQuoteId: string;
+    }) => {
       if (!cartId) throw new Error("Carrinho inexistente");
+      const idempotencyKey = `checkout-${cartId}-${crypto.randomUUID()}`;
       try {
-        return await cartService.checkout(cartId, shipping, cep);
+        return await cartService.checkout(cartId, addressId, shippingQuoteId, idempotencyKey);
       } catch (error) {
         if (isStaleCartError(error)) clearCartId();
         throw error;

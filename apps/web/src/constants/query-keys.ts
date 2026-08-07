@@ -25,6 +25,7 @@ export const queryKeys = {
   },
   profile: {
     detail: ["profile"] as const,
+    addresses: ["profile", "addresses"] as const,
   },
   paymentCards: {
     all: ["payment-cards"] as const,
