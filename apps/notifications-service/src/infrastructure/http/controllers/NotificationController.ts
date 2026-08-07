@@ -25,6 +25,10 @@ export class NotificationController {
     const userId = c.get('userId') as string;
     const notificationId = c.req.param('id');
 
+    if (!notificationId) {
+      return c.json({ status: UseCaseStatus.ERROR, message: 'Notification not found' }, 404);
+    }
+
     const result = await this.markNotificationReadUseCase.execute({
       notificationId,
       userId,

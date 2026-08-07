@@ -52,6 +52,17 @@ describe('CreateNotificationFromOrderEventUseCase', () => {
       expect(notificationPublisherMock.publish).not.toHaveBeenCalled();
     });
 
+    it('should never treat order.created as payment even if its payload incorrectly says PAID', async () => {
+      const result = await useCase.execute({
+        eventName: 'order.created',
+        payload: { ...basePayload, status: 'PAID' },
+      });
+
+      expect(result).toEqual({ status: Status.SUCCESS, notification: null });
+      expect(notificationRepositoryMock.save).not.toHaveBeenCalled();
+      expect(notificationPublisherMock.publish).not.toHaveBeenCalled();
+    });
+
     it('should create and publish a purchase notification after payment', async () => {
       (notificationRepositoryMock.save as jest.Mock).mockResolvedValue(undefined);
       (notificationPublisherMock.publish as jest.Mock).mockResolvedValue(undefined);
@@ -67,6 +78,10 @@ describe('CreateNotificationFromOrderEventUseCase', () => {
       }
       expect(notificationRepositoryMock.save).toHaveBeenCalledTimes(1);
       expect(notificationPublisherMock.publish).toHaveBeenCalledTimes(1);
+
+      const notification = (notificationRepositoryMock.save as jest.Mock).mock.calls[0][0];
+      expect(notification.message).toContain('Compra realizada com sucesso!');
+      expect(notification.sourceEventKey).toBe('order-1:ORDER_CREATED');
     });
 
     it('should create a delivery notification for order.status_changed / DELIVERED', async () => {

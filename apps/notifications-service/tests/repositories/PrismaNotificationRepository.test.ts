@@ -3,10 +3,14 @@ import { IdType } from '../../src/domain/shared/IdType';
 import { DuplicateNotificationEventError } from '../../src/domain/errors/DuplicateNotificationEventError';
 
 const notificationUpsert = jest.fn();
+const notificationUpdateMany = jest.fn();
 
 jest.mock('../../src/infrastructure/database/prisma/prisma-connection', () => ({
   prisma: {
-    notification: { upsert: notificationUpsert },
+    notification: {
+      upsert: notificationUpsert,
+      updateMany: notificationUpdateMany,
+    },
   },
 }));
 
@@ -110,6 +114,21 @@ describe('PrismaNotificationRepository', () => {
       const repository = new PrismaNotificationRepository();
 
       await expect(repository.save(notification)).rejects.toBe(dbError);
+    });
+  });
+
+  describe('markAllAsRead', () => {
+    it('updates only unread notifications owned by the requested user', async () => {
+      notificationUpdateMany.mockResolvedValue({ count: 2 });
+
+      const repository = new PrismaNotificationRepository();
+      const updatedCount = await repository.markAllAsRead(IdType.create('user-1'));
+
+      expect(notificationUpdateMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1', read: false },
+        data: { read: true },
+      });
+      expect(updatedCount).toBe(2);
     });
   });
 });
