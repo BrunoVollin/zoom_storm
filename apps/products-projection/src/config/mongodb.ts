@@ -9,7 +9,16 @@ export class MongoDbClient {
   constructor(uri: string, dbName: string) {
     this.uri = uri;
     this.dbName = dbName;
-    this.client = new MongoClient(this.uri);
+    this.client = new MongoClient(this.uri, {
+      // Without explicit timeouts a stalled/half-open handshake can hang
+      // indefinitely. Since this repository is called from inside
+      // consumer.run()'s eachMessage, an unbounded hang here blocks the
+      // Kafka heartbeat (only sent between processed messages), which gets
+      // the consumer kicked from the group and triggers a rebalance storm.
+      connectTimeoutMS: 10_000,
+      serverSelectionTimeoutMS: 10_000,
+      socketTimeoutMS: 20_000,
+    });
   }
 
   public async connect(): Promise<void> {

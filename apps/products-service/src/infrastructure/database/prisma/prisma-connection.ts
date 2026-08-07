@@ -6,6 +6,10 @@ const pool = new Pool({
   connectionString: process.env.PRODUCTS_SERVICE_DATABASE_URL,
   max: 20,
   idleTimeoutMillis: 30000,
+  // `pg` defaults connectionTimeoutMillis to 0 (wait forever). Bound it so a
+  // stalled Postgres connection fails fast and loudly instead of hanging a
+  // request/handler indefinitely.
+  connectionTimeoutMillis: 10_000,
 });
 
 const adapter = new PrismaPg(pool);

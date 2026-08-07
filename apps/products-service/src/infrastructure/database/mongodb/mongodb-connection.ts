@@ -9,7 +9,15 @@ class MongoDbClient {
     private readonly uri: string,
     private readonly dbName: string,
   ) {
-    this.client = new MongoClient(this.uri);
+    this.client = new MongoClient(this.uri, {
+      // Without explicit timeouts the driver can hang indefinitely on a
+      // stalled/half-open handshake, leaving connect() unresolved forever
+      // and, in turn, blocking the whole process silently (no log, no
+      // port bind). Bound every network wait so a failure always surfaces.
+      connectTimeoutMS: 10_000,
+      serverSelectionTimeoutMS: 10_000,
+      socketTimeoutMS: 20_000,
+    });
   }
 
   async connect(): Promise<void> {

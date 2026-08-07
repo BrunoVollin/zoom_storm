@@ -129,27 +129,38 @@ try {
   console.error('Failed to start orderDeliverySimulatorWorker:', error);
 }
 
+// The HTTP server must not be gated behind the MongoDB connection promise:
+// most cart-service routes (coupons, orders, checkout, saved cards, ...) are
+// backed by Postgres/Prisma and don't depend on Mongo at all. Previously the
+// whole process stayed silent (no log, no port bind) whenever the Mongo
+// handshake stalled or never settled. Now the server always starts, and the
+// Mongo connection is established in the background with its own logging so
+// a failure is always visible instead of hanging the entire service.
+const server = serve({ fetch: app.fetch, port: PORT }, () => {
+  console.log(`cart-service HTTP API running on http://localhost:${PORT}`);
+});
+
 mongoClient
   .connect()
   .then(() => {
-    const server = serve({ fetch: app.fetch, port: PORT }, () => {
-      console.log(`cart-service HTTP API running on http://localhost:${PORT}`);
-    });
-
-    async function shutdown() {
-      server.close();
-      outboxRelay.stop();
-      orderDeliverySimulatorWorker.stop();
-      await kafkaProducer.disconnect();
-      await closeDatabaseConnections();
-      await closeMongoConnection();
-      process.exit(0);
-    }
-
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
+    console.log('cart-service connected to MongoDB');
   })
   .catch((error) => {
-    console.error('Failed to connect to MongoDB:', error);
-    process.exit(1);
+    console.error(
+      'Failed to connect to MongoDB. Routes backed by Mongo (products, cart queries) will fail until connectivity is restored:',
+      error,
+    );
   });
+
+async function shutdown() {
+  server.close();
+  outboxRelay.stop();
+  orderDeliverySimulatorWorker.stop();
+  await kafkaProducer.disconnect();
+  await closeDatabaseConnections();
+  await closeMongoConnection();
+  process.exit(0);
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
