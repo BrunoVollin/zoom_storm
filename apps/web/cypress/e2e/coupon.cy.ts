@@ -17,9 +17,12 @@ describe("Coupons", () => {
     cy.get("[data-testid=coupon-input]").should("be.visible");
   });
 
-  it("applies a valid coupon and reflects the discount in the total", () => {
+  it("applies and removes a valid coupon while updating the total", () => {
     cy.intercept("POST", "/api/cart/carts/*/coupons", { fixture: "cart-with-coupon.json" }).as(
       "applyCoupon",
+    );
+    cy.intercept("DELETE", "/api/cart/carts/*/coupons/*", { fixture: "cart.json" }).as(
+      "removeCoupon",
     );
 
     cy.get("[data-testid=coupon-input]").type("10OFF");
@@ -29,6 +32,14 @@ describe("Coupons", () => {
 
     cy.get("[data-testid=applied-coupon]").should("be.visible").and("contain.text", "10%");
     cy.get("[data-testid=coupon-error]").should("not.exist");
+
+    cy.get("[data-testid=remove-coupon-btn]").click();
+
+    cy.wait("@removeCoupon")
+      .its("request.url")
+      .should("match", /\/coupons\/coupon-1$/);
+    cy.get("[data-testid=applied-coupon]").should("not.exist");
+    cy.get("[data-testid=coupon-input]").should("be.visible");
   });
 
   it("shows an error for an invalid coupon and keeps the cart unchanged", () => {
