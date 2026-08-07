@@ -30,8 +30,18 @@ export class CartMapper {
       coupons: cart.getCoupons().map((coupon) => ({
         id: coupon.id.toString(),
         name: coupon.name,
+        appliedVersion: cart.getAppliedCouponVersion(coupon.id),
         discount: coupon.getDiscount(cart.calcSubtotal()),
       })),
+      loyaltyRedemption: cart.getLoyaltyRedemptionPoints()
+        ? {
+            points: cart.getLoyaltyRedemptionPoints(),
+            discount: Math.min(
+              cart.calcSubtotal(),
+              cart.getLoyaltyRedemptionPoints() * 100,
+            ),
+          }
+        : null,
       subtotal: cart.calcSubtotal(),
       totalDiscount: cart.calcTotalDiscount(cart.calcSubtotal()),
       total: cart.calcTotal(),

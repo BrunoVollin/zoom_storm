@@ -26,6 +26,8 @@ export class PrismaCouponRepository implements CouponRepository {
             type: 'FIXED' as const,
             amount: coupon.amount,
             percent: null,
+            version: coupon.version,
+            deletedAt: coupon.deletedAt,
           }
         : coupon instanceof CouponPercentByTime
           ? {
@@ -35,6 +37,8 @@ export class PrismaCouponRepository implements CouponRepository {
               type: 'PERCENT' as const,
               percent: coupon.percent,
               amount: null,
+              version: coupon.version,
+              deletedAt: coupon.deletedAt,
             }
           : (() => {
               throw new Error('Unknown coupon type');

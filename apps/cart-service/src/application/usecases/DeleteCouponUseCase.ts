@@ -15,7 +15,8 @@ export class DeleteCouponUseCase implements UseCase<Input, Output> {
         return { status: Status.ERROR, message: 'Coupon not found' };
       }
 
-      await this.couponRepository.delete(id);
+      existing.softDelete();
+      await this.couponRepository.save(existing);
 
       return { status: Status.SUCCESS };
     } catch (error) {

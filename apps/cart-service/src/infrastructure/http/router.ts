@@ -15,16 +15,25 @@ import { ListOrdersQuery } from '@application/Queries/ListOrdersQuery';
 import { OrderQuery } from '@application/Queries/OrderQuery';
 import { UpdateOrderStatusUseCase } from '@application/usecases/UpdateOrderStatusUseCase';
 import { PayOrderUseCase } from '@application/usecases/PayOrderUseCase';
+import { CancelOrderUseCase } from '@application/usecases/CancelOrderUseCase';
 import { ListWishlistQuery } from '@application/Queries/ListWishlistQuery';
 import { AddToWishlistUseCase } from '@application/usecases/AddToWishlistUseCase';
 import { RemoveFromWishlistUseCase } from '@application/usecases/RemoveFromWishlistUseCase';
 import { GetLoyaltyBalanceQuery } from '@application/Queries/GetLoyaltyBalanceQuery';
 import { RedeemLoyaltyPointsUseCase } from '@application/usecases/RedeemLoyaltyPointsUseCase';
+import { RemoveLoyaltyRedemptionUseCase } from '@application/usecases/RemoveLoyaltyRedemptionUseCase';
 import { GetUserProfileQuery } from '@application/Queries/GetUserProfileQuery';
 import { UpdateUserProfileUseCase } from '@application/usecases/UpdateUserProfileUseCase';
 import { ListSavedCardsQuery } from '@application/Queries/ListSavedCardsQuery';
 import { AddSavedCardUseCase } from '@application/usecases/AddSavedCardUseCase';
 import { DeleteSavedCardUseCase } from '@application/usecases/DeleteSavedCardUseCase';
+import { UpdateSavedCardUseCase } from '@application/usecases/UpdateSavedCardUseCase';
+import { SetDefaultSavedCardUseCase } from '@application/usecases/SetDefaultSavedCardUseCase';
+import { ListSavedAddressesQuery } from '@application/Queries/ListSavedAddressesQuery';
+import { AddSavedAddressUseCase } from '@application/usecases/AddSavedAddressUseCase';
+import { UpdateSavedAddressUseCase } from '@application/usecases/UpdateSavedAddressUseCase';
+import { DeleteSavedAddressUseCase } from '@application/usecases/DeleteSavedAddressUseCase';
+import { SetDefaultSavedAddressUseCase } from '@application/usecases/SetDefaultSavedAddressUseCase';
 import { LookupCepQuery } from '@application/Queries/LookupCepQuery';
 import { ListCouponsUseCase } from '@application/usecases/ListCouponsUseCase';
 import { CreateCouponUseCase } from '@application/usecases/CreateCouponUseCase';
@@ -41,6 +50,7 @@ import { WishlistController } from './controllers/WishlistController';
 import { LoyaltyController } from './controllers/LoyaltyController';
 import { UserProfileController } from './controllers/UserProfileController';
 import { SavedCardController } from './controllers/SavedCardController';
+import { SavedAddressController } from './controllers/SavedAddressController';
 import { CepLookupController } from './controllers/CepLookupController';
 import { requireAuth } from './middlewares/requireAuthMiddleware';
 import { requireAdmin } from './middlewares/requireAdminMiddleware';
@@ -59,16 +69,25 @@ interface Dependencies {
   getOrder: OrderQuery;
   updateOrderStatus: UpdateOrderStatusUseCase;
   payOrder: PayOrderUseCase;
+  cancelOrder: CancelOrderUseCase;
   listWishlist: ListWishlistQuery;
   addToWishlist: AddToWishlistUseCase;
   removeFromWishlist: RemoveFromWishlistUseCase;
   getLoyaltyBalance: GetLoyaltyBalanceQuery;
   redeemLoyaltyPoints: RedeemLoyaltyPointsUseCase;
+  removeLoyaltyRedemption: RemoveLoyaltyRedemptionUseCase;
   getUserProfile: GetUserProfileQuery;
   updateUserProfile: UpdateUserProfileUseCase;
   listSavedCards: ListSavedCardsQuery;
   addSavedCard: AddSavedCardUseCase;
+  updateSavedCard: UpdateSavedCardUseCase;
   deleteSavedCard: DeleteSavedCardUseCase;
+  setDefaultSavedCard: SetDefaultSavedCardUseCase;
+  listSavedAddresses: ListSavedAddressesQuery;
+  addSavedAddress: AddSavedAddressUseCase;
+  updateSavedAddress: UpdateSavedAddressUseCase;
+  deleteSavedAddress: DeleteSavedAddressUseCase;
+  setDefaultSavedAddress: SetDefaultSavedAddressUseCase;
   lookupCep: LookupCepQuery;
   listCoupons: ListCouponsUseCase;
   createCoupon: CreateCouponUseCase;
@@ -105,6 +124,7 @@ export function buildRouter(deps: Dependencies): Hono {
     deps.getOrder,
     deps.updateOrderStatus,
     deps.payOrder,
+    deps.cancelOrder,
   );
   const wishlist = new WishlistController(
     deps.listWishlist,
@@ -114,6 +134,7 @@ export function buildRouter(deps: Dependencies): Hono {
   const loyalty = new LoyaltyController(
     deps.getLoyaltyBalance,
     deps.redeemLoyaltyPoints,
+    deps.removeLoyaltyRedemption,
   );
   const userProfile = new UserProfileController(
     deps.getUserProfile,
@@ -122,7 +143,16 @@ export function buildRouter(deps: Dependencies): Hono {
   const savedCard = new SavedCardController(
     deps.listSavedCards,
     deps.addSavedCard,
+    deps.updateSavedCard,
     deps.deleteSavedCard,
+    deps.setDefaultSavedCard,
+  );
+  const savedAddress = new SavedAddressController(
+    deps.listSavedAddresses,
+    deps.addSavedAddress,
+    deps.updateSavedAddress,
+    deps.deleteSavedAddress,
+    deps.setDefaultSavedAddress,
   );
   const cepLookup = new CepLookupController(deps.lookupCep);
   const adminCoupon = new AdminCouponController(
@@ -162,6 +192,7 @@ export function buildRouter(deps: Dependencies): Hono {
   app.get('/orders/:orderId', (c) => order.getById(c));
   app.patch('/orders/:orderId/status', requireAdmin, (c) => order.updateStatus(c));
   app.post('/orders/:orderId/pay', (c) => order.pay(c));
+  app.post('/orders/:orderId/cancel', (c) => order.cancel(c));
 
   app.use('/wishlist', requireAuth);
   app.use('/wishlist/*', requireAuth);
@@ -175,6 +206,7 @@ export function buildRouter(deps: Dependencies): Hono {
 
   app.get('/loyalty/balance', (c) => loyalty.balance(c));
   app.post('/carts/:cartId/loyalty/redeem', (c) => loyalty.redeem(c));
+  app.delete('/carts/:cartId/loyalty/redeem', (c) => loyalty.removeRedemption(c));
 
   app.use('/profile', requireAuth);
   app.use('/profile/*', requireAuth);
@@ -184,7 +216,17 @@ export function buildRouter(deps: Dependencies): Hono {
 
   app.get('/profile/cards', (c) => savedCard.list(c));
   app.post('/profile/cards', (c) => savedCard.add(c));
+  app.put('/profile/cards/:cardId', (c) => savedCard.update(c));
   app.delete('/profile/cards/:cardId', (c) => savedCard.remove(c));
+  app.put('/profile/cards/:cardId/default', (c) => savedCard.setDefault(c));
+
+  app.get('/profile/addresses', (c) => savedAddress.list(c));
+  app.post('/profile/addresses', (c) => savedAddress.add(c));
+  app.put('/profile/addresses/:addressId', (c) => savedAddress.update(c));
+  app.delete('/profile/addresses/:addressId', (c) => savedAddress.remove(c));
+  app.put('/profile/addresses/:addressId/default', (c) =>
+    savedAddress.setDefault(c),
+  );
 
   app.use('/cep', requireAuth);
   app.use('/cep/*', requireAuth);

@@ -11,6 +11,8 @@ export class Cart {
 
   private items: Array<CartItem> = [];
   private coupons: Array<Coupon> = [];
+  private appliedCouponVersions = new Map<string, number>();
+  private loyaltyRedemptionPoints = 0;
 
   addItem(item: CartItem) {
     const existingItem = this.items.find(
@@ -37,7 +39,17 @@ export class Cart {
     this.items.push(item);
   }
 
-  addCoupon(coupon: Coupon) {
+  addCoupon(coupon: Coupon, appliedVersion: number = coupon.version) {
+    if (this.loyaltyRedemptionPoints > 0) {
+      throw new Error(
+        'A promotional coupon cannot be combined with loyalty points',
+      );
+    }
+
+    if (!Number.isInteger(appliedVersion) || appliedVersion < 1) {
+      throw new Error('Applied coupon version must be a positive integer');
+    }
+
     const alreadyApplied = this.coupons.some((currentCoupon) =>
       currentCoupon.id.equals(coupon.id),
     );
@@ -45,14 +57,46 @@ export class Cart {
     if (alreadyApplied) return;
 
     this.coupons.push(coupon);
+    this.appliedCouponVersions.set(coupon.id.toString(), appliedVersion);
   }
 
   removeCoupon(id: IdType) {
     this.coupons = this.coupons.filter((coupon) => !coupon.id.equals(id));
+    this.appliedCouponVersions.delete(id.toString());
   }
 
   getCoupons() {
     return this.coupons;
+  }
+
+  getAppliedCouponVersion(id: IdType): number | null {
+    return this.appliedCouponVersions.get(id.toString()) ?? null;
+  }
+
+  setLoyaltyRedemption(points: number, availableBalance: number): void {
+    if (!Number.isInteger(points) || points <= 0) {
+      throw new Error('Points to redeem must be a positive integer');
+    }
+
+    if (points > availableBalance) {
+      throw new Error('Insufficient loyalty points balance');
+    }
+
+    if (this.coupons.length > 0) {
+      throw new Error(
+        'Loyalty points cannot be combined with a promotional coupon',
+      );
+    }
+
+    this.loyaltyRedemptionPoints = points;
+  }
+
+  removeLoyaltyRedemption(): void {
+    this.loyaltyRedemptionPoints = 0;
+  }
+
+  getLoyaltyRedemptionPoints(): number {
+    return this.loyaltyRedemptionPoints;
   }
 
   removeItem(id: IdType) {
@@ -62,6 +106,8 @@ export class Cart {
   clear() {
     this.items = [];
     this.coupons = [];
+    this.appliedCouponVersions.clear();
+    this.loyaltyRedemptionPoints = 0;
   }
 
   getItems() {
@@ -87,13 +133,15 @@ export class Cart {
   }
 
   calcTotalDiscount(subtotal: number) {
-    const discount = this.coupons.reduce((acc, coupon) => {
+    const couponDiscount = this.coupons.reduce((acc, coupon) => {
       const discountResult = coupon.getDiscount(subtotal);
 
       return acc + discountResult;
     }, 0);
 
-    return discount;
+    const loyaltyDiscount = this.loyaltyRedemptionPoints * 100;
+
+    return Math.min(subtotal, couponDiscount + loyaltyDiscount);
   }
 
   calcTotal() {

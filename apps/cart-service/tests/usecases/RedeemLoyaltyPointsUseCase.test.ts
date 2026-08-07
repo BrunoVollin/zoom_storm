@@ -3,15 +3,14 @@ import { Status } from '../../src/application/contracts/UseCase';
 import { Cart } from '../../src/domain/entities/cart/Cart';
 import { LoyaltyAccount } from '../../src/domain/entities/loyalty/LoyaltyAccount';
 import { createIdFromString } from '../factories/IdFactory';
+import { createValidCoupon } from '../factories/CouponFactory';
 import {
   FakeCartRepository,
-  FakeCouponRepository,
   FakeLoyaltyRepository,
 } from '../factories/FakeRepositories';
 
 describe('RedeemLoyaltyPointsUseCase', () => {
   let cartRepository: FakeCartRepository;
-  let couponRepository: FakeCouponRepository;
   let loyaltyRepository: FakeLoyaltyRepository;
   let useCase: RedeemLoyaltyPointsUseCase;
 
@@ -20,17 +19,12 @@ describe('RedeemLoyaltyPointsUseCase', () => {
 
   beforeEach(() => {
     cartRepository = new FakeCartRepository();
-    couponRepository = new FakeCouponRepository();
     loyaltyRepository = new FakeLoyaltyRepository();
-    useCase = new RedeemLoyaltyPointsUseCase(
-      cartRepository,
-      couponRepository,
-      loyaltyRepository,
-    );
+    useCase = new RedeemLoyaltyPointsUseCase(cartRepository, loyaltyRepository);
   });
 
   describe('Success Scenario', () => {
-    it('redeems points, applies a fixed-amount coupon to the cart and debits the loyalty balance', async () => {
+    it('reserves the redemption on the cart without debiting the loyalty balance yet', async () => {
       const cart = new Cart(createIdFromString(userId), createIdFromString(cartId));
       cartRepository.carts.set(cartId, cart);
       loyaltyRepository.accounts.set(
@@ -42,11 +36,13 @@ describe('RedeemLoyaltyPointsUseCase', () => {
 
       expect(result.status).toBe(Status.SUCCESS);
       if (result.status === Status.SUCCESS) {
-        expect(result.balance).toBe(60);
+        // Balance is only debited when the reservation is consumed at
+        // payment time, not when the redemption is requested.
+        expect(result.balance).toBe(100);
+        expect(result.reservedPoints).toBe(40);
       }
-      expect(cart.getCoupons()).toHaveLength(1);
-      expect(cart.getCoupons()[0].getDiscount(10000)).toBe(4000);
-      expect(couponRepository.coupons.size).toBe(1);
+      expect(cart.getLoyaltyRedemptionPoints()).toBe(40);
+      expect(cart.getCoupons()).toHaveLength(0);
     });
   });
 
@@ -77,13 +73,7 @@ describe('RedeemLoyaltyPointsUseCase', () => {
 
     it('returns an error when the cart already has a coupon applied', async () => {
       const cart = new Cart(createIdFromString(userId), createIdFromString(cartId));
-      cart.addCoupon({
-        id: createIdFromString('existing-coupon'),
-        name: 'EXISTING',
-        isValid: () => true,
-        getName: () => 'EXISTING',
-        getDiscount: () => 100,
-      });
+      cart.addCoupon(createValidCoupon({ id: createIdFromString('existing-coupon') }));
       cartRepository.carts.set(cartId, cart);
       loyaltyRepository.accounts.set(
         userId,

@@ -40,6 +40,14 @@ export class ApplyCouponUseCase implements UseCase<Input, Output> {
         };
       }
 
+      if (coupon.isDeleted()) {
+        return {
+          status: Status.ERROR,
+          message: 'Coupon is unavailable',
+          code: 'COUPON_UNAVAILABLE',
+        };
+      }
+
       if (!coupon.isValid()) {
         return {
           status: Status.ERROR,
@@ -47,11 +55,7 @@ export class ApplyCouponUseCase implements UseCase<Input, Output> {
         };
       }
 
-      const hasLoyaltyRedemption = cart
-        .getCoupons()
-        .some((applied) => applied.id.toString().startsWith('LOYALTY-'));
-
-      if (hasLoyaltyRedemption) {
+      if (cart.getLoyaltyRedemptionPoints() > 0) {
         return {
           status: Status.ERROR,
           message:

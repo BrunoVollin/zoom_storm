@@ -43,6 +43,7 @@ export class UpdateCouponUseCase implements UseCase<Input, Output> {
                 input.start,
                 input.end,
                 input.amount ?? 0,
+                existing.version + 1,
               )
             : new CouponPercentByTime(
                 id,
@@ -51,6 +52,7 @@ export class UpdateCouponUseCase implements UseCase<Input, Output> {
                 input.start,
                 input.end,
                 input.percent ?? 0,
+                existing.version + 1,
               );
       } catch (error) {
         if (error instanceof CouponValidationError) {

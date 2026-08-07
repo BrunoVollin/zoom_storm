@@ -8,6 +8,10 @@ import { PrismaWishlistRepository } from '../database/prisma/repositories/Prisma
 import { PrismaLoyaltyRepository } from '../database/prisma/repositories/PrismaLoyaltyRepository';
 import { PrismaUserProfileRepository } from '../database/prisma/repositories/PrismaUserProfileRepository';
 import { PrismaSavedCardRepository } from '../database/prisma/repositories/PrismaSavedCardRepository';
+import { PrismaSavedAddressRepository } from '../database/prisma/repositories/PrismaSavedAddressRepository';
+import { PrismaPaymentAttemptRepository } from '../database/prisma/repositories/PrismaPaymentAttemptRepository';
+import { PrismaLoyaltyReservationRepository } from '../database/prisma/repositories/PrismaLoyaltyReservationRepository';
+import { PrismaShippingQuoteRepository } from '../database/prisma/repositories/PrismaShippingQuoteRepository';
 import { MongoProductRepository } from '../database/mongodb/repositories/MongoProductRepository';
 import { KafkaProducerClient } from '../messaging/KafkaProducerClient';
 import { KafkaEventPublisher } from '../messaging/KafkaEventPublisher';
@@ -15,6 +19,7 @@ import { OutboxRelay } from '../messaging/OutboxRelay';
 import { OrderDeliverySimulatorWorker } from '../messaging/OrderDeliverySimulatorWorker';
 import { FreightRoadCalculator } from '../../domain/entities/freight/FreightCalculator';
 import { ViaCepAdapter } from '../http/adapters/ViaCepAdapter';
+import { HttpInventoryReservationService } from '../http/adapters/HttpInventoryReservationService';
 import { CreateCartUseCase } from '../../application/usecases/CreateCartUseCase';
 import { AddItemToCartUseCase } from '../../application/usecases/AddItemToCartUseCase';
 import { RemoveItemFromCartUseCase } from '../../application/usecases/RemoveItemFromCartUseCase';
@@ -25,15 +30,34 @@ import { CalculateShippingUseCase } from '../../application/usecases/CalculateSh
 import { CheckoutUseCase } from '../../application/usecases/CheckoutUseCase';
 import { UpdateOrderStatusUseCase } from '../../application/usecases/UpdateOrderStatusUseCase';
 import { PayOrderUseCase } from '../../application/usecases/PayOrderUseCase';
+import { CancelOrderUseCase } from '../../application/usecases/CancelOrderUseCase';
+import { ExpireOrderUseCase } from '../../application/usecases/ExpireOrderUseCase';
 import { AddToWishlistUseCase } from '../../application/usecases/AddToWishlistUseCase';
 import { RemoveFromWishlistUseCase } from '../../application/usecases/RemoveFromWishlistUseCase';
 import { GetLoyaltyBalanceQuery } from '../../application/Queries/GetLoyaltyBalanceQuery';
 import { RedeemLoyaltyPointsUseCase } from '../../application/usecases/RedeemLoyaltyPointsUseCase';
+import { RemoveLoyaltyRedemptionUseCase } from '../../application/usecases/RemoveLoyaltyRedemptionUseCase';
+import { RevalidateCartCouponsUseCase } from '../../application/usecases/RevalidateCartCouponsUseCase';
+import { ReserveLoyaltyPointsUseCase } from '../../application/usecases/ReserveLoyaltyPointsUseCase';
+import { ConsumeLoyaltyReservationUseCase } from '../../application/usecases/ConsumeLoyaltyReservationUseCase';
+import { ReleaseLoyaltyReservationUseCase } from '../../application/usecases/ReleaseLoyaltyReservationUseCase';
+import { ExpireLoyaltyReservationsUseCase } from '../../application/usecases/ExpireLoyaltyReservationsUseCase';
 import { GetUserProfileQuery } from '../../application/Queries/GetUserProfileQuery';
 import { UpdateUserProfileUseCase } from '../../application/usecases/UpdateUserProfileUseCase';
 import { ListSavedCardsQuery } from '../../application/Queries/ListSavedCardsQuery';
 import { AddSavedCardUseCase } from '../../application/usecases/AddSavedCardUseCase';
 import { DeleteSavedCardUseCase } from '../../application/usecases/DeleteSavedCardUseCase';
+import { UpdateSavedCardUseCase } from '../../application/usecases/UpdateSavedCardUseCase';
+import { SetDefaultSavedCardUseCase } from '../../application/usecases/SetDefaultSavedCardUseCase';
+import { ListSavedAddressesQuery } from '../../application/Queries/ListSavedAddressesQuery';
+import { AddSavedAddressUseCase } from '../../application/usecases/AddSavedAddressUseCase';
+import { UpdateSavedAddressUseCase } from '../../application/usecases/UpdateSavedAddressUseCase';
+import { DeleteSavedAddressUseCase } from '../../application/usecases/DeleteSavedAddressUseCase';
+import { SetDefaultSavedAddressUseCase } from '../../application/usecases/SetDefaultSavedAddressUseCase';
+import { ListCouponsUseCase } from '../../application/usecases/ListCouponsUseCase';
+import { CreateCouponUseCase } from '../../application/usecases/CreateCouponUseCase';
+import { UpdateCouponUseCase } from '../../application/usecases/UpdateCouponUseCase';
+import { DeleteCouponUseCase } from '../../application/usecases/DeleteCouponUseCase';
 import { LookupCepQuery } from '../../application/Queries/LookupCepQuery';
 import { closeDatabaseConnections } from '../database/prisma/prisma-connection';
 import {
@@ -45,6 +69,7 @@ import { CartQuery } from '../../application/Queries/CartQuery';
 import { ListOrdersQuery } from '../../application/Queries/ListOrdersQuery';
 import { OrderQuery } from '../../application/Queries/OrderQuery';
 import { ListWishlistQuery } from '../../application/Queries/ListWishlistQuery';
+import { OrderExpirationWorker } from '../workers/OrderExpirationWorker';
 
 const PORT = env.http.port;
 
@@ -56,6 +81,14 @@ const wishlistRepository = new PrismaWishlistRepository();
 const loyaltyRepository = new PrismaLoyaltyRepository();
 const userProfileRepository = new PrismaUserProfileRepository();
 const savedCardRepository = new PrismaSavedCardRepository();
+const savedAddressRepository = new PrismaSavedAddressRepository();
+const paymentAttemptRepository = new PrismaPaymentAttemptRepository();
+const loyaltyReservationRepository = new PrismaLoyaltyReservationRepository();
+const shippingQuoteRepository = new PrismaShippingQuoteRepository();
+const inventoryReservationService = new HttpInventoryReservationService(
+  env.productsService.url,
+  env.productsService.internalServiceToken,
+);
 
 const kafkaProducer = new KafkaProducerClient();
 const eventPublisher = new KafkaEventPublisher(kafkaProducer);
@@ -71,11 +104,42 @@ const orderDeliverySimulatorWorker = new OrderDeliverySimulatorWorker(
   env.order.transitStepMinutes * 60_000,
   env.order.simulatorPollIntervalMs,
 );
+const releaseLoyaltyReservationUseCase = new ReleaseLoyaltyReservationUseCase(
+  loyaltyReservationRepository,
+);
+const expireOrderUseCase = new ExpireOrderUseCase(
+  orderRepository,
+  inventoryReservationService,
+  loyaltyReservationRepository,
+  releaseLoyaltyReservationUseCase,
+);
+const expireLoyaltyReservationsUseCase = new ExpireLoyaltyReservationsUseCase(
+  loyaltyReservationRepository,
+);
+const orderExpirationWorker = new OrderExpirationWorker(
+  orderRepository,
+  expireOrderUseCase,
+  env.order.expirationPollIntervalMs,
+  expireLoyaltyReservationsUseCase,
+);
 
 const freightCalculator = new FreightRoadCalculator();
 const cepLookupService = new ViaCepAdapter();
 
 const cartQueryRepository = new MongoCartQueryRepository();
+
+const revalidateCartCouponsUseCase = new RevalidateCartCouponsUseCase(
+  cartRepository,
+  couponRepository,
+);
+const reserveLoyaltyPointsUseCase = new ReserveLoyaltyPointsUseCase(
+  loyaltyRepository,
+  loyaltyReservationRepository,
+);
+const consumeLoyaltyReservationUseCase = new ConsumeLoyaltyReservationUseCase(
+  loyaltyRepository,
+  loyaltyReservationRepository,
+);
 
 const app = buildRouter({
   getCart: new CartQuery(cartQueryRepository),
@@ -94,29 +158,65 @@ const app = buildRouter({
   removeCoupon: new RemoveCouponUseCase(cartRepository),
   calculateShipping: new CalculateShippingUseCase(
     cartRepository,
+    savedAddressRepository,
     freightCalculator,
-    cepLookupService,
+    shippingQuoteRepository,
   ),
-  checkout: new CheckoutUseCase(cartRepository, orderRepository, cepLookupService),
+  checkout: new CheckoutUseCase(
+    cartRepository,
+    orderRepository,
+    savedAddressRepository,
+    inventoryReservationService,
+    shippingQuoteRepository,
+    revalidateCartCouponsUseCase,
+    reserveLoyaltyPointsUseCase,
+  ),
   listOrders: new ListOrdersQuery(orderRepository),
   getOrder: new OrderQuery(orderRepository),
   updateOrderStatus: updateOrderStatusUseCase,
-  payOrder: new PayOrderUseCase(orderRepository, loyaltyRepository),
+  payOrder: new PayOrderUseCase(
+    orderRepository,
+    loyaltyRepository,
+    savedCardRepository,
+    paymentAttemptRepository,
+    inventoryReservationService,
+    loyaltyReservationRepository,
+    consumeLoyaltyReservationUseCase,
+  ),
+  cancelOrder: new CancelOrderUseCase(
+    orderRepository,
+    inventoryReservationService,
+    loyaltyReservationRepository,
+    releaseLoyaltyReservationUseCase,
+  ),
   listWishlist: new ListWishlistQuery(wishlistRepository),
   addToWishlist: new AddToWishlistUseCase(productRepository, wishlistRepository),
   removeFromWishlist: new RemoveFromWishlistUseCase(wishlistRepository),
   getLoyaltyBalance: new GetLoyaltyBalanceQuery(loyaltyRepository),
   redeemLoyaltyPoints: new RedeemLoyaltyPointsUseCase(
     cartRepository,
-    couponRepository,
     loyaltyRepository,
   ),
+  removeLoyaltyRedemption: new RemoveLoyaltyRedemptionUseCase(cartRepository),
   getUserProfile: new GetUserProfileQuery(userProfileRepository),
   updateUserProfile: new UpdateUserProfileUseCase(userProfileRepository),
   listSavedCards: new ListSavedCardsQuery(savedCardRepository),
   addSavedCard: new AddSavedCardUseCase(savedCardRepository),
+  updateSavedCard: new UpdateSavedCardUseCase(savedCardRepository),
   deleteSavedCard: new DeleteSavedCardUseCase(savedCardRepository),
+  setDefaultSavedCard: new SetDefaultSavedCardUseCase(savedCardRepository),
+  listSavedAddresses: new ListSavedAddressesQuery(savedAddressRepository),
+  addSavedAddress: new AddSavedAddressUseCase(savedAddressRepository),
+  updateSavedAddress: new UpdateSavedAddressUseCase(savedAddressRepository),
+  deleteSavedAddress: new DeleteSavedAddressUseCase(savedAddressRepository),
+  setDefaultSavedAddress: new SetDefaultSavedAddressUseCase(
+    savedAddressRepository,
+  ),
   lookupCep: new LookupCepQuery(cepLookupService),
+  listCoupons: new ListCouponsUseCase(couponRepository),
+  createCoupon: new CreateCouponUseCase(couponRepository),
+  updateCoupon: new UpdateCouponUseCase(couponRepository),
+  deleteCoupon: new DeleteCouponUseCase(couponRepository),
 });
 
 outboxRelay.start();
@@ -125,6 +225,7 @@ outboxRelay.start();
 // (Postgres), so it must not be gated by the Mongo connection promise below.
 try {
   orderDeliverySimulatorWorker.start();
+  orderExpirationWorker.start();
 } catch (error) {
   console.error('Failed to start orderDeliverySimulatorWorker:', error);
 }
@@ -156,6 +257,7 @@ async function shutdown() {
   server.close();
   outboxRelay.stop();
   orderDeliverySimulatorWorker.stop();
+  orderExpirationWorker.stop();
   await kafkaProducer.disconnect();
   await closeDatabaseConnections();
   await closeMongoConnection();

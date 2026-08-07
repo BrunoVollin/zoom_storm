@@ -4,11 +4,13 @@ export class SavedCardMapper {
   static toPrimitives(card: SavedCard) {
     return {
       id: card.id.toString(),
-      brand: card.brand,
-      lastFour: card.lastFour,
-      holderName: card.holderName,
-      expiry: card.expiry,
+      brand: card.getBrand(),
+      lastFour: card.getLastFour(),
+      holderName: card.getHolderName(),
+      expiry: card.getExpiry(),
+      isDefault: card.isDefault(),
       createdAt: card.createdAt.toISOString(),
+      updatedAt: card.getUpdatedAt().toISOString(),
     };
   }
 }

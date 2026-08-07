@@ -1,7 +1,9 @@
 import { Cart } from '../../src/domain/entities/cart/Cart';
 import { Coupon } from '../../src/domain/entities/coupon/Coupon';
 import { LoyaltyAccount } from '../../src/domain/entities/loyalty/LoyaltyAccount';
+import { LoyaltyReservation } from '../../src/domain/entities/loyalty/LoyaltyReservation';
 import { Order } from '../../src/domain/entities/order/Order';
+import { OrderStatus } from '../../src/domain/entities/order/OrderStatus';
 import { WishlistItem } from '../../src/domain/entities/wishlist/WishlistItem';
 import { DomainEvent } from '../../src/domain/events/DomainEvent';
 import {
@@ -14,7 +16,17 @@ import {
   LoyaltyRepository,
   LoyaltyTransactionType,
 } from '../../src/domain/repositories/LoyaltyRepository';
+import {
+  LoyaltyReservationRepository,
+  ReserveLoyaltyResult,
+} from '../../src/domain/repositories/LoyaltyReservationRepository';
 import { OrderRepository } from '../../src/domain/repositories/OrderRepository';
+import {
+  InventoryReservationLineInput,
+  InventoryReservationResult,
+  InventoryReservationService,
+  InventoryReservationSnapshot,
+} from '../../src/domain/repositories/InventoryReservationService';
 import {
   WishlistRepository,
 } from '../../src/domain/repositories/WishlistRepository';
@@ -124,14 +136,171 @@ export class FakeOrderRepository implements OrderRepository {
     return this.orders.get(id.toString()) ?? null;
   }
 
+  async findByCheckoutIdempotencyKey(
+    userId: IdType,
+    key: string,
+  ): Promise<Order | null> {
+    return (
+      [...this.orders.values()].find(
+        (order) =>
+          order.belongsTo(userId) && order.checkoutIdempotencyKey === key,
+      ) ?? null
+    );
+  }
+
   async findByUserId(userId: IdType): Promise<Array<Order>> {
     return [...this.orders.values()].filter((order) =>
       order.belongsTo(userId),
     );
   }
 
+  async findAwaitingPaymentExpiredAtOrBefore(at: Date): Promise<Array<Order>> {
+    return [...this.orders.values()].filter(
+      (order) =>
+        order.getStatus() === OrderStatus.CREATED &&
+        order.expiresAt.getTime() <= at.getTime(),
+    );
+  }
+
   async findInProgress(): Promise<Array<Order>> {
     return [...this.orders.values()];
+  }
+}
+
+/**
+ * Permissive in-memory fake for InventoryReservationService: every
+ * operation succeeds by default (synthesizing a reservation snapshot when
+ * one hasn't been created via `reserve` yet), so tests that don't care
+ * about inventory reservation mechanics don't need to set one up. Assign
+ * `reserveResult`/`confirmResult`/`releaseResult` to force a specific
+ * outcome (e.g. simulate a conflict) in tests that do care.
+ */
+export class FakeInventoryReservationService implements InventoryReservationService {
+  readonly reservations = new Map<string, InventoryReservationSnapshot>();
+  reserveResult: InventoryReservationResult | null = null;
+  confirmResult: InventoryReservationResult | null = null;
+  releaseResult: InventoryReservationResult | null = null;
+
+  async reserve(input: {
+    orderId: string;
+    lines: InventoryReservationLineInput[];
+  }): Promise<InventoryReservationResult> {
+    if (this.reserveResult) return this.reserveResult;
+
+    const now = new Date();
+    const reservation: InventoryReservationSnapshot = {
+      id: `reservation-${input.orderId}`,
+      orderId: input.orderId,
+      status: 'ACTIVE',
+      lines: input.lines,
+      createdAt: now,
+      expiresAt: new Date(now.getTime() + 15 * 60 * 1000),
+      updatedAt: now,
+    };
+    this.reservations.set(input.orderId, reservation);
+    return { ok: true, reservation };
+  }
+
+  async confirm(orderId: string): Promise<InventoryReservationResult> {
+    if (this.confirmResult) return this.confirmResult;
+
+    const reservation =
+      this.reservations.get(orderId) ??
+      this.buildDefaultReservation(orderId, 'CONFIRMED');
+    reservation.status = 'CONFIRMED';
+    this.reservations.set(orderId, reservation);
+    return { ok: true, reservation };
+  }
+
+  async release(orderId: string): Promise<InventoryReservationResult> {
+    if (this.releaseResult) return this.releaseResult;
+
+    const reservation =
+      this.reservations.get(orderId) ??
+      this.buildDefaultReservation(orderId, 'RELEASED');
+    reservation.status = 'RELEASED';
+    this.reservations.set(orderId, reservation);
+    return { ok: true, reservation };
+  }
+
+  private buildDefaultReservation(
+    orderId: string,
+    status: InventoryReservationSnapshot['status'],
+  ): InventoryReservationSnapshot {
+    const now = new Date();
+    return {
+      id: `reservation-${orderId}`,
+      orderId,
+      status,
+      lines: [],
+      createdAt: now,
+      expiresAt: now,
+      updatedAt: now,
+    };
+  }
+}
+
+/** In-memory fake implementing LoyaltyReservationRepository for unit tests. */
+export class FakeLoyaltyReservationRepository
+  implements LoyaltyReservationRepository
+{
+  readonly reservations = new Map<string, LoyaltyReservation>();
+
+  async findByOrderId(orderId: IdType): Promise<LoyaltyReservation | null> {
+    return this.reservations.get(orderId.toString()) ?? null;
+  }
+
+  async reserve(
+    reservation: LoyaltyReservation,
+    currentBalance: number,
+  ): Promise<ReserveLoyaltyResult> {
+    const orderId = reservation.orderId.toString();
+    const existing = this.reservations.get(orderId);
+
+    if (existing) {
+      if (
+        existing.userId.equals(reservation.userId) &&
+        existing.points === reservation.points
+      ) {
+        return { outcome: 'RESERVED', reservation: existing };
+      }
+      return { outcome: 'IDEMPOTENCY_CONFLICT' };
+    }
+
+    const alreadyReserved = [...this.reservations.values()]
+      .filter(
+        (candidate) =>
+          candidate.userId.equals(reservation.userId) &&
+          candidate.getStatus() === 'ACTIVE',
+      )
+      .reduce((acc, candidate) => acc + candidate.points, 0);
+
+    if (alreadyReserved + reservation.points > currentBalance) {
+      return { outcome: 'INSUFFICIENT_BALANCE' };
+    }
+
+    this.reservations.set(orderId, reservation);
+    return { outcome: 'RESERVED', reservation };
+  }
+
+  async save(reservation: LoyaltyReservation): Promise<void> {
+    this.reservations.set(reservation.orderId.toString(), reservation);
+  }
+
+  async consume(
+    reservation: LoyaltyReservation,
+    account: LoyaltyAccount,
+  ): Promise<void> {
+    this.reservations.set(reservation.orderId.toString(), reservation);
+    void account;
+  }
+
+  async findActiveExpired(referenceDate: Date): Promise<LoyaltyReservation[]> {
+    return [...this.reservations.values()].filter(
+      (reservation) =>
+        reservation.getStatus() === 'ACTIVE' &&
+        reservation.expiresAt.getTime() <= referenceDate.getTime(),
+    );
   }
 }
 

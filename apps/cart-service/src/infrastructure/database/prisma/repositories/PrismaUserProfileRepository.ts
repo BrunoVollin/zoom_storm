@@ -45,10 +45,36 @@ export class PrismaUserProfileRepository implements UserProfileRepository {
       addressZip: address.zip,
     };
 
-    await prisma.userProfile.upsert({
-      where: { userId },
-      create: { userId, ...data },
-      update: data,
+    await prisma.$transaction(async (tx) => {
+      await tx.userProfile.upsert({
+        where: { userId },
+        create: { userId, ...data },
+        update: data,
+      });
+
+      const hasSavedAddress = await tx.savedAddress.findFirst({
+        where: { userId },
+        select: { id: true },
+      });
+
+      if (!hasSavedAddress) {
+        await tx.savedAddress.create({
+          data: {
+            id: crypto.randomUUID(),
+            userId,
+            label: 'Home',
+            recipient: profile.getFullName(),
+            street: address.street,
+            number: address.number,
+            complement: address.complement,
+            neighborhood: address.neighborhood,
+            city: address.city,
+            state: address.state,
+            zip: address.zip,
+            isDefault: true,
+          },
+        });
+      }
     });
   }
 }

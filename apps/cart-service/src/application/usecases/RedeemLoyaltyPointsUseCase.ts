@@ -1,21 +1,15 @@
 import { DomainEvent, DomainEventName } from '@src/domain/events/DomainEvent';
 import { CartRepository } from '../../domain/repositories/CartRepository';
-import { CouponRepository } from '../../domain/repositories/CouponRepository';
 import { LoyaltyRepository } from '../../domain/repositories/LoyaltyRepository';
-import { CouponFixedAmount } from '../../domain/entities/coupon/Coupon';
 import { LoyaltyAccount } from '../../domain/entities/loyalty/LoyaltyAccount';
 import { IdType } from '../../domain/shared/IdType';
 import { ErrorOutput, Status, UseCase } from '../contracts/UseCase';
 import { CartMapper, CartPrimitives } from '../mappers/CartMapper';
 import { handleUnexpectedError } from '../shared/handleUnexpectedError';
 
-const CENTS_PER_POINT = 100;
-const REDEMPTION_WINDOW_MS = 60 * 60 * 1000;
-
 export class RedeemLoyaltyPointsUseCase implements UseCase<Input, Output> {
   constructor(
     private readonly cartRepository: CartRepository,
-    private readonly couponRepository: CouponRepository,
     private readonly loyaltyRepository: LoyaltyRepository,
   ) {}
 
@@ -50,19 +44,7 @@ export class RedeemLoyaltyPointsUseCase implements UseCase<Input, Output> {
         return { status: Status.ERROR, message: 'Saldo de pontos insuficiente' };
       }
 
-      const now = new Date();
-      const coupon = new CouponFixedAmount(
-        IdType.create(`LOYALTY-${IdType.create().toString()}`),
-        `${input.points} pontos de fidelidade`,
-        now,
-        now,
-        new Date(now.getTime() + REDEMPTION_WINDOW_MS),
-        input.points * CENTS_PER_POINT,
-      );
-
-      await this.couponRepository.save(coupon);
-
-      cart.addCoupon(coupon);
+      cart.setLoyaltyRedemption(input.points, account.getBalance());
 
       const event = new DomainEvent(
         DomainEventName.CART_UPDATED,
@@ -72,16 +54,11 @@ export class RedeemLoyaltyPointsUseCase implements UseCase<Input, Output> {
 
       await this.cartRepository.save(cart, event);
 
-      account.redeem(input.points);
-      await this.loyaltyRepository.save(account, {
-        type: 'REDEEM',
-        points: input.points,
-      });
-
       return {
         status: Status.SUCCESS,
         cart: CartMapper.toPrimitives(cart),
         balance: account.getBalance(),
+        reservedPoints: input.points,
       };
     } catch (error) {
       if (error instanceof Error) {
@@ -103,6 +80,7 @@ interface SuccessOutput {
   status: Status.SUCCESS;
   cart: CartPrimitives;
   balance: number;
+  reservedPoints: number;
 }
 
 type Output = SuccessOutput | ErrorOutput;

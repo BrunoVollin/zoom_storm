@@ -1,17 +1,22 @@
 import { CartRepository } from '../../domain/repositories/CartRepository';
-import { CepLookupService } from '../../domain/repositories/CepLookupService';
-import { Shipment } from '../../domain/entities/freight/Freight';
-import { estimateFreightRegion } from '../../domain/entities/freight/FreightRegionEstimator';
+import { SavedAddressRepository } from '../../domain/repositories/SavedAddressRepository';
+import { ShippingQuoteRepository } from '../../domain/repositories/ShippingQuoteRepository';
+import { calculateShipmentForItems } from '../../domain/entities/freight/calculateShipmentForItems';
+import { ShippingQuote } from '../../domain/entities/freight/ShippingQuote';
 import { IdType } from '../../domain/shared/IdType';
-import { Status, UseCase } from '../contracts/UseCase';
+import { ErrorOutput, Status, UseCase } from '../contracts/UseCase';
 import { Freight } from '../../domain/entities/freight/Freight';
 import { handleUnexpectedError } from '../shared/handleUnexpectedError';
+
+/** Same payment/reservation window used for inventory reservations. */
+export const SHIPPING_QUOTE_VALIDITY_MS = 15 * 60 * 1000;
 
 export class CalculateShippingUseCase implements UseCase<Input, Output> {
   constructor(
     private readonly cartRepository: CartRepository,
+    private readonly savedAddressRepository: SavedAddressRepository,
     private readonly freightCalculator: Freight,
-    private readonly cepLookupService: CepLookupService,
+    private readonly shippingQuoteRepository: ShippingQuoteRepository,
   ) {}
 
   async execute(input: Input): Promise<Output> {
@@ -43,31 +48,43 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
         };
       }
 
-      const address = await this.cepLookupService.lookup(input.cep);
+      const savedAddress = await this.savedAddressRepository.findById(
+        IdType.create(input.addressId),
+      );
 
-      if (!address) {
+      if (!savedAddress || !savedAddress.belongsTo(IdType.create(input.userId))) {
         return {
           status: Status.ERROR,
-          message: 'CEP inválido ou não encontrado',
+          message: 'Address not found',
+          code: 'ADDRESS_NOT_FOUND',
         };
       }
 
-      const totalVolume = items.reduce((acc, item) => {
-        return acc + item.getVolume();
-      }, 0);
+      const address = savedAddress.getAddress();
+      const { shipping, estimatedDays } = calculateShipmentForItems(
+        items,
+        address.state,
+        this.freightCalculator,
+      );
 
-      const totalWeight = items.reduce((acc, item) => {
-        return acc + item.getWeight();
-      }, 0);
-
-      const region = estimateFreightRegion(address.state);
-      const shipment = new Shipment(region.distanceKm, totalVolume, totalWeight);
-      const shipping = this.freightCalculator.calculate(shipment);
+      const now = new Date();
+      const quote = new ShippingQuote(
+        IdType.create(),
+        cart.getId(),
+        savedAddress.id,
+        cart.getVersion(),
+        shipping,
+        estimatedDays,
+        new Date(now.getTime() + SHIPPING_QUOTE_VALIDITY_MS),
+        now,
+      );
+      await this.shippingQuoteRepository.save(quote);
 
       return {
         status: Status.SUCCESS,
+        shippingQuoteId: quote.id.toString(),
         shipping,
-        estimatedDays: region.days,
+        estimatedDays,
         city: address.city,
         state: address.state,
       };
@@ -80,20 +97,16 @@ export class CalculateShippingUseCase implements UseCase<Input, Output> {
 interface Input {
   cartId: string;
   userId: string;
-  cep: string;
+  addressId: string;
 }
 
 interface SuccessOutput {
   status: Status.SUCCESS;
+  shippingQuoteId: string;
   shipping: number;
   estimatedDays: number;
   city: string;
   state: string;
-}
-
-interface ErrorOutput {
-  status: Status.ERROR;
-  message: string;
 }
 
 type Output = SuccessOutput | ErrorOutput;

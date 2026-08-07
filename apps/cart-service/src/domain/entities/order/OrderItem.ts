@@ -7,6 +7,7 @@ export class OrderItem {
     readonly productName: string,
     readonly productPrice: number,
     readonly quantity: number,
+    readonly variantId: IdType = productId,
   ) {}
 
   getSubtotal(): number {

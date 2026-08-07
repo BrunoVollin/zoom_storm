@@ -26,9 +26,9 @@ export const ApplyCouponSchema = z.object({
 });
 
 export const CheckoutSchema = z.object({
-  shipping: z.int().min(0),
-  cep: z.string().min(1).optional(),
-});
+  addressId: z.string().trim().min(1),
+  shippingQuoteId: z.string().trim().min(1),
+}).strict();
 
 const couponAmountFields = {
   name: z.string().min(1),
@@ -79,5 +79,18 @@ export function httpStatus(
 ): 200 | 201 | 409 | 422 {
   if (result.status === Status.SUCCESS) return successStatus;
 
-  return result.code === 'CONCURRENCY_CONFLICT' ? 409 : 422;
+  return result.code === 'CONCURRENCY_CONFLICT' ||
+    result.code === 'IDEMPOTENCY_CONFLICT' ||
+    result.code === 'PRODUCT_UNAVAILABLE' ||
+    result.code === 'INSUFFICIENT_STOCK' ||
+    result.code === 'CATALOG_CHANGED' ||
+    result.code === 'RESERVATION_EXPIRED' ||
+    result.code === 'RESERVATION_NOT_ACTIVE' ||
+    result.code === 'INVENTORY_CONFLICT' ||
+    result.code === 'COUPON_CHANGED' ||
+    result.code === 'COUPON_UNAVAILABLE' ||
+    result.code === 'LOYALTY_BALANCE_CHANGED' ||
+    result.code === 'SHIPPING_QUOTE_EXPIRED'
+    ? 409
+    : 422;
 }

@@ -44,6 +44,56 @@ describe('Order', () => {
     });
   });
 
+  describe('terminal unpaid states', () => {
+    it('cancels only an unpaid order', () => {
+      const order = createOrder();
+
+      order.cancel();
+
+      expect(order.getStatus()).toBe(OrderStatus.CANCELLED);
+      expect(order.getNextStatus()).toBeNull();
+      expect(() => order.markAsPaid()).toThrow(
+        'Cannot mark order as paid from status CANCELLED',
+      );
+    });
+
+    it('expires after the 15 minute payment window', () => {
+      const createdAt = new Date('2026-01-01T10:00:00.000Z');
+      const order = new Order(
+        createIdFromString('order-expiring'),
+        createIdFromString('user-1'),
+        createIdFromString('cart-1'),
+        [],
+        1000,
+        0,
+        0,
+        1000,
+        OrderStatus.CREATED,
+        createdAt,
+      );
+
+      expect(() => order.expire(new Date('2026-01-01T10:14:59.999Z'))).toThrow(
+        'Cannot expire order before its payment window ends',
+      );
+      order.expire(new Date('2026-01-01T10:15:00.000Z'));
+
+      expect(order.getStatus()).toBe(OrderStatus.EXPIRED);
+      expect(order.isNotifiablePurchase()).toBe(false);
+      expect(() => order.markAsPaid()).toThrow(
+        'Cannot mark order as paid from status EXPIRED',
+      );
+    });
+
+    it('only considers a paid order a notifiable purchase', () => {
+      const order = createOrder();
+      expect(order.isNotifiablePurchase()).toBe(false);
+
+      order.markAsPaid();
+
+      expect(order.isNotifiablePurchase()).toBe(true);
+    });
+  });
+
   describe('advanceLogisticsTo', () => {
     it('does not allow the generic status transition to confirm payment', () => {
       const order = createOrder();

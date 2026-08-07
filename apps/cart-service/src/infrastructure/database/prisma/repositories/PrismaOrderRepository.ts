@@ -1,4 +1,5 @@
 import { Order } from '../../../../domain/entities/order/Order';
+import { OrderAddressSnapshot } from '../../../../domain/entities/order/Order';
 import { OrderItem } from '../../../../domain/entities/order/OrderItem';
 import { OrderStatus } from '../../../../domain/entities/order/OrderStatus';
 import { IdType } from '../../../../domain/shared/IdType';
@@ -29,12 +30,30 @@ export class PrismaOrderRepository implements OrderRepository {
           shipping: order.shipping,
           total: order.total,
           status: order.getStatus(),
+          expiresAt: order.expiresAt,
           originCity: order.getOriginCity(),
           destinationCity: order.destinationCity,
+          checkoutIdempotencyKey:
+            order.checkoutIdempotencyKey ?? `legacy-${orderId}`,
+          inventoryReservationId:
+            order.inventoryReservationId ?? `legacy-${orderId}`,
+          savedAddressId: order.savedAddressId ?? 'legacy-address',
+          shippingAddress: (order.shippingAddress ?? {
+            label: 'Legacy',
+            recipient: '',
+            street: '',
+            number: '',
+            complement: null,
+            neighborhood: '',
+            city: order.destinationCity ?? '',
+            state: '',
+            zip: '',
+          }) as Prisma.InputJsonValue,
           items: {
             create: order.items.map((item) => ({
               id: item.id.toString(),
               productId: item.productId.toString(),
+              variantId: item.variantId.toString(),
               productName: item.productName,
               productPrice: item.productPrice,
               quantity: item.quantity,
@@ -44,6 +63,7 @@ export class PrismaOrderRepository implements OrderRepository {
         update: {
           status: order.getStatus(),
           originCity: order.getOriginCity(),
+          expiresAt: order.expiresAt,
         },
       });
 
@@ -80,6 +100,34 @@ export class PrismaOrderRepository implements OrderRepository {
     return dbOrders.map((dbOrder) => this.toDomain(dbOrder));
   }
 
+  async findByCheckoutIdempotencyKey(
+    userId: IdType,
+    key: string,
+  ): Promise<Order | null> {
+    const dbOrder = await prisma.order.findUnique({
+      where: {
+        userId_checkoutIdempotencyKey: {
+          userId: userId.toString(),
+          checkoutIdempotencyKey: key,
+        },
+      },
+      include: { items: true },
+    });
+
+    return dbOrder ? this.toDomain(dbOrder) : null;
+  }
+
+  async findAwaitingPaymentExpiredAtOrBefore(
+    at: Date,
+  ): Promise<Array<Order>> {
+    const dbOrders = await prisma.order.findMany({
+      where: { status: OrderStatus.CREATED, expiresAt: { lte: at } },
+      include: { items: true },
+    });
+
+    return dbOrders.map((dbOrder) => this.toDomain(dbOrder));
+  }
+
   async findInProgress(): Promise<Array<Order>> {
     const dbOrders = await prisma.order.findMany({
       where: {
@@ -106,6 +154,7 @@ export class PrismaOrderRepository implements OrderRepository {
           item.productName,
           item.productPrice,
           item.quantity,
+          IdType.create(item.variantId),
         ),
     );
 
@@ -123,6 +172,11 @@ export class PrismaOrderRepository implements OrderRepository {
       dbOrder.originCity,
       dbOrder.destinationCity,
       dbOrder.updatedAt,
+      dbOrder.expiresAt,
+      dbOrder.checkoutIdempotencyKey,
+      dbOrder.inventoryReservationId,
+      dbOrder.savedAddressId,
+      dbOrder.shippingAddress as unknown as OrderAddressSnapshot,
     );
   }
 }

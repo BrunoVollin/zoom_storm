@@ -10,13 +10,17 @@ export class AddSavedCardUseCase implements UseCase<Input, Output> {
 
   async execute(input: Input): Promise<Output> {
     try {
+      const userId = IdType.create(input.userId);
+      const currentCards = await this.savedCardRepository.findByUserId(userId);
       const card = new SavedCard(
         IdType.create(),
-        IdType.create(input.userId),
+        userId,
         input.brand,
         input.lastFour,
         input.holderName,
         input.expiry,
+        undefined,
+        input.isDefault === true || currentCards.length === 0,
       );
 
       await this.savedCardRepository.save(card);
@@ -38,6 +42,7 @@ interface Input {
   lastFour: string;
   holderName: string;
   expiry: string;
+  isDefault?: boolean;
 }
 
 interface SuccessOutput {

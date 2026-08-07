@@ -41,6 +41,22 @@ describe('SavedCard', () => {
     ).toThrow('Card expiry must be in MM/YY format');
   });
 
+  it('rejects an impossible expiry month', () => {
+    expect(
+      () => new SavedCard(IdType.create(), userId, 'Visa', '4242', 'Bruno', '13/28'),
+    ).toThrow('Card expiry month must be between 01 and 12');
+  });
+
+  it('updates safe metadata and never exposes a CVC field', () => {
+    const card = new SavedCard(IdType.create(), userId, 'Visa', '4242', 'Bruno', '12/28');
+
+    card.update('Visa Platinum', 'Bruno Almeida', '11/29');
+
+    expect(card.getBrand()).toBe('Visa Platinum');
+    expect(card.getLastFour()).toBe('4242');
+    expect('cvc' in card).toBe(false);
+  });
+
   it('rejects an empty holder name', () => {
     expect(
       () => new SavedCard(IdType.create(), userId, 'Visa', '4242', '  ', '12/28'),

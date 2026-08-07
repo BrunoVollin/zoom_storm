@@ -5,22 +5,39 @@ import { prisma } from '../prisma-connection';
 
 export class PrismaSavedCardRepository implements SavedCardRepository {
   async save(card: SavedCard): Promise<void> {
-    await prisma.savedCard.create({
-      data: {
-        id: card.id.toString(),
-        userId: card.userId.toString(),
-        brand: card.brand,
-        lastFour: card.lastFour,
-        holderName: card.holderName,
-        expiry: card.expiry,
-      },
+    const id = card.id.toString();
+    const userId = card.userId.toString();
+    const data = {
+      userId,
+      brand: card.getBrand(),
+      lastFour: card.getLastFour(),
+      holderName: card.getHolderName(),
+      expiry: card.getExpiry(),
+      isDefault: card.isDefault(),
+      createdAt: card.createdAt,
+      updatedAt: card.getUpdatedAt(),
+    };
+
+    await prisma.$transaction(async (tx) => {
+      if (card.isDefault()) {
+        await tx.savedCard.updateMany({
+          where: { userId, isDefault: true, id: { not: id } },
+          data: { isDefault: false },
+        });
+      }
+
+      await tx.savedCard.upsert({
+        where: { id },
+        create: { id, ...data },
+        update: data,
+      });
     });
   }
 
   async findByUserId(userId: IdType): Promise<Array<SavedCard>> {
     const rows = await prisma.savedCard.findMany({
       where: { userId: userId.toString() },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
     });
 
     return rows.map((row) => this.toDomain(row));
@@ -45,7 +62,9 @@ export class PrismaSavedCardRepository implements SavedCardRepository {
     lastFour: string;
     holderName: string;
     expiry: string;
+    isDefault: boolean;
     createdAt: Date;
+    updatedAt: Date;
   }): SavedCard {
     return new SavedCard(
       IdType.create(row.id),
@@ -55,6 +74,8 @@ export class PrismaSavedCardRepository implements SavedCardRepository {
       row.holderName,
       row.expiry,
       row.createdAt,
+      row.isDefault,
+      row.updatedAt,
     );
   }
 }

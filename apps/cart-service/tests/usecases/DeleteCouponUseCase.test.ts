@@ -14,7 +14,7 @@ describe('DeleteCouponUseCase', () => {
   });
 
   describe('Success Scenario', () => {
-    it('deletes an existing coupon', async () => {
+    it('soft-deletes an existing coupon', async () => {
       await couponRepository.save(
         createValidCoupon({ id: createIdFromString('coupon-1') }),
       );
@@ -22,7 +22,11 @@ describe('DeleteCouponUseCase', () => {
       const result = await useCase.execute({ id: 'coupon-1' });
 
       expect(result.status).toBe(Status.SUCCESS);
-      expect(await couponRepository.findById(createIdFromString('coupon-1'))).toBeNull();
+      const stored = await couponRepository.findById(
+        createIdFromString('coupon-1'),
+      );
+      expect(stored).not.toBeNull();
+      expect(stored?.isDeleted()).toBe(true);
     });
   });
 
@@ -43,7 +47,7 @@ describe('DeleteCouponUseCase', () => {
         createValidCoupon({ id: createIdFromString('coupon-1') }),
       );
       jest
-        .spyOn(couponRepository, 'delete')
+        .spyOn(couponRepository, 'save')
         .mockRejectedValue(new Error('db down'));
 
       const result = await useCase.execute({ id: 'coupon-1' });

@@ -13,6 +13,8 @@ export class CouponMapper {
       type: coupon.getType(),
       start: coupon.start,
       end: coupon.end,
+      version: coupon.version,
+      deletedAt: coupon.deletedAt,
       isValid: coupon.isValid(),
       percent:
         coupon instanceof CouponPercentByTime ? coupon.percent : undefined,

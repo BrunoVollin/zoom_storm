@@ -10,6 +10,7 @@ export class OrderMapper {
       items: order.items.map((item) => ({
         id: item.id.toString(),
         productId: item.productId.toString(),
+        variantId: item.variantId.toString(),
         productName: item.productName,
         productPrice: item.productPrice,
         quantity: item.quantity,
@@ -20,8 +21,13 @@ export class OrderMapper {
       shipping: order.shipping,
       total: order.total,
       createdAt: order.createdAt.toISOString(),
+      expiresAt: order.expiresAt.toISOString(),
       originCity: order.getOriginCity(),
       destinationCity: order.destinationCity,
+      checkoutIdempotencyKey: order.checkoutIdempotencyKey,
+      inventoryReservationId: order.inventoryReservationId,
+      savedAddressId: order.savedAddressId,
+      shippingAddress: order.shippingAddress,
     };
   }
 }

@@ -1,28 +1,8 @@
 import { DeleteSavedCardUseCase } from '../../src/application/usecases/DeleteSavedCardUseCase';
 import { SavedCard } from '../../src/domain/entities/payment/SavedCard';
-import { SavedCardRepository } from '../../src/domain/repositories/SavedCardRepository';
 import { IdType } from '../../src/domain/shared/IdType';
 import { Status } from '../../src/application/contracts/UseCase';
-
-class InMemorySavedCardRepository implements SavedCardRepository {
-  private readonly cards = new Map<string, SavedCard>();
-
-  async save(card: SavedCard): Promise<void> {
-    this.cards.set(card.id.toString(), card);
-  }
-
-  async findByUserId(userId: IdType): Promise<Array<SavedCard>> {
-    return [...this.cards.values()].filter((card) => card.belongsTo(userId));
-  }
-
-  async findById(id: IdType): Promise<SavedCard | null> {
-    return this.cards.get(id.toString()) ?? null;
-  }
-
-  async delete(id: IdType): Promise<void> {
-    this.cards.delete(id.toString());
-  }
-}
+import { InMemorySavedCardRepository } from '../helpers/InMemorySavedCardRepository';
 
 describe('DeleteSavedCardUseCase', () => {
   let repository: InMemorySavedCardRepository;
@@ -40,8 +20,22 @@ describe('DeleteSavedCardUseCase', () => {
         '4242',
         'Bruno Almeida',
         '12/28',
+        undefined,
+        true,
       ),
     );
+  });
+
+  it('promotes another card after deleting the default', async () => {
+    await repository.save(
+      new SavedCard(
+        IdType.create('card-2'), IdType.create('user-1'), 'Visa', '1111', 'Bruno', '11/29',
+      ),
+    );
+
+    await useCase.execute({ userId: 'user-1', cardId: 'card-1' });
+
+    expect((await repository.findById(IdType.create('card-2')))?.isDefault()).toBe(true);
   });
 
   it('deletes a card that belongs to the requesting user', async () => {

@@ -18,14 +18,16 @@ enum CouponType {
 }
 
 model Coupon {
-  id      String       @id
-  name    String
-  start   DateTime
-  end     DateTime
-  type    CouponType   @default(PERCENT)
-  percent Float?
-  amount  Float?
-  carts   CartCoupon[]
+  id        String       @id
+  name      String
+  start     DateTime
+  end       DateTime
+  type      CouponType   @default(PERCENT)
+  percent   Float?
+  amount    Float?
+  version   Int          @default(1)
+  deletedAt DateTime?
+  carts     CartCoupon[]
 }
 
 model Cart {
@@ -59,10 +61,11 @@ model CartItem {
 }
 
 model CartCoupon {
-  cart     Cart   @relation(fields: [cartId], references: [id])
-  cartId   String
-  coupon   Coupon @relation(fields: [couponId], references: [id])
-  couponId String
+  cart           Cart   @relation(fields: [cartId], references: [id])
+  cartId         String
+  coupon         Coupon @relation(fields: [couponId], references: [id])
+  couponId       String
+  appliedVersion Int    @default(1)
 
   @@id([cartId, couponId])
 }
@@ -84,24 +87,34 @@ enum OrderStatus {
   IN_TRANSIT
   OUT_FOR_DELIVERY
   DELIVERED
+  CANCELLED
+  EXPIRED
 }
 
 model Order {
-  id        String      @id
-  userId    String
-  cartId    String
-  subtotal  Float
-  discount  Float
-  shipping  Float
-  total     Float
-  status    OrderStatus @default(CREATED)
-  items     OrderItem[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id              String           @id
+  userId          String
+  cartId          String
+  subtotal        Float
+  discount        Float
+  shipping        Float
+  total           Float
+  status          OrderStatus      @default(CREATED)
+  items           OrderItem[]
+  paymentAttempts PaymentAttempt[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  expiresAt       DateTime
   originCity      String?
   destinationCity String?
+  checkoutIdempotencyKey String
+  inventoryReservationId String
+  savedAddressId    String
+  shippingAddress  Json
 
   @@index([userId])
+  @@unique([userId, checkoutIdempotencyKey])
+  @@index([status, expiresAt])
 }
 
 model OrderItem {
@@ -109,6 +122,7 @@ model OrderItem {
   order        Order  @relation(fields: [orderId], references: [id])
   orderId      String
   productId    String
+  variantId    String
   productName  String
   productPrice Float
   quantity     Int
@@ -149,6 +163,39 @@ model LoyaltyTransaction {
   @@index([userId])
 }
 
+enum LoyaltyReservationStatus {
+  ACTIVE
+  CONSUMED
+  RELEASED
+  EXPIRED
+}
+
+model LoyaltyReservation {
+  orderId   String                   @id
+  userId    String
+  points    Int
+  status    LoyaltyReservationStatus @default(ACTIVE)
+  expiresAt DateTime
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime                 @updatedAt
+
+  @@index([userId])
+  @@index([status, expiresAt])
+}
+
+model ShippingQuote {
+  id          String   @id
+  cartId      String
+  addressId   String
+  cartVersion Int
+  shipping    Float
+  estimatedDays Int
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([cartId])
+}
+
 model UserProfile {
   userId              String   @id
   fullName            String
@@ -170,7 +217,62 @@ model SavedCard {
   lastFour   String
   holderName String
   expiry     String
+  isDefault  Boolean  @default(false)
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([userId])
+}
+
+model SavedAddress {
+  id           String   @id
+  userId       String
+  label        String
+  recipient    String
+  street       String
+  number       String
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+  zip          String
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+enum PaymentAttemptStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum PaymentMethodType {
+  SAVED_CARD
+  NEW_CARD
+}
+
+model PaymentAttempt {
+  id             String               @id
+  order          Order                @relation(fields: [orderId], references: [id])
+  orderId        String
+  userId         String
+  idempotencyKey String
+  methodType     PaymentMethodType
+  savedCardId    String?
+  brand          String
+  lastFour       String
+  holderName     String
+  expiry         String
+  saveCard       Boolean              @default(false)
+  installments   Int
+  status         PaymentAttemptStatus @default(PENDING)
+  failureReason  String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@unique([userId, idempotencyKey])
+  @@index([orderId])
 }

@@ -7,4 +7,11 @@ export const AddSavedCardSchema = z.object({
   lastFour: z.string().regex(/^\d{4}$/),
   holderName: z.string().min(1),
   expiry: z.string().regex(/^\d{2}\/\d{2}$/),
-});
+  isDefault: z.boolean().optional(),
+}).strict();
+
+export const UpdateSavedCardSchema = z.object({
+  brand: z.string().min(1),
+  holderName: z.string().min(1),
+  expiry: z.string().regex(/^\d{2}\/\d{2}$/),
+}).strict();

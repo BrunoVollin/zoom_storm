@@ -13,6 +13,8 @@ export interface CouponRow {
   type: string;
   percent: number | null;
   amount: number | null;
+  version: number;
+  deletedAt: Date | null;
 }
 
 /**
@@ -31,6 +33,8 @@ export function couponFromRow(row: CouponRow): Coupon {
       row.start,
       row.end,
       row.amount ?? 0,
+      row.version,
+      row.deletedAt,
     );
   }
 
@@ -41,5 +45,7 @@ export function couponFromRow(row: CouponRow): Coupon {
     row.start,
     row.end,
     row.percent ?? 0,
+    row.version,
+    row.deletedAt,
   );
 }

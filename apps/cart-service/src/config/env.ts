@@ -26,6 +26,10 @@ export const env = {
   auth: {
     skip: process.env.CART_SERVICE_SKIP_AUTH === 'true',
   },
+  productsService: {
+    url: process.env.PRODUCTS_SERVICE_URL || 'http://localhost:3001',
+    internalServiceToken: process.env.INTERNAL_SERVICE_TOKEN || '',
+  },
   order: {
     originCity: process.env.ORDER_ORIGIN_CITY || 'São Paulo',
     // How long a paid order sits in each simulated transit step
@@ -34,5 +38,7 @@ export const env = {
     transitStepMinutes: Number(process.env.ORDER_TRANSIT_STEP_MINUTES) || 2,
     simulatorPollIntervalMs:
       Number(process.env.ORDER_SIMULATOR_POLL_INTERVAL_MS) || 30_000,
+    expirationPollIntervalMs:
+      Number(process.env.ORDER_EXPIRATION_POLL_INTERVAL_MS) || 30_000,
   },
 };

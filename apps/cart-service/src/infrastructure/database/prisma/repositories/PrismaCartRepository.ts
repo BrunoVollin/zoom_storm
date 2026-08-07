@@ -37,7 +37,11 @@ export class PrismaCartRepository implements CartRepository {
       quantity: item.quantity,
     }));
 
-    const couponIds = cart.getCoupons().map((c) => c.id.toString());
+    const coupons = cart.getCoupons().map((c) => ({
+      id: c.id.toString(),
+      appliedVersion: cart.getAppliedCouponVersion(c.id) ?? c.version,
+    }));
+    const couponIds = coupons.map((c) => c.id);
 
     await prisma.$transaction(async (tx) => {
       const existingCart = await tx.cart.findUnique({
@@ -81,11 +85,15 @@ export class PrismaCartRepository implements CartRepository {
       );
 
       await Promise.all(
-        couponIds.map((couponId) =>
+        coupons.map((coupon) =>
           tx.cartCoupon.upsert({
-            where: { cartId_couponId: { cartId, couponId } },
-            create: { cartId, couponId },
-            update: {},
+            where: { cartId_couponId: { cartId, couponId: coupon.id } },
+            create: {
+              cartId,
+              couponId: coupon.id,
+              appliedVersion: coupon.appliedVersion,
+            },
+            update: { appliedVersion: coupon.appliedVersion },
           }),
         ),
       );
@@ -143,7 +151,7 @@ export class PrismaCartRepository implements CartRepository {
     }
 
     for (const cp of dbCart.coupons) {
-      cart.addCoupon(couponFromRow(cp.coupon));
+      cart.addCoupon(couponFromRow(cp.coupon), cp.appliedVersion);
     }
 
     return cart;

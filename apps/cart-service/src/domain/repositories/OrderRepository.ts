@@ -5,7 +5,12 @@ import { DomainEvent } from '../events/DomainEvent';
 export interface OrderRepository {
   save(order: Order, events?: DomainEvent | Array<DomainEvent>): Promise<void>;
   findById(id: IdType): Promise<Order | null>;
+  findByCheckoutIdempotencyKey(
+    userId: IdType,
+    key: string,
+  ): Promise<Order | null>;
   findByUserId(userId: IdType): Promise<Array<Order>>;
+  findAwaitingPaymentExpiredAtOrBefore(at: Date): Promise<Array<Order>>;
   /** Paid-but-not-yet-delivered orders, for the delivery simulator to poll. */
   findInProgress(): Promise<Array<Order>>;
 }

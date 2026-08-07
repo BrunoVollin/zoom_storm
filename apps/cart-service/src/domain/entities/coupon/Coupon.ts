@@ -17,10 +17,22 @@ export interface Coupon {
   name: string;
   start: Date;
   end: Date;
+  version: number;
+  deletedAt: Date | null;
   isValid(): boolean;
+  isDeleted(): boolean;
+  softDelete(deletedAt?: Date): void;
   getName(): string;
   getType(): CouponType;
   getDiscount(total: number): number;
+}
+
+function validateVersion(version: number): void {
+  if (!Number.isInteger(version) || version < 1) {
+    throw new CouponValidationError(
+      'Coupon version must be a positive integer',
+    );
+  }
 }
 
 function validateCoupon(
@@ -49,6 +61,8 @@ function validateCoupon(
 }
 
 export class CouponPercentByTime implements Coupon {
+  private deletionDate: Date | null;
+
   constructor(
     readonly id: IdType,
     readonly name: string,
@@ -56,18 +70,35 @@ export class CouponPercentByTime implements Coupon {
     readonly start: Date,
     readonly end: Date,
     readonly percent: number,
+    readonly version: number = 1,
+    deletedAt: Date | null = null,
   ) {
     validateCoupon(name, today, start, end);
+    validateVersion(version);
 
     if (!Number.isFinite(percent) || percent <= 0 || percent > 1) {
       throw new CouponValidationError(
         'Coupon percent must be greater than 0 and at most 1',
       );
     }
+
+    this.deletionDate = deletedAt;
+  }
+
+  get deletedAt(): Date | null {
+    return this.deletionDate;
+  }
+
+  isDeleted(): boolean {
+    return this.deletionDate !== null;
+  }
+
+  softDelete(deletedAt: Date = new Date()): void {
+    if (!this.deletionDate) this.deletionDate = deletedAt;
   }
 
   isValid() {
-    return this.today >= this.start && this.today <= this.end;
+    return !this.isDeleted() && this.today >= this.start && this.today <= this.end;
   }
 
   getName() {
@@ -88,6 +119,8 @@ export class CouponPercentByTime implements Coupon {
 }
 
 export class CouponFixedAmount implements Coupon {
+  private deletionDate: Date | null;
+
   constructor(
     readonly id: IdType,
     readonly name: string,
@@ -95,18 +128,35 @@ export class CouponFixedAmount implements Coupon {
     readonly start: Date,
     readonly end: Date,
     readonly amount: number,
+    readonly version: number = 1,
+    deletedAt: Date | null = null,
   ) {
     validateCoupon(name, today, start, end);
+    validateVersion(version);
 
     if (!Number.isInteger(amount) || amount <= 0) {
       throw new CouponValidationError(
         'Coupon fixed amount must be a positive integer in cents',
       );
     }
+
+    this.deletionDate = deletedAt;
+  }
+
+  get deletedAt(): Date | null {
+    return this.deletionDate;
+  }
+
+  isDeleted(): boolean {
+    return this.deletionDate !== null;
+  }
+
+  softDelete(deletedAt: Date = new Date()): void {
+    if (!this.deletionDate) this.deletionDate = deletedAt;
   }
 
   isValid() {
-    return this.today >= this.start && this.today <= this.end;
+    return !this.isDeleted() && this.today >= this.start && this.today <= this.end;
   }
 
   getName() {

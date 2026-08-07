@@ -40,6 +40,8 @@ describe('UpdateItemQuantityUseCase', () => {
       getUserId: jest.fn(() => ({ toString: () => 'user-1' })),
       getItems: jest.fn(() => [mockItem]),
       getCoupons: jest.fn(() => []),
+      getAppliedCouponVersion: jest.fn(() => 1),
+      getLoyaltyRedemptionPoints: jest.fn(() => 0),
       calcSubtotal: jest.fn(() => 0),
       calcTotalDiscount: jest.fn(() => 0),
       calcTotal: jest.fn(() => 0),

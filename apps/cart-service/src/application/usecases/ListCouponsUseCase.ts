@@ -17,7 +17,9 @@ export class ListCouponsUseCase implements UseCase<Input, Output> {
 
       return {
         status: Status.SUCCESS,
-        coupons: coupons.map((coupon) => CouponMapper.toPrimitives(coupon)),
+        coupons: coupons
+          .filter((coupon) => !coupon.isDeleted())
+          .map((coupon) => CouponMapper.toPrimitives(coupon)),
       };
     } catch (error) {
       return handleUnexpectedError(error);

@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+set -e
+
+KEYCLOAK_URL="http://localhost:3040"
+ADMIN_USER="admin"
+ADMIN_PASSWORD="admin"
+REALM="zoom-storm"
+CLIENT_ID="bff"
+CLIENT_SECRET="hjOm3lu18570zFI86ZyJ5uDP6dieUaL5"
+ZOOM_GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
+ZOOM_GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-}"
+
+echo "Obtaining admin token..."
+ADMIN_TOKEN=$(curl -s -X POST "$KEYCLOAK_URL/realms/master/protocol/openid-connect/token" \
+  -d "client_id=admin-cli&username=$ADMIN_USER&password=$ADMIN_PASSWORD&grant_type=password" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+echo "Creating realm '$REALM'..."
+curl -s -X POST "$KEYCLOAK_URL/admin/realms" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "realm": "'"$REALM"'",
+    "enabled": true,
+    "displayName": "Zoom Storm",
+    "registrationAllowed": true,
+    "loginWithEmailAllowed": true,
+    "duplicateEmailsAllowed": false,
+    "resetPasswordAllowed": true,
+    "editUsernameAllowed": false,
+    "bruteForceProtected": true,
+    "accessTokenLifespan": 300,
+    "ssoSessionIdleTimeout": 1800,
+    "ssoSessionMaxLifespan": 36000,
+    "offlineSessionIdleTimeout": 2592000
+  }' -w "\nRealm HTTP %{http_code}\n"
+
+echo "Creating client '$CLIENT_ID'..."
+curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM/clients" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientId": "'"$CLIENT_ID"'",
+    "enabled": true,
+    "protocol": "openid-connect",
+    "publicClient": false,
+    "secret": "'"$CLIENT_SECRET"'",
+    "standardFlowEnabled": true,
+    "directAccessGrantsEnabled": false,
+    "serviceAccountsEnabled": false,
+    "redirectUris": [
+      "http://localhost:8088/auth/callback",
+      "http://localhost:3100/api/auth/callback"
+    ],
+    "webOrigins": [
+      "http://localhost:3100"
+    ],
+    "attributes": {
+      "pkce.code.challenge.method": "S256",
+      "use.refresh.tokens": "true"
+    }
+  }' -w "\nClient HTTP %{http_code}\n"
+
+if [ -n "$ZOOM_GOOGLE_CLIENT_ID" ] && [ -n "$ZOOM_GOOGLE_CLIENT_SECRET" ]; then
+  echo "Configuring optional Google identity provider..."
+  GOOGLE_IDP_JSON=$(ZOOM_GOOGLE_CLIENT_ID="$ZOOM_GOOGLE_CLIENT_ID" \
+    ZOOM_GOOGLE_CLIENT_SECRET="$ZOOM_GOOGLE_CLIENT_SECRET" \
+    python3 -c 'import json, os; print(json.dumps({
+      "alias": "google",
+      "displayName": "Google",
+      "providerId": "google",
+      "enabled": True,
+      "trustEmail": True,
+      "storeToken": False,
+      "linkOnly": False,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": os.environ["ZOOM_GOOGLE_CLIENT_ID"],
+        "clientSecret": os.environ["ZOOM_GOOGLE_CLIENT_SECRET"],
+        "syncMode": "IMPORT",
+        "useJwksUrl": "true"
+      }
+    }))')
+
+  curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM/identity-provider/instances" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    --data-binary "$GOOGLE_IDP_JSON" \
+    -w "\nGoogle identity provider HTTP %{http_code}\n"
+  unset GOOGLE_IDP_JSON
+else
+  echo "Google identity provider skipped (set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable)."
+fi
+
+echo "Creating test user..."
+curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM/users" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "test",
+    "email": "test@test.com",
+    "firstName": "Test",
+    "lastName": "User",
+    "enabled": true,
+    "credentials": [{ "type": "password", "value": "test123", "temporary": false }]
+  }' -w "\nUser HTTP %{http_code}\n"
+
+echo "Creating user bruno..."
+curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM/users" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "bruno",
+    "email": "bruno@test.com",
+    "firstName": "Bruno",
+    "lastName": "",
+    "enabled": true,
+    "credentials": [{ "type": "password", "value": "123", "temporary": false }]
+  }' -w "\nUser HTTP %{http_code}\n"
+
+echo "Creating realm role 'admin'..."
+curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM/roles" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "admin",
+    "description": "Grants access to admin-only endpoints (e.g. product management)"
+  }' -w "\nRole HTTP %{http_code}\n"
+
+echo "Assigning 'admin' role to user bruno..."
+BRUNO_ID=$(curl -s -X GET "$KEYCLOAK_URL/admin/realms/$REALM/users?username=bruno&exact=true" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['id'])")
+
+ADMIN_ROLE=$(curl -s -X GET "$KEYCLOAK_URL/admin/realms/$REALM/roles/admin" \
+  -H "Authorization: Bearer $ADMIN_TOKEN")
+
+curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM/users/$BRUNO_ID/role-mappings/realm" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "[$ADMIN_ROLE]" -w "\nRole assignment HTTP %{http_code}\n"
+
+echo "Done."
+echo "  test / test123"
+echo "  bruno / 123 (admin role)"

@@ -16,6 +16,13 @@ export class DeleteSavedCardUseCase implements UseCase<Input, Output> {
       }
 
       await this.savedCardRepository.delete(cardId);
+      if (card.isDefault()) {
+        const replacement = (await this.savedCardRepository.findByUserId(card.userId))[0];
+        if (replacement) {
+          replacement.makeDefault();
+          await this.savedCardRepository.save(replacement);
+        }
+      }
 
       return { status: Status.SUCCESS };
     } catch (error) {

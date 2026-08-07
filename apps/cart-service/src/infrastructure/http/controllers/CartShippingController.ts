@@ -8,11 +8,11 @@ export class CartShippingController {
   ) {}
 
   async calculate(c: Context) {
-    const cep = c.req.query('cep') ?? '';
+    const addressId = c.req.query('addressId') ?? '';
 
-    if (!/^\d{5}-?\d{3}$/.test(cep)) {
+    if (!addressId.trim()) {
       return c.json(
-        { status: Status.ERROR, message: 'Invalid cep query param' },
+        { status: Status.ERROR, message: 'addressId query param is required' },
         400,
       );
     }
@@ -20,7 +20,7 @@ export class CartShippingController {
     const result = await this.calculateShippingUseCase.execute({
       cartId: c.req.param('cartId')!,
       userId: c.get('userId') as string,
-      cep,
+      addressId,
     });
     const status = result.status === Status.SUCCESS ? 200 : 422;
 
