@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
@@ -7,10 +9,17 @@ import { CartItemRow } from "@/components/features/cart/cart-item-row";
 import { CartSummary } from "@/components/features/cart/cart-summary";
 import { useAuth } from "@/providers/auth-provider";
 import { useCart } from "@/hooks/use-cart";
+import { markCartIndicatorSeen } from "@/hooks/use-cart-indicator";
 
 export function CartList() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { cart, isLoading, error } = useCart();
+
+  useEffect(() => {
+    if (!cart) return;
+    const itemCount = cart.items.reduce((total, item) => total + item.quantity, 0);
+    markCartIndicatorSeen(cart.id, itemCount);
+  }, [cart]);
 
   if (isAuthLoading || isLoading) {
     return <LoadingSpinner />;
