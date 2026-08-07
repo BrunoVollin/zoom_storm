@@ -29,4 +29,7 @@ export const queryKeys = {
   paymentCards: {
     all: ["payment-cards"] as const,
   },
+  coupons: {
+    all: ["admin-coupons"] as const,
+  },
 } as const;
