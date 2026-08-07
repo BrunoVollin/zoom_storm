@@ -20,6 +20,8 @@ tags:
     description: Adding, removing, and updating cart items
   - name: Coupons
     description: Applying and removing discount coupons
+  - name: Admin Coupons
+    description: Admin-only management (list/create/update/delete) of discount coupons
   - name: Shipping
     description: Shipping cost calculation
   - name: Checkout
@@ -263,6 +265,157 @@ paths:
                 status: ERROR
                 message: Cart not found
 
+  /admin/coupons:
+    get:
+      operationId: listCoupons
+      summary: List every registered coupon (admin only)
+      tags:
+        - Admin Coupons
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of coupons
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: SUCCESS
+                  coupons:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminCoupon'
+        '401':
+          description: Missing or invalid bearer token
+        '403':
+          description: Admin role required
+    post:
+      operationId: createCoupon
+      summary: Create a new coupon (admin only)
+      tags:
+        - Admin Coupons
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminCouponRequest'
+            example:
+              name: PROMO10
+              type: PERCENT
+              start: '2026-01-01T00:00:00.000Z'
+              end: '2026-12-31T23:59:59.000Z'
+              percent: 0.1
+      responses:
+        '201':
+          description: Coupon created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: SUCCESS
+                  coupon:
+                    $ref: '#/components/schemas/AdminCoupon'
+        '400':
+          description: Invalid request body
+        '401':
+          description: Missing or invalid bearer token
+        '403':
+          description: Admin role required
+        '422':
+          description: Unprocessable entity (e.g. duplicate coupon name, invalid coupon parameters)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/coupons/{id}:
+    put:
+      operationId: updateCoupon
+      summary: Update an existing coupon (admin only)
+      tags:
+        - Admin Coupons
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminCouponRequest'
+      responses:
+        '200':
+          description: Coupon updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: SUCCESS
+                  coupon:
+                    $ref: '#/components/schemas/AdminCoupon'
+        '400':
+          description: Invalid request body
+        '401':
+          description: Missing or invalid bearer token
+        '403':
+          description: Admin role required
+        '422':
+          description: Unprocessable entity (e.g. coupon not found, duplicate name)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      operationId: deleteCoupon
+      summary: Delete a coupon (admin only)
+      description: |
+        Hard delete. Cascades to related CartCoupon rows in a single
+        transaction.
+      tags:
+        - Admin Coupons
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Coupon deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSuccessResponse'
+        '401':
+          description: Missing or invalid bearer token
+        '403':
+          description: Admin role required
+        '422':
+          description: Unprocessable entity (coupon not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /carts/{cartId}/shipping:
     get:
       operationId: calculateShipping
@@ -454,6 +607,59 @@ components:
       properties:
         couponId:
           type: string
+
+    AdminCouponRequest:
+      type: object
+      required:
+        - name
+        - type
+        - start
+        - end
+      properties:
+        name:
+          type: string
+          example: PROMO10
+        type:
+          type: string
+          enum: [PERCENT, FIXED]
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        percent:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Required when type is PERCENT (e.g. 0.1 = 10%)
+        amount:
+          type: integer
+          minimum: 1
+          description: Required when type is FIXED, in cents
+
+    AdminCoupon:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [PERCENT, FIXED]
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        isValid:
+          type: boolean
+        percent:
+          type: number
+        amount:
+          type: integer
           description: Coupon ID to apply
           example: PROMO10
 

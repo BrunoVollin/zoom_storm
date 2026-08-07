@@ -26,9 +26,14 @@ import { ListSavedCardsQuery } from '@application/Queries/ListSavedCardsQuery';
 import { AddSavedCardUseCase } from '@application/usecases/AddSavedCardUseCase';
 import { DeleteSavedCardUseCase } from '@application/usecases/DeleteSavedCardUseCase';
 import { LookupCepQuery } from '@application/Queries/LookupCepQuery';
+import { ListCouponsUseCase } from '@application/usecases/ListCouponsUseCase';
+import { CreateCouponUseCase } from '@application/usecases/CreateCouponUseCase';
+import { UpdateCouponUseCase } from '@application/usecases/UpdateCouponUseCase';
+import { DeleteCouponUseCase } from '@application/usecases/DeleteCouponUseCase';
 import { CartController } from './controllers/CartController';
 import { CartItemController } from './controllers/CartItemController';
 import { CartCouponController } from './controllers/CartCouponController';
+import { AdminCouponController } from './controllers/AdminCouponController';
 import { CartShippingController } from './controllers/CartShippingController';
 import { CartCheckoutController } from './controllers/CartCheckoutController';
 import { OrderController } from './controllers/OrderController';
@@ -65,6 +70,10 @@ interface Dependencies {
   addSavedCard: AddSavedCardUseCase;
   deleteSavedCard: DeleteSavedCardUseCase;
   lookupCep: LookupCepQuery;
+  listCoupons: ListCouponsUseCase;
+  createCoupon: CreateCouponUseCase;
+  updateCoupon: UpdateCouponUseCase;
+  deleteCoupon: DeleteCouponUseCase;
 }
 
 const openapiSpec = readFileSync(
@@ -116,6 +125,12 @@ export function buildRouter(deps: Dependencies): Hono {
     deps.deleteSavedCard,
   );
   const cepLookup = new CepLookupController(deps.lookupCep);
+  const adminCoupon = new AdminCouponController(
+    deps.listCoupons,
+    deps.createCoupon,
+    deps.updateCoupon,
+    deps.deleteCoupon,
+  );
 
   app.get('/openapi.yml', (c) =>
     c.text(openapiSpec, 200, { 'Content-Type': 'application/yaml' }),
@@ -175,6 +190,11 @@ export function buildRouter(deps: Dependencies): Hono {
   app.use('/cep/*', requireAuth);
 
   app.get('/cep/:cep', (c) => cepLookup.lookup(c));
+
+  app.get('/admin/coupons', requireAdmin, (c) => adminCoupon.list(c));
+  app.post('/admin/coupons', requireAdmin, (c) => adminCoupon.create(c));
+  app.put('/admin/coupons/:id', requireAdmin, (c) => adminCoupon.update(c));
+  app.delete('/admin/coupons/:id', requireAdmin, (c) => adminCoupon.delete(c));
 
   return app;
 }

@@ -56,6 +56,14 @@ export class PrismaCouponRepository implements CouponRepository {
     return couponFromRow(row);
   }
 
+  async findAll(): Promise<Array<Coupon>> {
+    const rows = await this.prisma.coupon.findMany({
+      orderBy: { name: 'asc' },
+    });
+
+    return rows.map((row) => couponFromRow(row));
+  }
+
   async findByIds(ids: Array<IdType>): Promise<Array<Coupon>> {
     const idsStr = ids.map((i) => i.toString());
     const rows = await this.prisma.coupon.findMany({
@@ -63,5 +71,21 @@ export class PrismaCouponRepository implements CouponRepository {
     });
 
     return rows.map((row) => couponFromRow(row));
+  }
+
+  async findByName(name: string): Promise<Coupon | null> {
+    const row = await this.prisma.coupon.findFirst({ where: { name } });
+    if (!row) return null;
+
+    return couponFromRow(row);
+  }
+
+  async delete(id: IdType): Promise<void> {
+    const couponId = id.toString();
+
+    await this.prisma.$transaction([
+      this.prisma.cartCoupon.deleteMany({ where: { couponId } }),
+      this.prisma.coupon.delete({ where: { id: couponId } }),
+    ]);
   }
 }

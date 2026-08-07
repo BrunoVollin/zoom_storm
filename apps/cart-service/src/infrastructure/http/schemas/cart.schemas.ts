@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { OutputUseCase, Status } from '@application/contracts/UseCase';
+import { CouponType } from '@domain/entities/coupon/Coupon';
 import type { Context } from 'hono';
 
 const ProductInputSchema = z.object({
@@ -28,6 +29,28 @@ export const CheckoutSchema = z.object({
   shipping: z.int().min(0),
   cep: z.string().min(1).optional(),
 });
+
+const couponAmountFields = {
+  name: z.string().min(1),
+  type: z.enum(CouponType),
+  start: z.coerce.date(),
+  end: z.coerce.date(),
+  percent: z.number().min(0).max(1).optional(),
+  amount: z.int().min(1).optional(),
+};
+
+export const CreateCouponSchema = z.object(couponAmountFields).refine(
+  (data) =>
+    data.type === CouponType.PERCENT
+      ? data.percent !== undefined
+      : data.amount !== undefined,
+  {
+    message:
+      'percent is required for PERCENT coupons and amount is required for FIXED coupons',
+  },
+);
+
+export const UpdateCouponSchema = CreateCouponSchema;
 
 export function validate<T>(
   schema: z.ZodType<T>,

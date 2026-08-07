@@ -49,6 +49,12 @@ describe('Coupon', () => {
 
       expect(discount).toBe(30);
     });
+
+    it('rounds percentage discounts to whole cents', () => {
+      const coupon = createValidCoupon({ percent: 0.1 });
+
+      expect(coupon.getDiscount(999)).toBe(100);
+    });
   });
 
   describe('Time-based revalidation', () => {

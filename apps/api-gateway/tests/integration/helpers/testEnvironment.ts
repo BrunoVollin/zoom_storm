@@ -25,6 +25,10 @@ import { ListSavedCardsQuery } from '@application/Queries/ListSavedCardsQuery';
 import { AddSavedCardUseCase } from '@application/usecases/AddSavedCardUseCase';
 import { DeleteSavedCardUseCase } from '@application/usecases/DeleteSavedCardUseCase';
 import { LookupCepQuery } from '@application/Queries/LookupCepQuery';
+import { ListCouponsUseCase } from '@application/usecases/ListCouponsUseCase';
+import { CreateCouponUseCase } from '@application/usecases/CreateCouponUseCase';
+import { UpdateCouponUseCase } from '@application/usecases/UpdateCouponUseCase';
+import { DeleteCouponUseCase } from '@application/usecases/DeleteCouponUseCase';
 import { FreightRoadCalculator } from '@domain/entities/freight/FreightCalculator';
 import {
   InMemoryProductStore,
@@ -207,6 +211,10 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
     addSavedCard: new AddSavedCardUseCase(savedCardRepository),
     deleteSavedCard: new DeleteSavedCardUseCase(savedCardRepository),
     lookupCep: new LookupCepQuery(cepLookupService),
+    listCoupons: new ListCouponsUseCase(couponRepository),
+    createCoupon: new CreateCouponUseCase(couponRepository),
+    updateCoupon: new UpdateCouponUseCase(couponRepository),
+    deleteCoupon: new DeleteCouponUseCase(couponRepository),
   });
 
   const cartServer = await startServer(cartApp);

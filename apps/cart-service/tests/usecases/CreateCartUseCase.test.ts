@@ -26,8 +26,10 @@ describe('CreateCartUseCase', () => {
 
     couponRepositoryMock = {
       save: jest.fn(),
+      findAll: jest.fn(),
       findById: jest.fn(),
       findByIds: jest.fn(),
+      delete: jest.fn(),
     };
 
     cartRepositoryMock = {
