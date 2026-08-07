@@ -6,6 +6,8 @@ import {
   ProductQueryRepository,
 } from '../../../../products-service/src/domain/repositories/ProductQueryRepository';
 import { ProductMapper } from '../../../../products-service/src/application/mappers/ProductMapper';
+import { ReviewEligibility } from '../../../../products-service/src/domain/entities/ReviewEligibility';
+import { ReviewEligibilityRepository } from '../../../../products-service/src/domain/repositories/ReviewEligibilityRepository';
 
 /**
  * Shared backing store for the products-service write repository
@@ -31,8 +33,12 @@ export class InMemoryProductStore {
    * cart-products-projection denormalizes one Mongo document per variant. */
   getByVariantId(variantId: string): Product | null {
     return (
-      this.getAll().find((product) =>
-        product.variants.some((variant) => variant.id.toString() === variantId),
+      this.getAll().find(
+        (product) =>
+          !product.isDeleted &&
+          product.variants.some(
+            (variant) => variant.id.toString() === variantId,
+          ),
       ) ?? null
     );
   }
@@ -58,7 +64,8 @@ export class InMemoryProductRepository implements ProductRepository {
   }
 
   async findById(id: IdType): Promise<Product | null> {
-    return this.store.get(id.toString());
+    const product = this.store.get(id.toString());
+    return product?.isDeleted ? null : product;
   }
 
   async delete(id: IdType): Promise<void> {
@@ -72,16 +79,48 @@ export class InMemoryProductQueryRepository implements ProductQueryRepository {
   async findAll(): Promise<ProductDTO[]> {
     return this.store
       .getAll()
+      .filter((product) => !product.isDeleted)
       .map((product) => ProductMapper.toPrimitives(product));
   }
 
   async findById(id: string): Promise<ProductDTO | null> {
     const product = this.store.get(id);
 
-    return product ? ProductMapper.toPrimitives(product) : null;
+    return product && !product.isDeleted
+      ? ProductMapper.toPrimitives(product)
+      : null;
   }
 
   async findDistinctCategories(): Promise<string[]> {
-    return [...new Set(this.store.getAll().map((product) => product.category))];
+    return [
+      ...new Set(
+        this.store
+          .getAll()
+          .filter((product) => !product.isDeleted)
+          .map((product) => product.category),
+      ),
+    ];
+  }
+}
+
+export class InMemoryReviewEligibilityRepository implements ReviewEligibilityRepository {
+  private readonly eligibilities = new Map<string, ReviewEligibility>();
+
+  async saveIfAbsent(eligibility: ReviewEligibility): Promise<boolean> {
+    if (this.eligibilities.has(eligibility.naturalKey)) return false;
+    this.eligibilities.set(eligibility.naturalKey, eligibility);
+    return true;
+  }
+
+  async findByUserOrderProduct(
+    userId: IdType,
+    orderId: IdType,
+    productId: IdType,
+  ): Promise<ReviewEligibility | null> {
+    return (
+      this.eligibilities.get(
+        `${userId.toString()}:${orderId.toString()}:${productId.toString()}`,
+      ) ?? null
+    );
   }
 }

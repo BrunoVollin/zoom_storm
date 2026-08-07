@@ -14,11 +14,17 @@ import { ListOrdersQuery } from '@application/Queries/ListOrdersQuery';
 import { OrderQuery } from '@application/Queries/OrderQuery';
 import { UpdateOrderStatusUseCase } from '@application/usecases/UpdateOrderStatusUseCase';
 import { PayOrderUseCase } from '@application/usecases/PayOrderUseCase';
+import { CancelOrderUseCase } from '@application/usecases/CancelOrderUseCase';
 import { ListWishlistQuery } from '@application/Queries/ListWishlistQuery';
 import { AddToWishlistUseCase } from '@application/usecases/AddToWishlistUseCase';
 import { RemoveFromWishlistUseCase } from '@application/usecases/RemoveFromWishlistUseCase';
 import { GetLoyaltyBalanceQuery } from '@application/Queries/GetLoyaltyBalanceQuery';
 import { RedeemLoyaltyPointsUseCase } from '@application/usecases/RedeemLoyaltyPointsUseCase';
+import { RemoveLoyaltyRedemptionUseCase } from '@application/usecases/RemoveLoyaltyRedemptionUseCase';
+import { RevalidateCartCouponsUseCase } from '@application/usecases/RevalidateCartCouponsUseCase';
+import { ReserveLoyaltyPointsUseCase } from '@application/usecases/ReserveLoyaltyPointsUseCase';
+import { ConsumeLoyaltyReservationUseCase } from '@application/usecases/ConsumeLoyaltyReservationUseCase';
+import { ReleaseLoyaltyReservationUseCase } from '@application/usecases/ReleaseLoyaltyReservationUseCase';
 import { GetUserProfileQuery } from '@application/Queries/GetUserProfileQuery';
 import { UpdateUserProfileUseCase } from '@application/usecases/UpdateUserProfileUseCase';
 import { ListSavedCardsQuery } from '@application/Queries/ListSavedCardsQuery';
@@ -34,6 +40,7 @@ import {
   InMemoryProductStore,
   InMemoryProductRepository,
   InMemoryProductQueryRepository,
+  InMemoryReviewEligibilityRepository,
 } from './inMemoryProductStore';
 import {
   InMemoryCartRepository,
@@ -44,11 +51,16 @@ import { InMemoryCouponRepository } from './inMemoryCouponRepository';
 import { InMemoryFlashOfferRepository } from './inMemoryFlashOfferRepository';
 import {
   FakeCepLookupService,
+  InMemoryInventoryReservationService,
   InMemoryOrderRepository,
+  InMemorySavedAddressRepository,
   InMemoryWishlistRepository,
   InMemoryLoyaltyRepository,
   InMemoryUserProfileRepository,
   InMemorySavedCardRepository,
+  InMemoryPaymentAttemptRepository,
+  InMemoryLoyaltyReservationRepository,
+  InMemoryShippingQuoteRepository,
 } from './inMemoryOrderWishlistRepositories';
 
 interface RunningServer {
@@ -72,6 +84,7 @@ export interface TestEnvironment {
   productStore: InMemoryProductStore;
   cartRepository: InMemoryCartRepository;
   couponRepository: InMemoryCouponRepository;
+  savedAddressRepository: InMemorySavedAddressRepository;
   stopProductsService: () => Promise<void>;
   stopCartService: () => Promise<void>;
   stop: () => Promise<void>;
@@ -101,6 +114,7 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
   const productQueryRepository = new InMemoryProductQueryRepository(
     productStore,
   );
+  const reviewEligibilityRepository = new InMemoryReviewEligibilityRepository();
 
   const { buildRouter: buildProductsRouter } =
     await import('../../../../products-service/src/infrastructure/http/router');
@@ -147,7 +161,10 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
     createProductVariant: new CreateProductVariantUseCase(productRepository),
     updateProductVariant: new UpdateProductVariantUseCase(productRepository),
     deleteProductVariant: new DeleteProductVariantUseCase(productRepository),
-    createReview: new CreateReviewUseCase(productRepository),
+    createReview: new CreateReviewUseCase(
+      productRepository,
+      reviewEligibilityRepository,
+    ),
     listActiveFlashOffers: new ListActiveFlashOffersQuery(flashOfferRepository),
     listFlashOffers: new ListFlashOffersQuery(flashOfferRepository),
     createFlashOffer: new CreateFlashOfferUseCase(flashOfferRepository),
@@ -166,7 +183,16 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
   const loyaltyRepository = new InMemoryLoyaltyRepository();
   const userProfileRepository = new InMemoryUserProfileRepository();
   const savedCardRepository = new InMemorySavedCardRepository();
+  const savedAddressRepository = new InMemorySavedAddressRepository();
+  const inventoryReservationService = new InMemoryInventoryReservationService();
   const cepLookupService = new FakeCepLookupService();
+  const shippingQuoteRepository = new InMemoryShippingQuoteRepository();
+  const paymentAttemptRepository = new InMemoryPaymentAttemptRepository();
+  const loyaltyReservationRepository = new InMemoryLoyaltyReservationRepository();
+
+  const releaseLoyaltyReservationUseCase = new ReleaseLoyaltyReservationUseCase(
+    loyaltyReservationRepository,
+  );
 
   const cartApp = buildCartRouter({
     getCart: new CartQuery(cartQueryRepository),
@@ -188,23 +214,55 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
     removeCoupon: new RemoveCouponUseCase(cartRepository),
     calculateShipping: new CalculateShippingUseCase(
       cartRepository,
+      savedAddressRepository,
       new FreightRoadCalculator(),
-      new FakeCepLookupService(),
+      shippingQuoteRepository,
     ),
-    checkout: new CheckoutUseCase(cartRepository, orderRepository),
+    checkout: new CheckoutUseCase(
+      cartRepository,
+      orderRepository,
+      savedAddressRepository,
+      inventoryReservationService,
+      shippingQuoteRepository,
+      new RevalidateCartCouponsUseCase(cartRepository, couponRepository),
+      new ReserveLoyaltyPointsUseCase(
+        loyaltyRepository,
+        loyaltyReservationRepository,
+      ),
+    ),
     listOrders: new ListOrdersQuery(orderRepository),
     getOrder: new OrderQuery(orderRepository),
     updateOrderStatus: new UpdateOrderStatusUseCase(orderRepository),
-    payOrder: new PayOrderUseCase(orderRepository, loyaltyRepository),
+    payOrder: new PayOrderUseCase(
+      orderRepository,
+      loyaltyRepository,
+      savedCardRepository,
+      paymentAttemptRepository,
+      inventoryReservationService,
+      loyaltyReservationRepository,
+      new ConsumeLoyaltyReservationUseCase(
+        loyaltyRepository,
+        loyaltyReservationRepository,
+      ),
+    ),
+    cancelOrder: new CancelOrderUseCase(
+      orderRepository,
+      inventoryReservationService,
+      loyaltyReservationRepository,
+      releaseLoyaltyReservationUseCase,
+    ),
     listWishlist: new ListWishlistQuery(wishlistRepository),
-    addToWishlist: new AddToWishlistUseCase(cartProductRepository, wishlistRepository),
+    addToWishlist: new AddToWishlistUseCase(
+      cartProductRepository,
+      wishlistRepository,
+    ),
     removeFromWishlist: new RemoveFromWishlistUseCase(wishlistRepository),
     getLoyaltyBalance: new GetLoyaltyBalanceQuery(loyaltyRepository),
     redeemLoyaltyPoints: new RedeemLoyaltyPointsUseCase(
       cartRepository,
-      couponRepository,
       loyaltyRepository,
     ),
+    removeLoyaltyRedemption: new RemoveLoyaltyRedemptionUseCase(cartRepository),
     getUserProfile: new GetUserProfileQuery(userProfileRepository),
     updateUserProfile: new UpdateUserProfileUseCase(userProfileRepository),
     listSavedCards: new ListSavedCardsQuery(savedCardRepository),
@@ -233,6 +291,7 @@ export async function startTestEnvironment(): Promise<TestEnvironment> {
     productStore,
     cartRepository,
     couponRepository,
+    savedAddressRepository,
     stopProductsService: productsServer.close,
     stopCartService: cartServer.close,
     stop: async () => {

@@ -4,6 +4,36 @@ import {
 } from './helpers/testEnvironment';
 import { createProduct } from './helpers/productFactory';
 import { createCart } from './helpers/cartFactory';
+import { SavedAddress } from '@domain/entities/profile/SavedAddress';
+import { Address } from '@domain/entities/profile/Address';
+import { IdType } from '@domain/shared/IdType';
+
+let addressCounter = 0;
+let idempotencyCounter = 0;
+
+/** Seeds a saved address owned by the test env's default 'local-dev-user' and returns its id. */
+async function seedAddress(
+  env: TestEnvironment,
+  overrides: Partial<{ state: string; zip: string }> = {},
+): Promise<string> {
+  const id = IdType.create(`address-${++addressCounter}`);
+  const address = new SavedAddress(
+    id,
+    IdType.create('local-dev-user'),
+    'Home',
+    'Bruno Almeida',
+    new Address(
+      'Rua A',
+      '100',
+      'Centro',
+      'São Paulo',
+      overrides.state ?? 'SP',
+      overrides.zip ?? '01310-100',
+    ),
+  );
+  await env.savedAddressRepository.save(address);
+  return id.toString();
+}
 
 async function getCart(gatewayUrl: string, cartId: string) {
   const response = await fetch(`${gatewayUrl}/cart/carts/${cartId}`);
@@ -58,11 +88,50 @@ async function removeItem(gatewayUrl: string, cartId: string, itemId: string) {
   return { response, body };
 }
 
-async function checkout(gatewayUrl: string, cartId: string, shipping: number) {
+async function calculateShipping(
+  gatewayUrl: string,
+  cartId: string,
+  addressId: string,
+) {
+  const response = await fetch(
+    `${gatewayUrl}/cart/carts/${cartId}/shipping?addressId=${encodeURIComponent(addressId)}`,
+  );
+  const body = await response.json();
+
+  return { response, body };
+}
+
+/**
+ * Mirrors the real checkout flow: fetch a shipping quote for the given
+ * address first, then submit the checkout with the returned
+ * `shippingQuoteId`. When `addressId` is omitted, no quote is fetched and
+ * the checkout request body omits both fields (used by validation tests).
+ */
+async function checkout(
+  gatewayUrl: string,
+  cartId: string,
+  addressId?: string,
+  idempotencyKey?: string,
+) {
+  let shippingQuoteId: string | undefined;
+  if (addressId) {
+    const quote = await calculateShipping(gatewayUrl, cartId, addressId);
+    // Shipping calculation can legitimately fail (e.g. empty cart, invalid
+    // address) — fall back to a placeholder so the checkout schema still
+    // validates and the checkout use case's own error (evaluated before it
+    // ever looks up the quote) is what the test actually observes.
+    shippingQuoteId = quote.body.shippingQuoteId ?? 'unavailable-quote';
+  }
+
   const response = await fetch(`${gatewayUrl}/cart/carts/${cartId}/checkout`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ shipping }),
+    headers: {
+      'Content-Type': 'application/json',
+      'Idempotency-Key': idempotencyKey ?? `idempotency-${++idempotencyCounter}`,
+    },
+    body: JSON.stringify(
+      addressId ? { addressId, shippingQuoteId } : {},
+    ),
   });
   const body = await response.json();
 
@@ -397,11 +466,16 @@ describe('API Gateway → Cart flow', () => {
         ],
       });
       const subtotal = productA.price * 2 + productB.price * 1;
+      // Server-calculated shipping for 3 units of the default test product
+      // (weight 1.5kg/unit, 20x15x30cm/unit) shipped to the seeded SP
+      // destination: round((12 + 4.5*2 + 0.027*150 + 50*0.05) * 100).
+      const expectedShipping = 2755;
+      const addressId = await seedAddress(env);
 
       const { response, body } = await checkout(
         env.gatewayUrl,
         created.cart.id,
-        500,
+        addressId,
       );
 
       expect(response.status).toBe(200);
@@ -410,8 +484,8 @@ describe('API Gateway → Cart flow', () => {
           status: 'SUCCESS',
           subtotal,
           discount: 0,
-          shipping: 500,
-          total: subtotal + 500,
+          shipping: expectedShipping,
+          total: subtotal + expectedShipping,
           cart: expect.objectContaining({ id: created.cart.id, items: [] }),
         }),
       );
@@ -433,24 +507,30 @@ describe('API Gateway → Cart flow', () => {
       );
       expect(withItemB.cart.items).toHaveLength(2);
 
+      const expectedShipping = 2755;
+      const addressId = await seedAddress(env);
+
       const { response, body } = await checkout(
         env.gatewayUrl,
         created.cart.id,
-        0,
+        addressId,
       );
 
       expect(response.status).toBe(200);
-      expect(body.total).toBe(productA.price * 1 + productB.price * 2);
+      expect(body.total).toBe(
+        productA.price * 1 + productB.price * 2 + expectedShipping,
+      );
       expect(body.cart.items).toEqual([]);
     });
 
     it('Given an empty cart, when checking out, then returns 422 with an error message', async () => {
       const { body: created } = await createCart(env.gatewayUrl);
+      const addressId = await seedAddress(env);
 
       const { response, body } = await checkout(
         env.gatewayUrl,
         created.cart.id,
-        500,
+        addressId,
       );
 
       expect(response.status).toBe(422);
@@ -458,17 +538,19 @@ describe('API Gateway → Cart flow', () => {
     });
 
     it('Given a non-existent cart id, when checking out, then returns 422 with an error message', async () => {
+      const addressId = await seedAddress(env);
+
       const { response, body } = await checkout(
         env.gatewayUrl,
         'does-not-exist',
-        500,
+        addressId,
       );
 
       expect(response.status).toBe(422);
       expect(body).toEqual({ status: 'ERROR', message: 'Cart not found' });
     });
 
-    it('Given a negative shipping value, when checking out, then returns 400 with a validation error', async () => {
+    it('Given no addressId in the request, when checking out, then returns 400 with a validation error', async () => {
       const { body: created } = await createCart(env.gatewayUrl, {
         products: [{ id: productA.id, quantity: 1 }],
       });
@@ -477,14 +559,81 @@ describe('API Gateway → Cart flow', () => {
         `${env.gatewayUrl}/cart/carts/${created.cart.id}/checkout`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ shipping: -10 }),
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': `idempotency-${++idempotencyCounter}`,
+          },
+          body: JSON.stringify({}),
         },
       );
       const body = await response.json();
 
       expect(response.status).toBe(400);
       expect(body.status).toBe('ERROR');
+    });
+
+    it('Given no Idempotency-Key header, when checking out, then returns 400 with a validation error', async () => {
+      const { body: created } = await createCart(env.gatewayUrl, {
+        products: [{ id: productA.id, quantity: 1 }],
+      });
+      const addressId = await seedAddress(env);
+
+      const response = await fetch(
+        `${env.gatewayUrl}/cart/carts/${created.cart.id}/checkout`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ addressId }),
+        },
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(body.status).toBe('ERROR');
+    });
+
+    it('Given a client-supplied shipping value in the request body, when checking out, then it is rejected outright instead of silently used', async () => {
+      const { body: created } = await createCart(env.gatewayUrl, {
+        products: [{ id: productA.id, quantity: 1 }],
+      });
+      const addressId = await seedAddress(env);
+
+      const response = await fetch(
+        `${env.gatewayUrl}/cart/carts/${created.cart.id}/checkout`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': `idempotency-${++idempotencyCounter}`,
+          },
+          // A tampered client tries to smuggle in a shipping value; the
+          // checkout schema only accepts `addressId` (and is `.strict()`),
+          // so this extra field must be rejected instead of being used —
+          // shipping is always recalculated server-side from the address.
+          body: JSON.stringify({ shipping: 0, addressId }),
+        },
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(body.status).toBe('ERROR');
+    });
+
+    it('Given an address that does not belong to (or does not exist for) the requester, when checking out, then returns an explicit error instead of an arbitrary shipping value', async () => {
+      const { body: created } = await createCart(env.gatewayUrl, {
+        products: [{ id: productA.id, quantity: 1 }],
+      });
+
+      const { response, body } = await checkout(
+        env.gatewayUrl,
+        created.cart.id,
+        'does-not-exist',
+      );
+
+      expect(response.status).toBe(422);
+      expect(body.status).toBe('ERROR');
+      expect(body.message).toBe('Address not found');
+      expect(body.code).toBe('ADDRESS_NOT_FOUND');
     });
   });
 
