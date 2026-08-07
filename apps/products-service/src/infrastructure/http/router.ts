@@ -4,6 +4,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { ProductController } from './controllers/ProductController';
 import { FlashOfferController } from './controllers/FlashOfferController';
+import { InventoryReservationController } from './controllers/InventoryReservationController';
 import { ListProductsQuery } from '../../application/queries/ListProductsQuery';
 import { GetProductByIdQuery } from '../../application/queries/GetProductByIdQuery';
 import { ListCategoriesQuery } from '../../application/queries/ListCategoriesQuery';
@@ -21,6 +22,11 @@ import { UpdateFlashOfferUseCase } from '../../application/usecases/UpdateFlashO
 import { DeleteFlashOfferUseCase } from '../../application/usecases/DeleteFlashOfferUseCase';
 import { requireAdmin } from './middlewares/requireAdminMiddleware';
 import { requireAuth } from './middlewares/requireAuthMiddleware';
+import { requireInternalService } from './middlewares/requireInternalServiceMiddleware';
+import { ReserveInventoryUseCase } from '../../application/usecases/ReserveInventoryUseCase';
+import { ConfirmInventoryReservationUseCase } from '../../application/usecases/ConfirmInventoryReservationUseCase';
+import { ReleaseInventoryReservationUseCase } from '../../application/usecases/ReleaseInventoryReservationUseCase';
+import { GetInventoryReservationUseCase } from '../../application/usecases/GetInventoryReservationUseCase';
 
 interface Dependencies {
   listProducts: ListProductsQuery;
@@ -38,6 +44,10 @@ interface Dependencies {
   createFlashOffer: CreateFlashOfferUseCase;
   updateFlashOffer: UpdateFlashOfferUseCase;
   deleteFlashOffer: DeleteFlashOfferUseCase;
+  reserveInventory: ReserveInventoryUseCase;
+  confirmInventory: ConfirmInventoryReservationUseCase;
+  releaseInventory: ReleaseInventoryReservationUseCase;
+  getInventoryReservation: GetInventoryReservationUseCase;
 }
 
 const openapiSpec = readFileSync(
@@ -69,6 +79,13 @@ export function buildRouter(deps: Dependencies): Hono {
     deps.createFlashOffer,
     deps.updateFlashOffer,
     deps.deleteFlashOffer,
+  );
+
+  const inventory = new InventoryReservationController(
+    deps.reserveInventory,
+    deps.confirmInventory,
+    deps.releaseInventory,
+    deps.getInventoryReservation,
   );
 
   app.get('/openapi.yml', (c) =>
@@ -111,6 +128,25 @@ export function buildRouter(deps: Dependencies): Hono {
   app.post('/flash-offers', requireAdmin, (c) => flashOffer.create(c));
   app.put('/flash-offers/:id', requireAdmin, (c) => flashOffer.update(c));
   app.delete('/flash-offers/:id', requireAdmin, (c) => flashOffer.delete(c));
+
+  app.post('/internal/inventory/reservations', requireInternalService, (c) =>
+    inventory.reserve(c),
+  );
+  app.get(
+    '/internal/inventory/reservations/:orderId',
+    requireInternalService,
+    (c) => inventory.get(c),
+  );
+  app.post(
+    '/internal/inventory/reservations/:orderId/confirm',
+    requireInternalService,
+    (c) => inventory.confirm(c),
+  );
+  app.post(
+    '/internal/inventory/reservations/:orderId/release',
+    requireInternalService,
+    (c) => inventory.release(c),
+  );
 
   return app;
 }

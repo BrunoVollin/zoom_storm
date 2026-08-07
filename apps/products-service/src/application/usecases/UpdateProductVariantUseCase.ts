@@ -5,6 +5,10 @@ import { ProductRepository } from '../../domain/repositories/ProductRepository';
 import { DomainEvent, DomainEventName } from '../../domain/events/DomainEvent';
 import { UseCase, Status } from '../contracts/UseCase';
 import { ProductMapper, ProductPrimitives } from '../mappers/ProductMapper';
+import {
+  InventoryError,
+  InventoryErrorCode,
+} from '../../domain/errors/InventoryError';
 
 interface Input {
   productId: string;
@@ -23,6 +27,7 @@ interface SuccessOutput {
 interface ErrorOutput {
   status: Status.ERROR;
   message: string;
+  code?: InventoryErrorCode;
 }
 
 type Output = SuccessOutput | ErrorOutput;
@@ -47,19 +52,31 @@ export class UpdateProductVariantUseCase implements UseCase<Input, Output> {
 
     // SKU is immutable after creation — historical CartItem/OrderItem
     // snapshots reference it by value.
-    const variants = existing.variants.map((v) =>
-      v.id.toString() === input.variantId
-        ? new ProductVariant(
-            v.id,
-            v.productId,
-            v.sku,
-            input.price,
-            input.stock,
-            input.name ?? v.name,
-            input.isDefault ?? v.isDefault,
-          )
-        : v,
-    );
+    let variants: ProductVariant[];
+    try {
+      variants = existing.variants.map((v) =>
+        v.id.toString() === input.variantId
+          ? new ProductVariant(
+              v.id,
+              v.productId,
+              v.sku,
+              input.price,
+              input.stock,
+              input.name ?? v.name,
+              input.isDefault ?? v.isDefault,
+              v.reservedStock,
+            )
+          : v,
+      );
+    } catch (error) {
+      if (
+        error instanceof InventoryError &&
+        error.code === InventoryErrorCode.INSUFFICIENT_STOCK
+      ) {
+        return { status: Status.ERROR, code: error.code, message: error.code };
+      }
+      throw error;
+    }
 
     const updated = new Product({
       ...existing,

@@ -7,6 +7,8 @@ interface VariantInput {
   name: string | null;
   price: number;
   stock: number;
+  reservedStock?: number;
+  availableStock?: number;
   isDefault: boolean;
 }
 
@@ -67,7 +69,9 @@ export class ProductRepository {
         sku: variant.sku,
         name: variant.name,
         price: variant.price,
-        stock: variant.stock,
+        stock:
+          variant.availableStock ??
+          Math.max(0, variant.stock - (variant.reservedStock ?? 0)),
         isDefault: variant.isDefault,
         transportHeight: data.transportHeight,
         transportWidth: data.transportWidth,

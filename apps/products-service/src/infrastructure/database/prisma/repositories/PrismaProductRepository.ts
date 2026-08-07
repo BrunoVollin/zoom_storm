@@ -40,6 +40,7 @@ export class PrismaProductRepository implements ProductRepository {
         minimumOrderQuantity: product.minimumOrderQuantity,
         barcode: product.barcode,
         qrCode: product.qrCode,
+        deletedAt: product.deletedAt,
       };
 
       await tx.product.upsert({
@@ -58,6 +59,7 @@ export class PrismaProductRepository implements ProductRepository {
             name: variant.name,
             price: variant.price,
             stock: variant.stock,
+            reservedStock: variant.reservedStock,
             isDefault: variant.isDefault,
           },
           update: {
@@ -65,6 +67,7 @@ export class PrismaProductRepository implements ProductRepository {
             name: variant.name,
             price: variant.price,
             stock: variant.stock,
+            reservedStock: variant.reservedStock,
             isDefault: variant.isDefault,
           },
         });
@@ -88,6 +91,8 @@ export class PrismaProductRepository implements ProductRepository {
             comment: review.comment,
             reviewerName: review.reviewerName,
             reviewerEmail: review.reviewerEmail,
+            userId: review.userId?.toString() ?? null,
+            orderId: review.orderId?.toString() ?? null,
           },
           update: {
             rating: review.rating,
@@ -117,8 +122,8 @@ export class PrismaProductRepository implements ProductRepository {
   }
 
   async findById(id: IdType): Promise<Product | null> {
-    const p = await this.prisma.product.findUnique({
-      where: { id: id.toString() },
+    const p = await this.prisma.product.findFirst({
+      where: { id: id.toString(), deletedAt: null },
       include: { variants: true, reviews: true },
     });
     if (!p) return null;
@@ -128,7 +133,10 @@ export class PrismaProductRepository implements ProductRepository {
 
   async delete(id: IdType, event?: DomainEvent): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      await tx.product.delete({ where: { id: id.toString() } });
+      await tx.product.update({
+        where: { id: id.toString() },
+        data: { deletedAt: new Date() },
+      });
 
       if (event) {
         await tx.outboxEvent.create({
@@ -169,6 +177,7 @@ export class PrismaProductRepository implements ProductRepository {
     qrCode: string | null;
     createdAt: Date;
     updatedAt: Date;
+    deletedAt: Date | null;
     variants: Array<{
       id: string;
       productId: string;
@@ -176,6 +185,7 @@ export class PrismaProductRepository implements ProductRepository {
       name: string | null;
       price: number;
       stock: number;
+      reservedStock: number;
       isDefault: boolean;
     }>;
     reviews: Array<{
@@ -186,6 +196,8 @@ export class PrismaProductRepository implements ProductRepository {
       reviewerName: string;
       reviewerEmail: string;
       createdAt: Date;
+      userId: string | null;
+      orderId: string | null;
     }>;
   }): Product {
     return new Product({
@@ -215,6 +227,7 @@ export class PrismaProductRepository implements ProductRepository {
       qrCode: p.qrCode,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
+      deletedAt: p.deletedAt,
       variants: p.variants.map(
         (v) =>
           new ProductVariant(
@@ -225,6 +238,7 @@ export class PrismaProductRepository implements ProductRepository {
             v.stock,
             v.name,
             v.isDefault,
+            v.reservedStock,
           ),
       ),
       reviews: p.reviews.map(
@@ -237,6 +251,8 @@ export class PrismaProductRepository implements ProductRepository {
             r.reviewerName,
             r.reviewerEmail,
             r.createdAt,
+            r.userId ? IdType.create(r.userId) : null,
+            r.orderId ? IdType.create(r.orderId) : null,
           ),
       ),
     });

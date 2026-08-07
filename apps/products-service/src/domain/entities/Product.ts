@@ -1,6 +1,8 @@
 import { IdType } from '../shared/IdType';
 import { ProductVariant } from './ProductVariant';
 import { ProductReview } from './ProductReview';
+import { InventoryError, InventoryErrorCode } from '../errors/InventoryError';
+import { ReviewError, ReviewErrorCode } from '../errors/ReviewError';
 
 export interface ProductProps {
   id: IdType;
@@ -29,6 +31,7 @@ export interface ProductProps {
   qrCode?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
+  deletedAt?: Date | null;
   variants: ProductVariant[];
   reviews?: ProductReview[];
 }
@@ -60,6 +63,7 @@ export class Product {
   readonly qrCode: string | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+  readonly deletedAt: Date | null;
   readonly variants: ProductVariant[];
   readonly reviews: ProductReview[];
 
@@ -94,6 +98,7 @@ export class Product {
     this.qrCode = props.qrCode ?? null;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? new Date();
+    this.deletedAt = props.deletedAt ?? null;
     this.variants = props.variants;
     this.reviews = props.reviews ?? [];
   }
@@ -104,5 +109,64 @@ export class Product {
 
   getDefaultVariant(): ProductVariant {
     return this.variants.find((v) => v.isDefault) ?? this.variants[0];
+  }
+
+  get isDeleted(): boolean {
+    return this.deletedAt !== null;
+  }
+
+  addReview(review: ProductReview): Product {
+    if (!review.productId.equals(this.id)) {
+      throw new ReviewError(ReviewErrorCode.INVALID_REVIEW);
+    }
+
+    if (
+      review.userId &&
+      review.orderId &&
+      this.hasReviewForPurchase(review.userId, review.orderId)
+    ) {
+      throw new ReviewError(ReviewErrorCode.REVIEW_ALREADY_EXISTS);
+    }
+
+    const reviews = [...this.reviews, review];
+    const rating =
+      reviews.reduce((sum, current) => sum + current.rating, 0) /
+      reviews.length;
+
+    return new Product({
+      ...this,
+      id: this.id,
+      variants: this.variants,
+      reviews,
+      rating,
+      updatedAt: new Date(),
+    });
+  }
+
+  private hasReviewForPurchase(userId: IdType, orderId: IdType): boolean {
+    return this.reviews.some((existing) =>
+      existing.belongsToPurchase(userId, orderId),
+    );
+  }
+
+  softDelete(deletedAt: Date = new Date()): Product {
+    if (this.isDeleted) {
+      return this;
+    }
+
+    if (this.variants.some((variant) => variant.reservedStock > 0)) {
+      throw new InventoryError(
+        InventoryErrorCode.PRODUCT_HAS_ACTIVE_RESERVATIONS,
+      );
+    }
+
+    return new Product({
+      ...this,
+      id: this.id,
+      variants: this.variants,
+      reviews: this.reviews,
+      deletedAt,
+      updatedAt: deletedAt,
+    });
   }
 }

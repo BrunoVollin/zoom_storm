@@ -51,12 +51,13 @@ export const ListProductsQuerySchema = z.object({
 
 export const UpdateProductSchema = z.object(catalogFields);
 
-export const CreateReviewSchema = z.object({
-  rating: z.int().min(1).max(5),
-  comment: z.string().min(1),
-  reviewerName: z.string().min(1),
-  reviewerEmail: z.string().email(),
-});
+export const CreateReviewSchema = z
+  .object({
+    orderId: z.string().min(1),
+    rating: z.int().min(1).max(5),
+    comment: z.string().min(1),
+  })
+  .strict();
 
 export const CreateProductVariantSchema = VariantSchema;
 

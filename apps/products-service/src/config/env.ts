@@ -20,6 +20,11 @@ export const env = {
     brokers: (
       process.env.PRODUCTS_SERVICE_KAFKA_BROKERS ?? 'localhost:9022'
     ).split(','),
+    orderEventsTopic:
+      process.env.PRODUCTS_SERVICE_ORDER_EVENTS_TOPIC || 'order-events',
+    reviewEligibilityGroupId:
+      process.env.PRODUCTS_SERVICE_REVIEW_ELIGIBILITY_GROUP_ID ||
+      'products-service-review-eligibility',
   },
   keycloak: {
     issuerUrl: process.env.KEYCLOAK_ISSUER_URL || '',
@@ -27,5 +32,14 @@ export const env = {
   },
   auth: {
     skip: process.env.PRODUCTS_SERVICE_SKIP_AUTH === 'true',
+  },
+  internal: {
+    serviceToken: process.env.INTERNAL_SERVICE_TOKEN || '',
+  },
+  inventory: {
+    expirationPollIntervalMs: Math.max(
+      1_000,
+      Number(process.env.INVENTORY_EXPIRATION_POLL_INTERVAL_MS) || 30_000,
+    ),
   },
 };

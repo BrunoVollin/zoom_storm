@@ -6,11 +6,11 @@ import { UpdateFlashOfferUseCase } from '../../../application/usecases/UpdateFla
 import { DeleteFlashOfferUseCase } from '../../../application/usecases/DeleteFlashOfferUseCase';
 import { Status as QueryStatus } from '../../../application/contracts/Query';
 import { Status as UseCaseStatus } from '../../../application/contracts/UseCase';
+import { validate, validationError } from '../schemas/product.schemas';
 import {
-  validate,
-  validationError,
-} from '../schemas/product.schemas';
-import { CreateFlashOfferSchema, UpdateFlashOfferSchema } from '../schemas/flash-offer.schemas';
+  CreateFlashOfferSchema,
+  UpdateFlashOfferSchema,
+} from '../schemas/flash-offer.schemas';
 
 export class FlashOfferController {
   constructor(
@@ -46,18 +46,21 @@ export class FlashOfferController {
   }
 
   async update(c: Context) {
-    const id = c.req.param('id');
+    const id = c.req.param('id')!;
     const parsed = validate(UpdateFlashOfferSchema, await c.req.json());
     if ('error' in parsed) return validationError(c, parsed.error);
 
-    const result = await this.updateFlashOfferUseCase.execute({ id, ...parsed.data });
+    const result = await this.updateFlashOfferUseCase.execute({
+      id,
+      ...parsed.data,
+    });
     const status = result.status === UseCaseStatus.SUCCESS ? 200 : 422;
 
     return c.json(result, status);
   }
 
   async delete(c: Context) {
-    const id = c.req.param('id');
+    const id = c.req.param('id')!;
 
     const result = await this.deleteFlashOfferUseCase.execute({ id });
     const status = result.status === UseCaseStatus.SUCCESS ? 200 : 422;

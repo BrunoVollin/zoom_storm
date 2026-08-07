@@ -58,7 +58,7 @@ export class ProductController {
   }
 
   async getById(c: Context) {
-    const id = c.req.param('id');
+    const id = c.req.param('id')!;
 
     const result = await this.getProductByIdQuery.execute({ id });
     const status = result.status === QueryStatus.SUCCESS ? 200 : 404;
@@ -77,7 +77,7 @@ export class ProductController {
   }
 
   async update(c: Context) {
-    const id = c.req.param('id');
+    const id = c.req.param('id')!;
     const parsed = validate(UpdateProductSchema, await c.req.json());
     if ('error' in parsed) return validationError(c, parsed.error);
 
@@ -91,7 +91,7 @@ export class ProductController {
   }
 
   async delete(c: Context) {
-    const id = c.req.param('id');
+    const id = c.req.param('id')!;
 
     const result = await this.deleteProductUseCase.execute({ id });
     const status = result.status === UseCaseStatus.SUCCESS ? 200 : 422;
@@ -100,7 +100,7 @@ export class ProductController {
   }
 
   async createVariant(c: Context) {
-    const productId = c.req.param('id');
+    const productId = c.req.param('id')!;
     const parsed = validate(CreateProductVariantSchema, await c.req.json());
     if ('error' in parsed) return validationError(c, parsed.error);
 
@@ -114,8 +114,8 @@ export class ProductController {
   }
 
   async updateVariant(c: Context) {
-    const productId = c.req.param('id');
-    const variantId = c.req.param('variantId');
+    const productId = c.req.param('id')!;
+    const variantId = c.req.param('variantId')!;
     const parsed = validate(UpdateProductVariantSchema, await c.req.json());
     if ('error' in parsed) return validationError(c, parsed.error);
 
@@ -130,8 +130,8 @@ export class ProductController {
   }
 
   async deleteVariant(c: Context) {
-    const productId = c.req.param('id');
-    const variantId = c.req.param('variantId');
+    const productId = c.req.param('id')!;
+    const variantId = c.req.param('variantId')!;
 
     const result = await this.deleteProductVariantUseCase.execute({
       productId,
@@ -143,12 +143,28 @@ export class ProductController {
   }
 
   async createReview(c: Context) {
-    const productId = c.req.param('id');
+    const productId = c.req.param('id')!;
     const parsed = validate(CreateReviewSchema, await c.req.json());
     if ('error' in parsed) return validationError(c, parsed.error);
 
+    const userId = c.get('userId') as string | undefined;
+    const reviewerName = c.get('userName') as string | undefined;
+    const reviewerEmail = c.get('userEmail') as string | undefined;
+    if (!userId || !reviewerName || !reviewerEmail) {
+      return c.json(
+        {
+          status: UseCaseStatus.ERROR,
+          message: 'Authenticated profile is incomplete',
+        },
+        401,
+      );
+    }
+
     const result = await this.createReviewUseCase.execute({
       productId,
+      userId,
+      reviewerName,
+      reviewerEmail,
       ...parsed.data,
     });
     const status = result.status === UseCaseStatus.SUCCESS ? 201 : 422;

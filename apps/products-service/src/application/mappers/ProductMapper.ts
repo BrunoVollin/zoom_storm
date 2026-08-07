@@ -10,6 +10,8 @@ export class ProductMapper {
       name: variant.name,
       price: variant.price,
       stock: variant.stock,
+      reservedStock: variant.reservedStock,
+      availableStock: variant.availableStock,
       isDefault: variant.isDefault,
     };
   }
@@ -56,6 +58,7 @@ export class ProductMapper {
         qrCode: product.qrCode,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
+        deletedAt: product.deletedAt,
       },
       variants: product.variants.map(ProductMapper.variantToPrimitives),
       reviews: product.reviews.map(ProductMapper.reviewToPrimitives),
