@@ -7,4 +7,8 @@ notes
 *.notes.txt
 .next/
 .claude
+CLAUDE.md
+concern.hide.md
+RELATORIO-CORRECOES.md
 *.log
+*.hide
