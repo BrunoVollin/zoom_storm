@@ -1,0 +1,13 @@
+{
+  "status": "SUCCESS",
+  "cards": [
+    {
+      "id": "card-1",
+      "brand": "Visa",
+      "lastFour": "4242",
+      "holderName": "Test User",
+      "expiry": "12/30",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    }
+  ]
+}

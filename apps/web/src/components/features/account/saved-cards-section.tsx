@@ -50,7 +50,7 @@ export function SavedCardsSection() {
           />
         ) : null}
         {!isLoading && (!savedCards || savedCards.length === 0) ? (
-          <p className="text-sm text-muted-foreground">You don't have any saved cards yet.</p>
+          <p className="text-sm text-muted-foreground">You don&apos;t have any saved cards yet.</p>
         ) : null}
         <AddCardForm onSubmit={handleAddCard} isSubmitting={addSavedCard.isPending} />
       </CardContent>

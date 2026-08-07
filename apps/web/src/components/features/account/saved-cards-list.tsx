@@ -34,6 +34,7 @@ export function SavedCardsList({
           {onSelect ? (
             <button
               data-testid="saved-card-option"
+              data-card-id={card.id}
               type="button"
               onClick={() => onSelect(card.id)}
               className={`flex flex-1 items-center justify-between rounded-md border px-3 py-2 text-left text-sm ${

@@ -52,14 +52,11 @@ export default function PaymentPage() {
     defaultValues: { installments: 1 },
   });
 
-  const {
-    register: registerSavedCard,
-    handleSubmit: handleSavedCardSubmit,
-    formState: { errors: savedCardErrors },
-  } = useForm<SavedCardPaymentFormInput>({
-    resolver: zodResolver(savedCardPaymentFormSchema),
-    defaultValues: { installments: 1 },
-  });
+  const { register: registerSavedCard, handleSubmit: handleSavedCardSubmit } =
+    useForm<SavedCardPaymentFormInput>({
+      resolver: zodResolver(savedCardPaymentFormSchema),
+      defaultValues: { installments: 1 },
+    });
 
   if (!orderId) {
     return <ErrorState title="No order specified" />;
@@ -131,6 +128,7 @@ export default function PaymentPage() {
             }}
           />
           <button
+            data-testid="new-card-option"
             type="button"
             onClick={() => setSelectedCardId(null)}
             className={`rounded-md border px-3 py-2 text-left text-sm ${
@@ -144,6 +142,7 @@ export default function PaymentPage() {
 
       {selectedCardId ? (
         <form
+          data-testid="saved-card-payment-form"
           onSubmit={submitSavedCard}
           className="flex flex-col gap-4 rounded-lg border border-border p-4"
         >
@@ -153,21 +152,12 @@ export default function PaymentPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cvv">CVV</Label>
-            <Input
-              id="cvv"
-              inputMode="numeric"
-              placeholder="123"
-              {...registerSavedCard("cvv")}
-            />
-            {savedCardErrors.cvv ? (
-              <p className="text-sm text-destructive">{savedCardErrors.cvv.message}</p>
-            ) : null}
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="installments">Installments</Label>
-            <Select id="installments" {...registerSavedCard("installments")}>
+            <Label htmlFor="saved-card-installments">Installments</Label>
+            <Select
+              data-testid="saved-card-installments"
+              id="saved-card-installments"
+              {...registerSavedCard("installments")}
+            >
               {installmentOptions.map((option) => (
                 <option key={option.count} value={option.count}>
                   {option.count}x of {formatPrice(option.valueCents)} interest-free
@@ -178,7 +168,9 @@ export default function PaymentPage() {
 
           {payOrder.isError ? (
             <p className="text-sm text-destructive">
-              {payOrder.error instanceof Error ? payOrder.error.message : "Could not process payment"}
+              {payOrder.error instanceof Error
+                ? payOrder.error.message
+                : "Could not process payment"}
             </p>
           ) : null}
 
@@ -193,6 +185,7 @@ export default function PaymentPage() {
         </form>
       ) : (
         <form
+          data-testid="new-card-payment-form"
           onSubmit={submitNewCard}
           className="flex flex-col gap-4 rounded-lg border border-border p-4"
         >
@@ -270,7 +263,9 @@ export default function PaymentPage() {
 
           {payOrder.isError ? (
             <p className="text-sm text-destructive">
-              {payOrder.error instanceof Error ? payOrder.error.message : "Could not process payment"}
+              {payOrder.error instanceof Error
+                ? payOrder.error.message
+                : "Could not process payment"}
             </p>
           ) : null}
 

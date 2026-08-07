@@ -21,15 +21,10 @@ export const paymentFormSchema = z.object({
 
 export type PaymentFormInput = z.infer<typeof paymentFormSchema>;
 
-/** Paying with a card already saved on the profile: number/name/expiry were
- * captured (and validated) when the card was first saved, so only the CVV —
- * never persisted — is asked again here. */
+/** Paying with a card already saved on the profile: the checkout only needs
+ * the installment choice because this project simulates the charge and never
+ * sends card credentials to the payment endpoint. */
 export const savedCardPaymentFormSchema = z.object({
-  cvv: z
-    .string()
-    .min(3, "Invalid CVV")
-    .max(4, "Invalid CVV")
-    .regex(/^\d+$/, "CVV must contain only numbers"),
   installments: z.coerce.number().int().min(1).max(12),
 });
 
