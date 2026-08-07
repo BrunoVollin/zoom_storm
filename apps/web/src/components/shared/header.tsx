@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { Heart, MapPin, MagnetIcon, Package, ShieldCheck } from "lucide-react";
 
@@ -78,7 +79,9 @@ export function Header() {
           Zoom Storm
         </Link>
         <div className="flex-1">
-          <SearchBar />
+          <Suspense fallback={<Skeleton aria-hidden="true" className="h-9 w-full bg-white/20" />}>
+            <SearchBar />
+          </Suspense>
         </div>
       </div>
       <div className="border-t border-white/10">
